@@ -1,31 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Hash, Calculator, TrendingDown } from 'lucide-react';
+import { Hash, Calculator} from 'lucide-react';
 
 interface QuantityStepProps {
   quantity: number;
   onQuantityChange: (quantity: number) => void;
-  onDiscountTierChange: (tier: string) => void;
 }
 
-const QUANTITY_BREAKS = [
-  { qty: 1, discount: 'Base Price' },
-  { qty: 5, discount: '5% Off' },
-  { qty: 10, discount: '12% Off' },
-  { qty: 25, discount: '18% Off' },
-  { qty: 50, discount: '22% Off' },
-  { qty: 100, discount: '25% Off' },
-];
 
 export function QuantityStep({
   quantity,
   onQuantityChange,
-  onDiscountTierChange,
 }: QuantityStepProps) {
   const [inputValue, setInputValue] = useState(quantity.toString());
 
@@ -46,19 +36,6 @@ export function QuantityStep({
       onQuantityChange(1);
     }
   };
-
-  const getCurrentDiscount = () => {
-    for (let i = QUANTITY_BREAKS.length - 1; i >= 0; i--) {
-      if (quantity >= QUANTITY_BREAKS[i].qty) {
-        return QUANTITY_BREAKS[i].discount;
-      }
-    }
-    return QUANTITY_BREAKS[0].discount;
-  };
-
-  useEffect(() => {
-    onDiscountTierChange(getCurrentDiscount());
-  }, [quantity, onDiscountTierChange]);
 
   return (
     <div className="space-y-6">
