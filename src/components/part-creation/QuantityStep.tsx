@@ -107,48 +107,8 @@ export function QuantityStep({
               </div>
             </div>
           </div>
-
-          {/* {quantity >= 5 && (
-            <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
-              <TrendingDown className="w-4 h-4 text-emerald-600" />
-              <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">
-                Quantity Discount Applied: {getCurrentDiscount()}
-              </p>
-            </div>
-          )} */}
         </div>
       </Card>
-
-      {/* Quantity Breaks Info */}
-      {/* <div className="space-y-3">
-        <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">
-          Volume Discount Tiers
-        </p>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          {QUANTITY_BREAKS.map((breakPoint) => (
-            <div
-              key={breakPoint.qty}
-              className={`text-center p-3 rounded-xl border transition-all ${
-                quantity >= breakPoint.qty
-                  ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white'
-                  : 'bg-slate-50 border-slate-200 text-slate-500'
-              }`}
-            >
-              <p
-                className={`text-xs font-bold ${quantity >= breakPoint.qty ? 'text-white' : 'text-slate-900'}`}
-              >
-                {breakPoint.qty}+
-              </p>
-              <p
-                className={`text-[9px] uppercase tracking-wider font-bold ${quantity >= breakPoint.qty ? 'text-blue-100' : 'text-slate-400'}`}
-              >
-                {breakPoint.discount}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div> */}
-
       {/* Summary Card */}
       <Card className="bg-slate-900 border-slate-800 p-5">
         <div className="flex items-center gap-3 mb-3">
