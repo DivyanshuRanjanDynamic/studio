@@ -72,14 +72,14 @@ export function QuantityStep({
       </div>
 
       {/* Quantity Input */}
-      <Card className="bg-blue-50 border-[#2F5FA7]/20 p-6">
+      <Card className="bg-blue-50 border-[#2F5FA7]/20 p-4 sm:p-6">
         <div className="space-y-4">
-          <div className='flex justify-around items-center'>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#2F5FA7] flex items-center justify-center">
-                <Hash className="w-5 h-5 text-white" />
+          <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
+            <div className="w-full sm:w-auto flex items-center gap-3 justify-center sm:justify-start">
+              <div className="w-10 h-10 hidden sm:flex rounded-xl bg-[#2F5FA7] items-center justify-center">
+                <Hash className="w-5 h-5  text-white" />
               </div>
-              <div className='pb-1'>
+              <div className="pb-1 text-center sm:text-left">
                 <Label
                   htmlFor="quantity"
                   className="text-[10px] uppercase text-[#2F5FA7] font-bold tracking-widest"
@@ -92,7 +92,7 @@ export function QuantityStep({
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="w-full sm:w-auto flex items-center gap-4 justify-center">
               <Input
                 id="quantity"
                 type="number"
@@ -100,7 +100,7 @@ export function QuantityStep({
                 value={inputValue}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
-                className="w-[10vw] h-14 text-2xl font-bold text-center uppercase tracking-wider text-slate-900 bg-white border-slate-200"
+                className="w-14 sm:w-[10vw] md:w-40 h-14 text-2xl font-bold text-center uppercase tracking-wider text-slate-900 bg-white border-slate-200"
               />
               <div className="text-center">
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-bold">PCS</p>
@@ -108,19 +108,19 @@ export function QuantityStep({
             </div>
           </div>
 
-          {quantity >= 5 && (
+          {/* {quantity >= 5 && (
             <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
               <TrendingDown className="w-4 h-4 text-emerald-600" />
               <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">
                 Quantity Discount Applied: {getCurrentDiscount()}
               </p>
             </div>
-          )}
+          )} */}
         </div>
       </Card>
 
       {/* Quantity Breaks Info */}
-      <div className="space-y-3">
+      {/* <div className="space-y-3">
         <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">
           Volume Discount Tiers
         </p>
@@ -147,7 +147,7 @@ export function QuantityStep({
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Summary Card */}
       <Card className="bg-slate-900 border-slate-800 p-5">
