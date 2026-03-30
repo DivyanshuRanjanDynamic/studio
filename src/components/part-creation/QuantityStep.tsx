@@ -74,35 +74,37 @@ export function QuantityStep({
       {/* Quantity Input */}
       <Card className="bg-blue-50 border-[#2F5FA7]/20 p-6">
         <div className="space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#2F5FA7] flex items-center justify-center">
-              <Hash className="w-5 h-5 text-white" />
+          <div className='flex justify-around items-center'>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#2F5FA7] flex items-center justify-center">
+                <Hash className="w-5 h-5 text-white" />
+              </div>
+              <div className='pb-1'>
+                <Label
+                  htmlFor="quantity"
+                  className="text-[10px] uppercase text-[#2F5FA7] font-bold tracking-widest"
+                >
+                  Required Quantity
+                </Label>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                  No minimum quantity required
+                </p>
+              </div>
             </div>
-            <div>
-              <Label
-                htmlFor="quantity"
-                className="text-[10px] uppercase text-[#2F5FA7] font-bold tracking-widest"
-              >
-                Required Quantity
-              </Label>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
-                No minimum quantity required
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <Input
-              id="quantity"
-              type="number"
-              min={1}
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              className="h-14 text-2xl font-bold text-center uppercase tracking-wider text-slate-900 bg-white border-slate-200"
-            />
-            <div className="text-center">
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-bold">PCS</p>
+            <div className="flex items-center gap-4">
+              <Input
+                id="quantity"
+                type="number"
+                min={1}
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                className="w-[10vw] h-14 text-2xl font-bold text-center uppercase tracking-wider text-slate-900 bg-white border-slate-200"
+              />
+              <div className="text-center">
+                <p className="text-xs text-slate-400 uppercase tracking-wider font-bold">PCS</p>
+              </div>
             </div>
           </div>
 
