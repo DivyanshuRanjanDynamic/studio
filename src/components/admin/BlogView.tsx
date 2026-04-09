@@ -40,6 +40,22 @@ export const BlogView = () => {
     };
   }, []);
 
+  const handleTest = async (post: PostMeta) => {
+    await fetch('/api/admin/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post }),
+    });
+  };
+
+  const handleBroadcast = async (post: PostMeta) => {
+    await fetch('/api/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post }),
+    });
+  };
+
   if (loading) return <div className="py-6 text-center text-slate-500">Loading posts…</div>;
 
   return (
@@ -48,10 +64,16 @@ export const BlogView = () => {
         <div key={post.id || index} className="flex flex-col">
           <BlogCard post={post} index={index} />
           <div className="flex gap-2 mt-3">
-            <button className="flex-1 py-2 rounded-xl bg-[#1E3A66] text-white text-sm font-bold hover:bg-[#2F5FA7] transition-colors">
+            <button
+              onClick={() => handleBroadcast(post)}
+              className="flex-1 py-2 rounded-xl bg-[#1E3A66] text-white text-sm font-bold hover:bg-[#2F5FA7] transition-colors"
+            >
               Broadcast
             </button>
-            <button className="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors">
+            <button
+              onClick={() => handleTest(post)}
+              className="flex-1 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+            >
               Test
             </button>
           </div>
