@@ -5,9 +5,13 @@ type PostMeta = {
   id: string;
   title: string;
   date: string;
-  summary?: string;
-  image?: string | null;
-  slug?: string | null;
+  summary: string;
+  image: string;
+  slug: string;
+  url: string;
+  readingTime: { text: string };
+  tags: string[];
+  author: string;
 };
 
 export const BlogView = () => {
@@ -42,7 +46,7 @@ export const BlogView = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {posts.map((post, index) => (
         <div key={post.id || index} className="flex flex-col">
-          <BlogCard post={post as any} index={index} />
+          <BlogCard post={post} index={index} />
           <div className="flex gap-2 mt-3">
             <button className="flex-1 py-2 rounded-xl bg-[#1E3A66] text-white text-sm font-bold hover:bg-[#2F5FA7] transition-colors">
               Broadcast
