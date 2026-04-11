@@ -82,6 +82,7 @@ import {
   MessageSquare,
   Phone,
   ArrowUpRight,
+  BookOpen,
 } from 'lucide-react';
 import {
   useFirestore,
@@ -118,6 +119,7 @@ import { ConsultationRequests } from '@/components/admin/ConsultationRequests';
 import { OrderManagement } from '@/components/admin/OrderManagement';
 import { IndustrialDemandHub } from '@/components/admin/IndustrialDemandHub';
 import { ContactQueries } from '@/components/admin/ContactQueries';
+import { BlogView } from '@/components/admin/BlogView';
 
 // Constants moved to @/config/constants
 
@@ -1104,8 +1106,13 @@ export default function AdminPanel() {
               }}
             />
           )}
+          {activeTab === 'blogs' && (
+            <BlogView/>
+          )}
         </main>
       </div>
+
+      
 
       {showDetailsModal &&
         selectedRfq &&
