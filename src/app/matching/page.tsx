@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,6 +29,7 @@ import {
   addDocumentNonBlocking,
 } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
+import { isVendorRole } from '@/lib/roles';
 
 export default function MatchingPage() {
   const router = useRouter();
@@ -42,14 +43,14 @@ export default function MatchingPage() {
   // Filter for ACTIVE vendors only
   const vendorsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(
-      collection(db, 'users'),
-      where('role', '==', 'vendor'),
-      where('isActive', '==', true)
-    );
+    return query(collection(db, 'users'), where('isActive', '==', true));
   }, [db]);
 
   const { data: dbVendors, isLoading: isVendorsLoading } = useCollection(vendorsQuery);
+  const activeVendors = useMemo(
+    () => (dbVendors || []).filter((vendor) => isVendorRole(vendor.role)),
+    [dbVendors]
+  );
 
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -91,7 +92,7 @@ export default function MatchingPage() {
       return;
     }
 
-    const selectedVendorObjects = dbVendors?.filter((v) => selectedVendors.includes(v.id)) || [];
+    const selectedVendorObjects = activeVendors.filter((v) => selectedVendors.includes(v.id));
 
     const rfqData = {
       userId: user?.uid || null,
@@ -222,8 +223,8 @@ export default function MatchingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {dbVendors && dbVendors.length > 0 ? (
-            dbVendors.map((vendor) => (
+          {activeVendors.length > 0 ? (
+            activeVendors.map((vendor) => (
               <div
                 key={vendor.id}
                 className={`relative cursor-pointer group rounded-xl transition-all ${selectedVendors.includes(vendor.id) ? 'ring-2 ring-cyan-500 shadow-[0_0_30px_rgba(34,211,238,0.2)]' : ''}`}

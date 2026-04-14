@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
 import { logger } from '@/utils/logger';
 import { s3Client, S3_BUCKET } from '@/lib/s3-client';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { isVendorRole } from '@/lib/roles';
 
 /**
  * GET /api/v1/files/retrieve?fileKey=[key]
@@ -24,6 +26,84 @@ export async function GET(req: NextRequest) {
 
     if (!fileKey) {
       return NextResponse.json({ error: 'Missing fileKey parameter' }, { status: 400 });
+    }
+
+    const { adminFirestore } = getFirebaseAdmin();
+    if (!adminFirestore) {
+      return NextResponse.json({ error: 'Database service unavailable' }, { status: 500 });
+    }
+
+    // 2. Authorize file access (owner/admin/authorized vendor only)
+    const requesterSnap = await adminFirestore.collection('users').doc(auth.uid).get();
+    const requesterRole = requesterSnap.data()?.role as string | undefined;
+    const requesterIsAdmin = requesterRole === 'admin';
+
+    let canAccess = requesterIsAdmin;
+
+    // Direct metadata ownership path
+    if (!canAccess) {
+      const filesSnapshot = await adminFirestore
+        .collection('uploaded_files')
+        .where('fileKey', '==', fileKey)
+        .limit(1)
+        .get();
+
+      if (!filesSnapshot.empty) {
+        const fileData = filesSnapshot.docs[0].data();
+        if (fileData.userId === auth.uid) {
+          canAccess = true;
+        }
+      }
+    }
+
+    // Project-part ownership / assignment fallback path
+    if (!canAccess) {
+      const partsSnapshot = await adminFirestore
+        .collection('projectParts')
+        .where('cadFile.fileUrl', '==', fileKey)
+        .limit(20)
+        .get();
+
+      const projectCache = new Map<string, any>();
+      for (const partDoc of partsSnapshot.docs) {
+        const partData = partDoc.data() as { userId?: string; projectId?: string };
+
+        if (partData.userId === auth.uid) {
+          canAccess = true;
+          break;
+        }
+
+        const projectId = partData.projectId;
+        if (!projectId) continue;
+
+        let projectData = projectCache.get(projectId);
+        if (!projectData) {
+          const projectSnap = await adminFirestore.collection('projectRFQs').doc(projectId).get();
+          if (!projectSnap.exists) continue;
+          projectData = projectSnap.data();
+          projectCache.set(projectId, projectData);
+        }
+
+        if (projectData?.userId === auth.uid) {
+          canAccess = true;
+          break;
+        }
+
+        if (
+          isVendorRole(requesterRole) &&
+          (projectData?.assignedVendorId === auth.uid ||
+            (Array.isArray(projectData?.shortlistedVendorIds) &&
+              projectData.shortlistedVendorIds.includes(auth.uid)))
+        ) {
+          canAccess = true;
+          break;
+        }
+      }
+    }
+
+    if (!canAccess) {
+      logger.warn({ event: 'API: Unauthorized file retrieval attempt', fileKey, authUid: auth.uid });
+      return forbiddenResponse('You do not have access to this file');
     }
 
     // 2. Select bucket (consistent with download API)

@@ -39,6 +39,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
     }
 
+    // Verify ID token first so we can enforce verification state.
+    const decodedToken = await adminAuth.verifyIdToken(idToken, true);
+    const signInProvider =
+      typeof decodedToken.firebase?.sign_in_provider === 'string'
+        ? decodedToken.firebase.sign_in_provider
+        : '';
+
+    // Block unverified password-based accounts from obtaining a long-lived session.
+    if (signInProvider === 'password' && !decodedToken.email_verified) {
+      return NextResponse.json(
+        { error: 'Email verification required before signing in.' },
+        { status: 403 }
+      );
+    }
+
     // Set session expiration to 5 days.
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
 

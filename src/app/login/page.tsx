@@ -32,6 +32,7 @@ import {
 } from 'firebase/auth';
 import { resolveUserFriendlyMessage } from '@/lib/error-mapping';
 import { getSafeRedirectPath } from '@/lib/auth-safety';
+import { isVendorRole } from '@/lib/roles';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" {...props}>
@@ -180,7 +181,7 @@ function LoginPageContent() {
           const redirectPath = getSafeRedirectPath(searchParams.get('redirect'));
           if (role === 'admin') {
             router.push('/admin');
-          } else if (role === 'vendor') {
+          } else if (isVendorRole(role)) {
             router.push('/vendor');
           } else {
             router.push(redirectPath);

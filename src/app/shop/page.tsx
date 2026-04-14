@@ -30,6 +30,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import Image from 'next/image';
 import { ProductCard } from '@/components/ProductCard';
 import {
@@ -239,6 +248,14 @@ export default function ShopPage() {
     return { min, max, avg };
   }, [filteredProducts]);
 
+  const activeFilterCount = useMemo(() => {
+    let total = 0;
+    if (selectedCategory !== 'all') total += 1;
+    if (priceBand !== 'all') total += 1;
+    if (stockFilter !== 'all') total += 1;
+    return total;
+  }, [selectedCategory, priceBand, stockFilter]);
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setDebouncedSearchQuery('');
@@ -294,7 +311,7 @@ export default function ShopPage() {
       <section className="border-b border-slate-200 bg-white pt-0">
         <BackToHomeBar className="pt-1 md:pt-2 pb-2" />
         <div className="container mx-auto px-4 pb-6 md:pb-8">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
             <Badge className="border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#2F5FA7]">
               <Store className="mr-1.5 h-3 w-3" />
               MechHub Registry
@@ -390,7 +407,148 @@ export default function ShopPage() {
 
       <main className="container mx-auto px-4 py-6 md:py-8">
         <div className="sticky top-[72px] z-30 mb-6 rounded-[28px] border border-slate-200 bg-white/95 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="flex items-center gap-2 lg:hidden">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search products"
+                className="h-11 rounded-2xl border-slate-200 bg-slate-50 pl-11 pr-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#2F5FA7]"
+              />
+            </div>
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-11 shrink-0 rounded-2xl border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]"
+                >
+                  <Filter className="mr-1.5 h-4 w-4" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 rounded-full bg-[#2F5FA7] px-1.5 py-0.5 text-[10px] font-black text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+
+              <SheetContent side="bottom" className="max-h-[82vh] overflow-y-auto rounded-t-3xl border-slate-200 bg-white p-0">
+                <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur">
+                  <SheetHeader className="space-y-1 text-left">
+                    <SheetTitle className="text-lg font-black tracking-tight text-slate-900">
+                      Filters
+                    </SheetTitle>
+                    <SheetDescription className="text-sm text-slate-500">
+                      Sort by price or pick tags like Bearings and Linear Motion.
+                    </SheetDescription>
+                  </SheetHeader>
+                </div>
+
+                <div className="space-y-6 px-5 py-5">
+                  <section>
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      Sort
+                    </h3>
+                    <select
+                      value={sortBy}
+                      onChange={(event) =>
+                        setSortBy(event.target.value as (typeof SORT_OPTIONS)[number])
+                      }
+                      className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2F5FA7]"
+                    >
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </section>
+
+                  <section>
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      Tags
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {CATEGORIES.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${
+                            selectedCategory === category.id
+                              ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
+                          }`}
+                        >
+                          {category.label}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      Price
+                    </h3>
+                    <div className="space-y-2">
+                      {PRICE_BANDS.map((band) => (
+                        <button
+                          key={band.id}
+                          onClick={() => setPriceBand(band.id)}
+                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                            priceBand === band.id
+                              ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
+                              : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {band.label}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      Availability
+                    </h3>
+                    <div className="space-y-2">
+                      {STOCK_FILTERS.map((stock) => (
+                        <button
+                          key={stock.id}
+                          onClick={() => setStockFilter(stock.id)}
+                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                            stockFilter === stock.id
+                              ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
+                              : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {stock.label}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={clearAllFilters}
+                      className="h-11 rounded-2xl border-slate-200 text-xs font-black uppercase tracking-[0.14em] text-slate-600 hover:bg-slate-50"
+                    >
+                      Clear
+                    </Button>
+                    <SheetClose asChild>
+                      <Button className="h-11 rounded-2xl bg-[#2F5FA7] text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1F447D]">
+                        View {filteredProducts.length}
+                      </Button>
+                    </SheetClose>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          <div className="hidden flex-col gap-3 lg:flex xl:flex-row xl:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
@@ -434,7 +592,7 @@ export default function ShopPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-[168px]">
+          <aside className="hidden h-fit rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-[168px] lg:block">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
@@ -543,7 +701,7 @@ export default function ShopPage() {
 
           <section className="space-y-6">
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, index) => (
                   <div
                     key={index}
@@ -559,7 +717,7 @@ export default function ShopPage() {
                 </p>
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}

@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -30,9 +31,14 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
           MechMaster Registry
         </h1>
-        <Button onClick={onAddVendor} className="gap-2" size="sm">
-          <Plus className="w-4 h-4" /> Add MechMaster
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/vendors">Review Applications</Link>
+          </Button>
+          <Button onClick={onAddVendor} className="gap-2" size="sm">
+            <Plus className="w-4 h-4" /> Add MechMaster
+          </Button>
+        </div>
       </div>
       <Card className="bg-card border-slate-200 overflow-x-auto">
         <Table className="min-w-[700px]">

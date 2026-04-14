@@ -265,6 +265,31 @@ function composeEmail(event: NotificationEvent): EmailPayload {
         ),
       };
 
+    case 'vendor_approved':
+      return {
+        to: event.vendorEmail,
+        subject: "Welcome to MechHub — You're now a MechMaster!",
+        html: templates.vendorApprovedEmail(event.vendorName, event.loginUrl),
+      };
+
+    case 'vendor_rejected':
+      return {
+        to: event.vendorEmail,
+        subject: 'Your MechHub vendor application update',
+        html: templates.vendorRejectedEmail(event.vendorName, event.reapplyUrl),
+      };
+
+    case 'admin_vendor_pending_reminder':
+      return {
+        to: event.recipients,
+        subject: `Action required — ${event.pendingCount} vendor application(s) pending review on MechHub`,
+        html: templates.adminVendorPendingReminderEmail(
+          event.pendingCount,
+          event.vendors,
+          event.reviewUrl
+        ),
+      };
+
     default: {
       // TypeScript exhaustive check — if this errors, we missed an event type
       const _exhaustive: never = event;

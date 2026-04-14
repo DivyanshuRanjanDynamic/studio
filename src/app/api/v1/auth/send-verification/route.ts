@@ -65,16 +65,17 @@ export async function POST(req: Request) {
 
     // 1. Generate a secure random token
     const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour expiry
 
     // 2. Save token to Firestore
     const safeName = typeof name === 'string' ? name.trim() : 'there';
-    await adminFirestore.collection('verification_tokens').doc(token).set({
+    await adminFirestore.collection('verification_tokens').doc(tokenHash).set({
       uid: normalizedUid,
       email: normalizedEmail,
       name: safeName,
-      token,
+      tokenHash,
       expiresAt: expiresAt.toISOString(),
       createdAt: new Date().toISOString(),
       used: false,

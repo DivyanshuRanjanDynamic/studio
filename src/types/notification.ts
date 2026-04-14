@@ -176,6 +176,32 @@ export interface AdminQuoteAcceptedEvent {
   readonly acceptedPrice: number;
 }
 
+export interface VendorApprovedEvent {
+  readonly type: 'vendor_approved';
+  readonly vendorName: string;
+  readonly vendorEmail: string;
+  readonly loginUrl: string;
+}
+
+export interface VendorRejectedEvent {
+  readonly type: 'vendor_rejected';
+  readonly vendorName: string;
+  readonly vendorEmail: string;
+  readonly reapplyUrl: string;
+}
+
+export interface AdminVendorReminderEvent {
+  readonly type: 'admin_vendor_pending_reminder';
+  readonly recipients: string[];
+  readonly pendingCount: number;
+  readonly vendors: Array<{
+    companyName: string;
+    ownerName: string;
+    submittedAt: string;
+  }>;
+  readonly reviewUrl: string;
+}
+
 // ─── Union Type ──────────────────────────────────────────────
 
 export type NotificationEvent =
@@ -197,4 +223,7 @@ export type NotificationEvent =
   | AdminContactQueryEvent
   | AdminConsultationBookedEvent
   | AdminPaymentReceivedEvent
-  | AdminQuoteAcceptedEvent;
+  | AdminQuoteAcceptedEvent
+  | VendorApprovedEvent
+  | VendorRejectedEvent
+  | AdminVendorReminderEvent;

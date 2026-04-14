@@ -102,7 +102,7 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import Image from 'next/image';
 import { logger } from '@/utils/logger';
-import { checkIsAdmin, isAdmin } from '@/lib/auth-utils';
+import { checkIsAdmin } from '@/lib/auth-utils';
 import { getIdTokenResult } from 'firebase/auth';
 import { STATUS_OPTIONS, SPECIALIZATIONS } from '@/config/constants';
 import { getTapName } from '@/config/manufacturing';
@@ -195,16 +195,13 @@ export default function AdminPanel() {
       }
 
       try {
-        // 2. Perform a multi-factor admin check to ensure persistence across refreshes.
+        // 2. Perform secure admin checks (custom claim + server profile role).
         const tokenResult = await getIdTokenResult(user);
         const hasAdminClaim = checkIsAdmin(tokenResult.claims);
         const profileIsAdmin = profile?.role === 'admin';
-        const hasAdminEmail = isAdmin(user.email);
 
-        if (hasAdminClaim || profileIsAdmin || hasAdminEmail) {
+        if (hasAdminClaim || profileIsAdmin) {
           setIsAdminConfirmed(true);
-          // If they were confirmed via email but claim is missing, 
-          // we could trigger a claim refresh here if needed.
         } else {
           // Only redirect if absolutely all checks fail
           setIsAdminConfirmed(false);
@@ -217,13 +214,7 @@ export default function AdminPanel() {
         }
       } catch (err) {
         console.error('Admin verification failed:', err);
-        // During refresh, network glitches shouldn't immediately kick the admin.
-        // We'll fallback to the email check one last time.
-        if (isAdmin(user.email)) {
-          setIsAdminConfirmed(true);
-        } else {
-          router.push('/dashboard');
-        }
+        router.push('/dashboard');
       }
     }
 
@@ -239,7 +230,9 @@ export default function AdminPanel() {
   );
   const vendorsQuery = useMemoFirebase(
     () =>
-      db && isAdminConfirmed ? query(collection(db, 'users'), where('role', '==', 'vendor')) : null,
+      db && isAdminConfirmed
+        ? query(collection(db, 'users'), where('role', 'in', ['vendor', 'mechmaster']))
+        : null,
     [db, isAdminConfirmed]
   );
   const rfqsQuery = useMemoFirebase(
@@ -526,7 +519,7 @@ export default function AdminPanel() {
       portfolio: formData.get('portfolio') as string,
       imageUrl: profileImage,
       specializations: specs,
-      role: 'vendor',
+      role: 'mechmaster',
       status: 'active',
       onboarded: true,
       isActive: formData.get('isActive') === 'on',

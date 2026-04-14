@@ -356,5 +356,22 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ─────────────────────────────────────────
+    // vendorApplications/{applicationId}
+    // ─────────────────────────────────────────
+    match /vendorApplications/{applicationId} {
+      // Admin can read all applications; owner can read their own.
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+
+      // Applicant can create their own pending application.
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.ndaAgreed == true;
+
+      // Only admin can review/update/delete.
+      allow update, delete: if isAdmin();
+    }
+
   }
 }

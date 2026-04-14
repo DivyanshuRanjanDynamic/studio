@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { LandingNav } from '@/components/LandingNav';
 import { RotatingGears } from '@/components/Gears';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { isVendorRole } from '@/lib/roles';
 
 export default function Home() {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
@@ -70,14 +71,13 @@ export default function Home() {
   // Fetch a subset of active vendors for the landing page showcase
   const landingVendorsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(
-      collection(db, 'users'),
-      where('role', '==', 'vendor'),
-      where('isActive', '==', true),
-      limit(6)
-    );
+    return query(collection(db, 'users'), where('isActive', '==', true), limit(12));
   }, [db]);
   const { data: landingVendors } = useCollection(landingVendorsQuery);
+  const filteredLandingVendors = useMemo(
+    () => (landingVendors || []).filter((vendor) => isVendorRole(vendor.role)).slice(0, 6),
+    [landingVendors]
+  );
 
   const handleWIPClick = (e: React.MouseEvent, feature: string) => {
     e.preventDefault();

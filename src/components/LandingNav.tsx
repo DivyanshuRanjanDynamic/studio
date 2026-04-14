@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { doc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
+import { getDashboardHrefByRole } from '@/lib/roles';
 
 const NAV_LINKS = [
   { href: '/#materials', label: 'Materials' },
@@ -81,7 +82,7 @@ export function LandingNav() {
 
   const displayName = profile?.fullName || user?.email?.split('@')[0] || 'Account';
   const role = profile?.role || 'customer';
-  const dashboardHref = role === 'admin' ? '/admin' : role === 'vendor' ? '/vendor' : '/dashboard';
+  const dashboardHref = getDashboardHrefByRole(role);
   const navLinks = user ? [...NAV_LINKS, { href: dashboardHref, label: 'Dashboard' }] : NAV_LINKS;
 
   const initials = displayName
@@ -269,6 +270,12 @@ export function LandingNav() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Link
+                      href="/onboard"
+                      className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#1a5fad] border border-[#1a5fad]/30 rounded-full bg-white hover:bg-blue-50 transition-all duration-200"
+                    >
+                      Onboard as Vendor
+                    </Link>
+                    <Link
                       href="/login"
                       className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#64748B] hover:text-[#2F5FA7] rounded-full hover:bg-slate-50 transition-all duration-200"
                     >
@@ -330,6 +337,13 @@ export function LandingNav() {
             <div className="border-t border-slate-100 mt-4 pt-3 flex flex-col gap-2">
               {!user ? (
                 <>
+                  <Link
+                    href="/onboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center border border-[#1a5fad]/25 text-[#1a5fad] font-bold rounded-2xl h-12 text-sm bg-blue-50/50 hover:bg-blue-50 transition-colors"
+                  >
+                    Onboard as Vendor
+                  </Link>
                   <Link
                     href="/login"
                     onClick={() => setMobileOpen(false)}

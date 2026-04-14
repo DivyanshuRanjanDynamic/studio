@@ -25,6 +25,7 @@ import {
   SlidersHorizontal,
   UserIcon,
 } from 'lucide-react';
+import { getDashboardHrefByRole } from '@/lib/roles';
 
 type ProfileSection = 'personal' | 'organization' | 'security' | 'preferences';
 
@@ -113,7 +114,7 @@ export default function ProfilePage() {
       .toUpperCase();
   }, [form.fullName, user?.email]);
   const role = profile?.role || 'customer';
-  const dashboardHref = role === 'admin' ? '/admin' : role === 'vendor' ? '/vendor' : '/dashboard';
+  const dashboardHref = getDashboardHrefByRole(role);
 
   const handleFieldChange = (key: keyof ProfileForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

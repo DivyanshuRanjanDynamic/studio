@@ -770,3 +770,93 @@ export function adminQuoteAcceptedEmail(
     }
   );
 }
+
+export function vendorApprovedEmail(vendorName: string, loginUrl: string): string {
+  return baseLayout(
+    `
+    <h2 class="title">Welcome to MechHub — You're now a MechMaster!</h2>
+    <p class="paragraph">Hi ${vendorName}, congratulations and welcome aboard.</p>
+    <p class="paragraph">Your vendor onboarding has been approved. You can now access MechMaster privileges to list manufacturing capabilities and fulfill orders on MechHub.</p>
+    <div class="cta-wrap">
+      <a href="${loginUrl}" class="cta">Login to MechHub</a>
+    </div>
+    <p class="meta">Thank you for partnering with MechHub. We look forward to building with you.</p>
+    `,
+    {
+      previewText: 'Your MechHub vendor profile is approved. You are now a MechMaster.',
+      heroPill: 'Vendor Approval',
+      heroTitle: 'Welcome, MechMaster',
+      heroSubtitle: 'Your account is now active',
+    }
+  );
+}
+
+export function vendorRejectedEmail(vendorName: string, reapplyUrl: string): string {
+  return baseLayout(
+    `
+    <h2 class="title">Your MechHub vendor application update</h2>
+    <p class="paragraph">Hi ${vendorName}, thank you for applying to join MechHub.</p>
+    <p class="paragraph">At this time, your application was not approved. We encourage you to reapply after strengthening your profile and capability details.</p>
+    <div class="cta-wrap">
+      <a href="${reapplyUrl}" class="cta-outline">Reapply as Vendor</a>
+    </div>
+    <p class="meta">If you need help preparing your reapplication, reply to this email and our team will assist.</p>
+    `,
+    {
+      previewText: 'Your vendor application was not approved at this time. Reapplication is welcome.',
+      heroPill: 'Vendor Update',
+      heroTitle: 'Application Status',
+      heroSubtitle: 'Reapply any time',
+    }
+  );
+}
+
+export function adminVendorPendingReminderEmail(
+  pendingCount: number,
+  vendors: Array<{ companyName: string; ownerName: string; submittedAt: string }>,
+  reviewUrl: string
+): string {
+  const rows = vendors
+    .map((vendor) => {
+      const submittedDate = new Date(vendor.submittedAt).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      return `
+      <tr>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${vendor.ownerName}</td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #334155;">${vendor.companyName}</td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #64748b;">${submittedDate}</td>
+      </tr>`;
+    })
+    .join('');
+
+  return baseLayout(
+    `
+    <h2 class="title">Pending Vendor Reviews</h2>
+    <p class="paragraph">There ${pendingCount === 1 ? 'is' : 'are'} currently <strong>${pendingCount}</strong> vendor application${pendingCount === 1 ? '' : 's'} pending review on MechHub.</p>
+    <div class="highlight-box" style="padding: 0; overflow: hidden;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f8fafc;">
+            <th align="left" style="padding: 10px 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #64748b;">Owner</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #64748b;">Company</th>
+            <th align="left" style="padding: 10px 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #64748b;">Submitted</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="cta-wrap">
+      <a href="${reviewUrl}" class="cta">Review Applications</a>
+    </div>
+    `,
+    {
+      previewText: `${pendingCount} vendor application(s) pending review on MechHub.`,
+      heroPill: 'Action Required',
+      heroTitle: 'Vendor Approvals Pending',
+      heroSubtitle: `${pendingCount} awaiting review`,
+    }
+  );
+}

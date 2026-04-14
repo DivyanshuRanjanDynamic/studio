@@ -96,12 +96,12 @@ export function ServicesSection() {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto columns-1 md:columns-2 xl:columns-3 gap-4 sm:gap-5">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
           {SERVICES.map((service) => (
             <Link
               key={service.num}
               href={service.href}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#1E3A66] p-3 md:p-4 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-sky-300/40 hover:shadow-[0_20px_60px_rgba(14,165,233,0.15)] block mb-4 sm:mb-5"
+              className="group relative h-full overflow-hidden rounded-2xl border border-white/10 bg-[#1E3A66] p-3 md:p-4 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-sky-300/40 hover:shadow-[0_20px_60px_rgba(14,165,233,0.15)] flex flex-col"
             >
               <div className="relative mb-4 aspect-[16/10] overflow-hidden rounded-xl border border-white/10">
                 <Image
@@ -116,9 +116,11 @@ export function ServicesSection() {
               <h3 className="text-lg font-extrabold tracking-tight text-white group-hover:text-sky-200 transition-colors">
                 {service.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">{service.desc}</p>
-              <div className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-300">
-                View Capability <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <p className="mt-2 hidden text-sm leading-relaxed text-slate-300 sm:block">{service.desc}</p>
+              <div className="mt-auto pt-4 inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.08em] text-sky-300 sm:text-xs sm:uppercase sm:tracking-[0.14em]">
+                <span className="sm:hidden">More</span>
+                <span className="hidden sm:inline">View Capability</span>
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 sm:h-4 sm:w-4" />
               </div>
             </Link>
           ))}

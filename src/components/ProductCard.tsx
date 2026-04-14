@@ -92,16 +92,16 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
   };
 
   return (
-    <div className="group h-full">
-      <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
-        <div className="relative border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white p-4">
-          <div className="absolute left-4 top-4 z-20 flex flex-wrap gap-2">
-            <Badge className="rounded-full border border-blue-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2F5FA7] shadow-sm">
+    <div className="group h-full min-w-0">
+      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:shadow-[0_16px_35px_rgba(15,23,42,0.10)] sm:rounded-[28px] sm:hover:-translate-y-1 sm:hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
+        <div className="relative border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white p-2.5 sm:p-4">
+          <div className="absolute left-2.5 top-2.5 z-20 flex max-w-[70%] flex-wrap gap-1.5 sm:left-4 sm:top-4 sm:max-w-[80%] sm:gap-2">
+            <Badge className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#2F5FA7] shadow-sm sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
               {product.categoryId?.replace('-', ' ')}
             </Badge>
             {discount > 0 && (
-              <Badge className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">
-                <BadgePercent className="mr-1 h-3 w-3" />
+              <Badge className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
+                <BadgePercent className="mr-1 h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 {discount}% off
               </Badge>
             )}
@@ -113,19 +113,19 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
               e.stopPropagation();
               toggleCompare(product);
             }}
-            className={`absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border transition ${
+            className={`absolute right-2.5 top-2.5 z-20 hidden h-7 w-7 items-center justify-center rounded-full border transition sm:right-4 sm:top-4 sm:flex sm:h-10 sm:w-10 ${
               isComparing
                 ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white'
                 : 'border-slate-200 bg-white text-slate-500 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
             }`}
             aria-label="Compare component"
           >
-            <Scale className="h-4 w-4" />
+            <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
 
           <Link
             href={`/shop/${product.id}`}
-            className="relative mt-12 block aspect-[4/3] overflow-hidden rounded-2xl bg-white"
+            className="relative mt-8 block aspect-[4/3] overflow-hidden rounded-xl bg-white sm:mt-12 sm:rounded-2xl"
             onMouseEnter={() => {
               if (productImages.length > 1) setCurrentImgIdx(1);
             }}
@@ -135,7 +135,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
               src={productImages[currentImgIdx] || productImages[0]}
               alt={product.name}
               fill
-              className={`object-contain p-4 transition duration-500 group-hover:scale-105 ${
+              className={`object-contain p-2.5 transition duration-500 group-hover:scale-105 sm:p-4 ${
                 isOutOfStock ? 'opacity-55 grayscale' : ''
               }`}
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 25vw"
@@ -153,15 +153,15 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
           </Link>
         </div>
 
-        <div className="flex flex-1 flex-col p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+        <div className="flex min-w-0 flex-1 flex-col p-2.5 sm:p-4">
+          <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3 sm:gap-3">
+            <p className="max-w-[65%] truncate rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
               {product.sku}
             </p>
             {avgRating === null ? (
-              <p className="text-[11px] font-bold text-slate-500">No reviews yet</p>
+              <p className="hidden text-[11px] font-bold text-slate-500 sm:block">No reviews yet</p>
             ) : (
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-600">
+              <div className="hidden items-center gap-1 text-[11px] font-bold text-slate-600 sm:flex">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                 <span>{avgRating}</span>
                 <span className="text-slate-400">({reviewCount})</span>
@@ -169,32 +169,32 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
             )}
           </div>
 
-          <Link href={`/shop/${product.id}`} className="block">
-            <h3 className="line-clamp-2 min-h-[52px] text-base font-bold leading-6 text-slate-900 transition-colors group-hover:text-[#2F5FA7]">
+          <Link href={`/shop/${product.id}`} className="block min-w-0">
+            <h3 className="line-clamp-2 min-h-[40px] break-words text-[15px] font-bold leading-5 text-slate-900 transition-colors group-hover:text-[#2F5FA7] sm:min-h-[52px] sm:text-base sm:leading-6">
               {product.name}
             </h3>
-            <p className="mt-2 line-clamp-2 min-h-[40px] text-sm leading-5 text-slate-600">
+            <p className="mt-1 line-clamp-2 min-h-[32px] break-words text-xs leading-4 text-slate-600 sm:mt-2 sm:min-h-[40px] sm:text-sm sm:leading-5">
               {product.specs || 'Industrial-grade component with verified procurement support.'}
             </p>
           </Link>
 
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950">
+          <div className="mt-3 flex items-end justify-between gap-2 sm:mt-4 sm:gap-3">
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-1 sm:gap-2">
+                <span className="text-2xl font-black leading-none tracking-tight text-slate-950 sm:text-3xl">
                   ₹{product.salePrice?.toLocaleString('en-IN')}
                 </span>
                 {basePrice > product.salePrice && (
-                  <span className="text-sm font-semibold text-slate-400 line-through">
+                  <span className="text-xs font-semibold text-slate-400 line-through sm:text-sm">
                     ₹{basePrice.toLocaleString('en-IN')}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xs font-semibold text-emerald-700">
+              <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 sm:mt-1 sm:text-xs">
                 {discount > 0 ? `You save ₹${(basePrice - product.salePrice).toLocaleString('en-IN')}` : 'Best listed price'}
               </p>
             </div>
-            <div className="text-right">
+            <div className="hidden text-right sm:block">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                 Stock
               </p>
@@ -216,7 +216,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
             </div>
           </div>
 
-          <div className="mt-4 rounded-2xl bg-slate-50 px-3 py-3">
+          <div className="mt-3 hidden rounded-2xl bg-slate-50 px-3 py-3 sm:mt-4 sm:block">
             <div className="flex items-center justify-between gap-3 text-sm">
               <div className="flex items-center gap-2 text-slate-700">
                 <Truck className="h-4 w-4 text-[#2F5FA7]" />
@@ -228,11 +228,11 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
             </div>
           </div>
 
-          <div className="mt-4 flex gap-3">
+          <div className="mt-3 flex gap-2 sm:mt-4 sm:gap-3">
             <Button
               asChild
               variant="outline"
-              className="h-11 min-w-0 flex-1 rounded-2xl border-slate-200 bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700 hover:bg-slate-50"
+              className="hidden h-11 min-w-0 flex-1 rounded-2xl border-slate-200 bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700 hover:bg-slate-50 sm:flex"
             >
               <Link href={`/shop/${product.id}`}>
                 View details
@@ -241,7 +241,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
 
             {isOutOfStock ? (
               <Button
-                className="h-11 min-w-0 flex-1 rounded-2xl bg-[#2F5FA7] px-3 text-[11px] font-black uppercase tracking-[0.14em] text-white hover:bg-[#254b86]"
+                className="h-9 min-w-0 w-full rounded-xl bg-[#2F5FA7] px-2 text-[10px] font-black uppercase tracking-[0.1em] text-white hover:bg-[#254b86] sm:h-11 sm:flex-1 sm:rounded-2xl sm:px-3 sm:text-[11px] sm:tracking-[0.14em]"
                 onClick={handleRestockRequest}
                 disabled={isRequesting || hasRequested}
               >
@@ -249,7 +249,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
               </Button>
             ) : (
               <Button
-                className="h-11 flex-1 rounded-2xl bg-[#FFD814] text-xs font-black uppercase tracking-[0.18em] text-slate-900 hover:bg-[#f7ca00]"
+                className="h-9 w-full rounded-xl bg-[#FFD814] px-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-900 hover:bg-[#f7ca00] sm:h-11 sm:flex-1 sm:rounded-2xl sm:px-3 sm:text-xs sm:tracking-[0.18em]"
                 onClick={(e) => {
                   e.preventDefault();
                   addItem({
@@ -268,7 +268,8 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
                   });
                 }}
               >
-                Add to cart
+                <span className="sm:hidden">Add</span>
+                <span className="hidden sm:inline">Add to cart</span>
               </Button>
             )}
           </div>
