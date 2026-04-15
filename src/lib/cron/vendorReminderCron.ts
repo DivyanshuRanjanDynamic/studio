@@ -1,5 +1,6 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { NotificationService } from '@/services/notification.service';
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 const WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -29,7 +30,7 @@ export async function runVendorReminderCron(now = new Date()): Promise<CronRunRe
     .where('status', '==', 'pending')
     .get();
 
-  const pendingDocs = pendingSnapshot.docs.filter((doc) => {
+  const pendingDocs = pendingSnapshot.docs.filter((doc: QueryDocumentSnapshot) => {
     const data = doc.data();
     const lastReminderAt = typeof data.lastReminderAt === 'string' ? data.lastReminderAt : null;
     return !lastReminderAt || lastReminderAt < thresholdIso;
@@ -41,8 +42,8 @@ export async function runVendorReminderCron(now = new Date()): Promise<CronRunRe
 
   const adminUsersSnap = await adminFirestore.collection('users').where('role', '==', 'admin').get();
   const recipients = adminUsersSnap.docs
-    .map((doc) => String(doc.data().email || '').trim().toLowerCase())
-    .filter((email) => email.length > 0);
+    .map((doc: QueryDocumentSnapshot) => String(doc.data().email || '').trim().toLowerCase())
+    .filter((email: string) => email.length > 0);
 
   if (recipients.length > 0) {
     NotificationService.sendAsync({
@@ -50,7 +51,7 @@ export async function runVendorReminderCron(now = new Date()): Promise<CronRunRe
       recipients,
       pendingCount: pendingDocs.length,
       reviewUrl: `${APP_URL}/admin/vendors`,
-      vendors: pendingDocs.map((doc) => {
+      vendors: pendingDocs.map((doc: QueryDocumentSnapshot) => {
         const data = doc.data();
         return {
           ownerName: String(data.ownerName || '-'),
