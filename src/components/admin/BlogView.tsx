@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BlogCard } from '../BlogCard';
 
 type PostMeta = {
@@ -49,7 +49,7 @@ export const BlogView = () => {
   };
 
   const handleBroadcast = async (post: PostMeta) => {
-    await fetch('/api/broadcast', {
+    await fetch('/api/admin/broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ post }),
