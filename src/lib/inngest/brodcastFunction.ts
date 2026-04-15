@@ -2,9 +2,21 @@ import { inngest } from '@/lib/inngest';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { Resend } from 'resend';
 import { format, parseISO } from 'date-fns';
+import { logger } from '@/utils/logger';
 
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendInstance: Resend | null = null;
+
+function getResend(): Resend {
+  if (!resendInstance) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+      throw new Error('RESEND_API_KEY environment variable is not configured');
+    }
+    resendInstance = new Resend(key);
+  }
+  return resendInstance;
+}
 
 type BlogBroadcastEvent = {
   name: 'blog/broadcast.send';
@@ -52,18 +64,46 @@ export const broadcastBlogEmail = inngest.createFunction(
     });
 
     // Step 2 — Send email to each user one by one
+    const resend = getResend();
+    const failedRecipients: { email: string; error: string }[] = [];
+
     for (const subscriber of subscribers) {
-      await step.run(`send-email-${subscriber.email}`, async () => {
-        await resend.emails.send({
-          from: 'MechHub Team <outreach@mechhub.in>',
-          to: subscriber.email,
-          subject: post.title,
-          html: getEmailHtml(post, fullUrl, subscriber.name),
-        });
+      await step.run(`send-email-${subscriber.email}-${Date.now()}`, async () => {
+        try {
+          await resend.emails.send({
+            from: 'MechHub Team <outreach@mechhub.in>',
+            to: subscriber.email,
+            subject: post.title,
+            html: getEmailHtml(post, fullUrl, subscriber.name),
+          });
+        } catch (err: any) {
+          const message = err?.message ?? String(err);
+          // Log the failure and continue with the next subscriber
+          try {
+            logger.error({
+              event: 'broadcast_send_failed',
+              to: subscriber.email,
+              error: message,
+              postId: post.id,
+            });
+          } catch (logErr) {
+            // Fallback to console if logger fails
+            // eslint-disable-next-line no-console
+            console.error('broadcast_send_failed', { to: subscriber.email, error: message, postId: post.id });
+          }
+
+          failedRecipients.push({ email: subscriber.email, error: message });
+        }
       });
     }
 
-    return { success: true, sent: subscribers.length };
+    return {
+      success: true,
+      total: subscribers.length,
+      sent: subscribers.length - failedRecipients.length,
+      failed: failedRecipients.length,
+      failures: failedRecipients.map((f) => f.email),
+    };
   }
 );
 
