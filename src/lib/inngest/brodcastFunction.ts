@@ -44,11 +44,10 @@ export const broadcastBlogEmail = inngest.createFunction(
         .where('emailVerified', '==', true)
         .get();
 
-      const users= snapshot.docs.map((doc) => ({
+      const users= snapshot.docs.map((doc:any) => ({
         email: doc.data().email as string,
         name: (doc.data().fullName as string) ?? null,
       }));
-      console.log("FETCHED USERS:", users);
       return users;
     });
 
