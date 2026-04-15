@@ -19,7 +19,7 @@ export const AdminController = {
 
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) {
-      throw new Error('Firebase Firestore not initialized');
+      return { authorized: false as const, status: 500, message: 'Firebase Firestore not initialized' };
     }
 
     // Verify admin role server-side (supports both session-cookie and Bearer token flows)

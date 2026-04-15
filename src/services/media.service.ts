@@ -1,5 +1,4 @@
-import * as admin from 'firebase-admin';
-import sharp from 'sharp';
+import type * as admin from 'firebase-admin';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client, S3_BUCKET, S3_REGION } from '@/lib/s3-client';
 import { logger } from '@/utils/logger';
@@ -81,6 +80,7 @@ export class MediaService {
         bucket: this.bucketName,
       });
 
+      const sharp = require('sharp');
       const optimizedBuffer = await sharp(buffer)
         .resize(size.width, size.width, {
           fit: 'inside',
@@ -134,7 +134,7 @@ export class MediaService {
       .collection('products')
       .doc(metadata.productId)
       .update({
-        images: admin.firestore.FieldValue.arrayUnion(result),
+        images: (require('firebase-admin') as any).firestore.FieldValue.arrayUnion(result),
         updatedAt: new Date().toISOString(),
       });
 

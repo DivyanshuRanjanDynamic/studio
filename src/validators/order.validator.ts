@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════════════
-// Checkout Validation — Zod schemas
-// ═══════════════════════════════════════════════════
-
 import { z } from 'zod';
 
 const INDIA_PINCODE_REGEX = /^[1-9][0-9]{5}$/;
@@ -38,18 +34,15 @@ export const shippingAddressSchema = z
     }
   );
 
-export const checkoutSchema = z
+export const orderCreateSchema = z
   .object({
-    items: z
-      .array(
-        z.object({
-          id: z.string(),
-          fileName: z.string(),
-          quote: z.any(), // QuoteResult is complex, any for MVP
-        })
-      )
-      .optional()
-      .default([]),
+    items: z.array(
+      z.object({
+        id: z.string().min(1),
+        fileName: z.string().min(1),
+        quote: z.record(z.any()), // Ensuring it's a non-null object
+      })
+    ).default([]),
     shopItems: z
       .array(
         z.object({
@@ -79,4 +72,4 @@ export const checkoutSchema = z
   });
 
 export type ShippingAddressInput = z.infer<typeof shippingAddressSchema>;
-export type CheckoutInput = z.infer<typeof checkoutSchema>;
+export type OrderCreateInput = z.infer<typeof orderCreateSchema>;

@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     // 4. Atomic Transaction: Inventory Reduction & Order Completion
     const paidAt = new Date().toISOString();
 
-    await db.runTransaction(async (transaction) => {
+    await db.runTransaction(async (transaction: any) => {
       const orderRef = db.collection('orders').doc(shopOrderId);
       const orderDoc = await transaction.get(orderRef);
 

@@ -104,7 +104,7 @@ export default function AnodizingPage() {
               },
               {
                 title: 'Decorative Color',
-                desc: 'Type II anodizing allows for vibrant, metallic finishes including Black, Clear, Blue, and Red with consistent dye absorption.',
+                desc: 'Type II anodizing allows for vibrant, metallic finishes including Black, Clear, Blue, Gold, and Red with consistent dye absorption.',
                 icon: Zap,
                 img: 'https://plus.unsplash.com/premium_photo-1713200811001-af93d0dcdfc2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
                 color: 'bg-blue-400',
@@ -113,7 +113,7 @@ export default function AnodizingPage() {
                 title: 'Dielectric Strength',
                 desc: 'Anodized layers act as a ceramic insulator, providing high dielectric breakdown strength for electrical components.',
                 icon: Settings,
-                img: 'https://images.unsplash.com/photo-1495976797530-f33e6580e44b?q=80&w=1112&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%',
+                img: 'https://images.unsplash.com/photo-1495976797530-f33e6580e44b?q=80&w=1112&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
                 color: 'bg-[#2F5FA7]',
               },
             ].map((item, index) => (

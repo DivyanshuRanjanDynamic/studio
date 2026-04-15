@@ -106,6 +106,7 @@ import { logger } from '@/utils/logger';
 import { checkIsAdmin } from '@/lib/auth-utils';
 import { getIdTokenResult } from 'firebase/auth';
 import { STATUS_OPTIONS, SPECIALIZATIONS } from '@/config/constants';
+import { getTapName } from '@/config/manufacturing';
 
 // Modular Components
 import { AdminService } from '@/services/admin.service';
@@ -188,12 +189,15 @@ export default function AdminPanel() {
 
   useEffect(() => {
     async function verifyAdmin() {
+      // 1. Wait for Auth and Profile to resolve definitively.
       if (isUserLoading || isProfileLoading || !db || !user) {
+        // Only redirect to login if we're sure there's no user at all.
         if (!isUserLoading && !user) router.push('/login');
         return;
       }
 
       try {
+        // 2. Perform secure admin checks (custom claim + server profile role).
         const tokenResult = await getIdTokenResult(user);
         const hasAdminClaim = checkIsAdmin(tokenResult.claims);
         const profileIsAdmin = profile?.role === 'admin';
@@ -201,6 +205,7 @@ export default function AdminPanel() {
         if (hasAdminClaim || profileIsAdmin) {
           setIsAdminConfirmed(true);
         } else {
+          // Only redirect if absolutely all checks fail
           setIsAdminConfirmed(false);
           toast({
             title: 'Access Denied',
@@ -227,7 +232,9 @@ export default function AdminPanel() {
   );
   const vendorsQuery = useMemoFirebase(
     () =>
-      db && isAdminConfirmed ? query(collection(db, 'users'), where('role', '==', 'vendor')) : null,
+      db && isAdminConfirmed
+        ? query(collection(db, 'users'), where('role', 'in', ['vendor', 'mechmaster']))
+        : null,
     [db, isAdminConfirmed]
   );
   const rfqsQuery = useMemoFirebase(
@@ -422,12 +429,47 @@ export default function AdminPanel() {
   };
 
   const handleUpdateStatus = async (rfqId: string, newStatus: string) => {
+    const rfq = rfqs?.find((r: any) => r.id === rfqId);
+    if (!rfq) return;
+
+    const oldStatus = rfq.status;
+
     try {
       await AdminService.updateProjectRfqStatus(rfqId, newStatus);
       toast({
         title: 'Status Synchronized',
         description: `RFQ lifecycle stage set to ${newStatus}.`,
       });
+
+      // Trigger user-critical status notifications ONLY on first transition to that status
+      const customerName = rfq.userName || 'Customer';
+      const customerEmail = rfq.userEmail || '';
+
+      let eventType: string | null = null;
+      if (newStatus === 'in_progress' && oldStatus !== 'in_progress') eventType = 'status_in_production';
+      if (newStatus === 'shipped' && oldStatus !== 'shipped') eventType = 'status_shipped';
+      if (newStatus === 'completed' && oldStatus !== 'completed') eventType = 'status_delivered';
+
+      if (eventType && customerEmail) {
+        const payload: any = {
+          type: eventType,
+          customer: { email: customerEmail, name: customerName },
+          projectName: rfq.projectName,
+          projectId: rfq.id,
+        };
+
+        // For shipping, we must include the 50% balance due
+        if (eventType === 'status_shipped') {
+          const finances = calculateProjectFinances(rfq.finalPrice || rfq.quotedPrice);
+          payload.balanceDue = finances.balance;
+        }
+
+        fetch('/api/v1/notifications/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch((err) => console.error('Failed to trigger status notification:', err));
+      }
     } catch (e) {
       logger.error({ event: 'Admin RFQ update failed', id: rfqId, status: newStatus, error: e });
       toast({
@@ -479,7 +521,7 @@ export default function AdminPanel() {
       portfolio: formData.get('portfolio') as string,
       imageUrl: profileImage,
       specializations: specs,
-      role: 'vendor',
+      role: 'mechmaster',
       status: 'active',
       onboarded: true,
       isActive: formData.get('isActive') === 'on',
@@ -543,6 +585,25 @@ export default function AdminPanel() {
         title: 'Quotation Revised',
         description: 'Intervention logged. RFQ moved to negotiation.',
       });
+
+      // Trigger customer notification for revised quote
+      const customerName = selectedRfq.userName || 'Customer';
+      const customerEmail = selectedRfq.userEmail || '';
+
+      if (customerEmail) {
+        fetch('/api/v1/notifications/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'quotation_received',
+            customer: { email: customerEmail, name: customerName },
+            projectName: selectedRfq.projectName,
+            projectId: selectedRfq.id,
+            quotedPrice: Number(revPrice),
+            leadTimeDays: Number(revLeadTime),
+          }),
+        }).catch((err) => console.error('Failed to trigger revision notification:', err));
+      }
     } catch (err: any) {
       toast({ title: 'Update Failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -605,6 +666,25 @@ export default function AdminPanel() {
       setSendQuoteLeadTime('');
       setSendQuoteRemarks('');
       toast({ title: 'Quotation Sent', description: 'Customer will be notified.' });
+
+      // Trigger customer notification for new quote
+      const customerName = selectedRfq.userName || 'Customer';
+      const customerEmail = selectedRfq.userEmail || '';
+
+      if (customerEmail) {
+        fetch('/api/v1/notifications/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'quotation_received',
+            customer: { email: customerEmail, name: customerName },
+            projectName: selectedRfq.projectName,
+            projectId: selectedRfq.id,
+            quotedPrice: Number(sendQuotePrice),
+            leadTimeDays: Number(sendQuoteLeadTime),
+          }),
+        }).catch((err) => console.error('Failed to trigger quotation notification:', err));
+      }
     } catch (err: any) {
       toast({ title: 'Submission Failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -644,6 +724,25 @@ export default function AdminPanel() {
         title: 'Response Sent',
         description: 'The customer has been notified of your counter-offer.',
       });
+
+      // Trigger customer notification for negotiation reply
+      const customerName = selectedRfq.userName || 'Customer';
+      const customerEmail = selectedRfq.userEmail || '';
+
+      if (customerEmail) {
+        fetch('/api/v1/notifications/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'negotiation_admin_reply',
+            customer: { email: customerEmail, name: customerName },
+            projectName: selectedRfq.projectName,
+            projectId: selectedRfq.id,
+            adminMessage: adminNegMessage,
+            proposedPrice: adminNegPrice ? Number(adminNegPrice) : undefined,
+          }),
+        }).catch((err) => console.error('Failed to trigger negotiation reply notification:', err));
+      }
     } catch (err: any) {
       toast({ title: 'Response Failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -1025,11 +1124,11 @@ export default function AdminPanel() {
               ? selectedRfq.designFiles
               : selectedRfq.designFileUrl
                 ? [
-                    {
-                      name: selectedRfq.designFileName || 'Main_Design_Data',
-                      dataUrl: selectedRfq.designFileUrl,
-                    },
-                  ]
+                  {
+                    name: selectedRfq.designFileName || 'Main_Design_Data',
+                    dataUrl: selectedRfq.designFileUrl,
+                  },
+                ]
                 : []),
             ...partFiles,
           ];
@@ -1047,6 +1146,17 @@ export default function AdminPanel() {
             completed: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
             rejected: 'bg-red-500/15 text-red-400 border-red-500/25',
             cancelled: 'bg-red-500/15 text-red-400 border-red-500/25',
+          };
+          const COLOR_HEX_MAP: Record<string, string> = {
+            black: '#121212',
+            white: '#FAFAFA',
+            red: '#D32F2F',
+            blue: '#1E88E5',
+            green: '#388E3C',
+            yellow: '#FBC02D',
+            grey: '#757575',
+            clear: '#E0E0E0',
+            gold: '#FFD700',
           };
           return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
@@ -1099,134 +1209,134 @@ export default function AdminPanel() {
                     {(selectedRfq.paymentStatus?.advance?.paid ||
                       selectedRfq.finalPrice > 0 ||
                       selectedRfq.quotedPrice > 0) && (
-                      <div className="mb-8">
-                        <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-4">
-                          <CreditCard className="w-3.5 h-3.5 text-emerald-500" /> Financial &
-                          Milestone Tracking
-                        </h3>
+                        <div className="mb-8">
+                          <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-4">
+                            <CreditCard className="w-3.5 h-3.5 text-emerald-500" /> Financial &
+                            Milestone Tracking
+                          </h3>
 
-                        {(() => {
-                          const finances = calculateProjectFinances(
-                            selectedRfq.finalPrice || selectedRfq.quotedPrice || 0
-                          );
+                          {(() => {
+                            const finances = calculateProjectFinances(
+                              selectedRfq.finalPrice || selectedRfq.quotedPrice || 0
+                            );
 
-                          return (
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 overflow-hidden text-sm shadow-sm">
-                              <div className="p-4 border-b border-emerald-100 bg-white space-y-2">
-                                <div className="flex justify-between items-center text-xs text-slate-500">
-                                  <span className="flex items-center gap-1.5">
-                                    <Box className="w-3.5 h-3.5 opacity-50" /> Quotation Subtotal
-                                  </span>
-                                  <span className="font-semibold text-slate-700">
-                                    INR {finances.subtotal.toLocaleString('en-IN')}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs text-slate-500">
-                                  <span className="flex items-center gap-1.5">
-                                    <Gavel className="w-3.5 h-3.5 opacity-50" /> GST (18%)
-                                  </span>
-                                  <span className="font-semibold text-slate-700">
-                                    INR {finances.gst.toLocaleString('en-IN')}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs text-slate-500">
-                                  <span className="flex items-center gap-1.5">
-                                    <ShoppingCart className="w-3.5 h-3.5 opacity-50" /> Shipping
-                                    (Ground)
-                                  </span>
-                                  <span className="font-semibold text-slate-700">
-                                    INR {finances.shipping.toLocaleString('en-IN')}
-                                  </span>
-                                </div>
-                                <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                  <span className="text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                                    Total Order Value
-                                  </span>
-                                  <span className="font-bold text-slate-900 text-lg">
-                                    INR {finances.total.toLocaleString('en-IN')}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                                {/* Advance Payment Block */}
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
-                                      50% Advance
+                            return (
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 overflow-hidden text-sm shadow-sm">
+                                <div className="p-4 border-b border-emerald-100 bg-white space-y-2">
+                                  <div className="flex justify-between items-center text-xs text-slate-500">
+                                    <span className="flex items-center gap-1.5">
+                                      <Box className="w-3.5 h-3.5 opacity-50" /> Quotation Subtotal
                                     </span>
-                                    {selectedRfq.paymentStatus?.advance?.paid ? (
-                                      <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px]">
-                                        PAID
-                                      </Badge>
-                                    ) : (
-                                      <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-[10px]">
-                                        PENDING
-                                      </Badge>
-                                    )}
+                                    <span className="font-semibold text-slate-700">
+                                      INR {finances.subtotal.toLocaleString('en-IN')}
+                                    </span>
                                   </div>
-                                  <div>
-                                    <p className="text-xl font-bold text-slate-900">
-                                      INR {finances.advance.toLocaleString('en-IN')}
-                                    </p>
+                                  <div className="flex justify-between items-center text-xs text-slate-500">
+                                    <span className="flex items-center gap-1.5">
+                                      <Gavel className="w-3.5 h-3.5 opacity-50" /> GST (18%)
+                                    </span>
+                                    <span className="font-semibold text-slate-700">
+                                      INR {finances.gst.toLocaleString('en-IN')}
+                                    </span>
                                   </div>
-                                  {selectedRfq.paymentStatus?.advance?.paid && (
-                                    <div className="text-[10px] text-slate-500 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
-                                      <p>
-                                        On:{' '}
-                                        {new Date(
-                                          selectedRfq.paymentStatus.advance.paidAt
-                                        ).toLocaleString('en-IN')}
-                                      </p>
-                                      <p className="font-mono text-[9px] truncate">
-                                        Ref: {selectedRfq.paymentStatus.advance.razorpayPaymentId}
+                                  <div className="flex justify-between items-center text-xs text-slate-500">
+                                    <span className="flex items-center gap-1.5">
+                                      <ShoppingCart className="w-3.5 h-3.5 opacity-50" /> Shipping
+                                      (Ground)
+                                    </span>
+                                    <span className="font-semibold text-slate-700">
+                                      INR {finances.shipping.toLocaleString('en-IN')}
+                                    </span>
+                                  </div>
+                                  <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                                    <span className="text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                      Total Order Value
+                                    </span>
+                                    <span className="font-bold text-slate-900 text-lg">
+                                      INR {finances.total.toLocaleString('en-IN')}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                                  {/* Advance Payment Block */}
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
+                                        50% Advance
+                                      </span>
+                                      {selectedRfq.paymentStatus?.advance?.paid ? (
+                                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px]">
+                                          PAID
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-[10px]">
+                                          PENDING
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="text-xl font-bold text-slate-900">
+                                        INR {finances.advance.toLocaleString('en-IN')}
                                       </p>
                                     </div>
-                                  )}
-                                </div>
-
-                                {/* Completion Payment Block */}
-                                <div className="space-y-3 md:pl-4 pt-4 md:pt-0">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
-                                      50% Balance
-                                    </span>
-                                    {selectedRfq.paymentStatus?.completion?.paid ? (
-                                      <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px]">
-                                        PAID
-                                      </Badge>
-                                    ) : (
-                                      <Badge className="bg-slate-500/10 text-slate-600 border-slate-500/20 text-[10px]">
-                                        PENDING
-                                      </Badge>
+                                    {selectedRfq.paymentStatus?.advance?.paid && (
+                                      <div className="text-[10px] text-slate-500 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
+                                        <p>
+                                          On:{' '}
+                                          {new Date(
+                                            selectedRfq.paymentStatus.advance.paidAt
+                                          ).toLocaleString('en-IN')}
+                                        </p>
+                                        <p className="font-mono text-[9px] truncate">
+                                          Ref: {selectedRfq.paymentStatus.advance.razorpayPaymentId}
+                                        </p>
+                                      </div>
                                     )}
                                   </div>
-                                  <div>
-                                    <p className="text-xl font-bold text-slate-900">
-                                      INR {finances.balance.toLocaleString('en-IN')}
-                                    </p>
-                                  </div>
-                                  {selectedRfq.paymentStatus?.completion?.paid && (
-                                    <div className="text-[10px] text-slate-500 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
-                                      <p>
-                                        On:{' '}
-                                        {new Date(
-                                          selectedRfq.paymentStatus.completion.paidAt
-                                        ).toLocaleString('en-IN')}
-                                      </p>
-                                      <p className="font-mono text-[9px] truncate">
-                                        Ref:{' '}
-                                        {selectedRfq.paymentStatus.completion.razorpayPaymentId}
+
+                                  {/* Completion Payment Block */}
+                                  <div className="space-y-3 md:pl-4 pt-4 md:pt-0">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
+                                        50% Balance
+                                      </span>
+                                      {selectedRfq.paymentStatus?.completion?.paid ? (
+                                        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px]">
+                                          PAID
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="bg-slate-500/10 text-slate-600 border-slate-500/20 text-[10px]">
+                                          PENDING
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="text-xl font-bold text-slate-900">
+                                        INR {finances.balance.toLocaleString('en-IN')}
                                       </p>
                                     </div>
-                                  )}
+                                    {selectedRfq.paymentStatus?.completion?.paid && (
+                                      <div className="text-[10px] text-slate-500 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
+                                        <p>
+                                          On:{' '}
+                                          {new Date(
+                                            selectedRfq.paymentStatus.completion.paidAt
+                                          ).toLocaleString('en-IN')}
+                                        </p>
+                                        <p className="font-mono text-[9px] truncate">
+                                          Ref:{' '}
+                                          {selectedRfq.paymentStatus.completion.razorpayPaymentId}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
+                            );
+                          })()}
+                        </div>
+                      )}
 
                     {/* Pricing Worksheet */}
                     {selectedRfqParts && selectedRfqParts.length > 0 && (
@@ -1401,9 +1511,17 @@ export default function AdminPanel() {
                                     <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
                                       Finish
                                     </p>
-                                    <p className="text-[10px] font-bold text-slate-900 uppercase">
-                                      {part.coatingColor || 'Standard'}
-                                    </p>
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      {part.coatingColor && COLOR_HEX_MAP[part.coatingColor] && (
+                                        <div
+                                          className="w-2.5 h-2.5 rounded-full border border-slate-200 shadow-sm"
+                                          style={{ backgroundColor: COLOR_HEX_MAP[part.coatingColor] }}
+                                        />
+                                      )}
+                                      <p className="text-[10px] font-bold text-slate-900 uppercase">
+                                        {part.coatingColor || 'Standard'}
+                                      </p>
+                                    </div>
                                   </div>
                                   <div className="text-center">
                                     <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
@@ -1429,6 +1547,83 @@ export default function AdminPanel() {
                                   </div>
                                 )}
 
+                                {/* Dimensions from CAD Analysis */}
+                                {part.dimensions && (
+                                  <div className="bg-indigo-50/50 rounded-lg p-3 border border-indigo-100">
+                                    <p className="text-[7px] font-bold text-indigo-400 uppercase tracking-widest mb-1">
+                                      CAD Dimensions (mm)
+                                    </p>
+                                    <p className="text-[11px] font-mono font-bold text-indigo-900">
+                                      {Number(part.dimensions.x).toFixed(1)} × {Number(part.dimensions.y).toFixed(1)} × {Number(part.dimensions.z).toFixed(1)} mm
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Tap Selections from auto-detection */}
+                                {part.taps && part.taps.length > 0 && (
+                                  <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
+                                    <p className="text-[7px] font-bold text-emerald-500 uppercase tracking-widest mb-2">
+                                      Threading / Tap Configuration ({part.taps.length} Holes)
+                                    </p>
+                                    <div className="space-y-1">
+                                      {part.taps.map((tap: any, tIdx: number) => {
+                                        const hole = part.analysis?.holes?.[tap.holeIndex];
+                                        return (
+                                          <div key={tIdx} className="flex items-center justify-between text-[10px] bg-white/50 p-1.5 rounded border border-emerald-100/50">
+                                            <div className="flex flex-col">
+                                              <span className="font-bold text-slate-700">Hole #{tap.holeIndex + 1}</span>
+                                              {hole && (
+                                                <span className="text-[8px] text-slate-500 font-mono italic">
+                                                  Design: Ø {(hole.radius * 2).toFixed(2)}mm × {hole.depth.toFixed(1)}mm
+                                                </span>
+                                              )}
+                                            </div>
+                                            <Badge className="bg-emerald-500 text-white text-[9px] border-none font-black uppercase px-2 py-0.5">
+                                              {getTapName(tap.tapType)}
+                                            </Badge>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Bend Analysis Breakdown */}
+                                {part.analysis?.bends && part.analysis.bends.length > 0 && (
+                                  <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
+                                    <p className="text-[7px] font-bold text-blue-500 uppercase tracking-widest mb-2">
+                                      Sheet Metal Bend Analysis ({part.analysis.bends.length} Bends)
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {part.analysis.bends.map((bend: any, bIdx: number) => (
+                                        <div key={bIdx} className="text-[9px] bg-white/50 p-1.5 rounded border border-blue-100/50 flex flex-col gap-0.5">
+                                          <span className="font-bold text-slate-700 uppercase tracking-tighter">Bend #{bIdx + 1}</span>
+                                          <span className="text-[8px] text-slate-500 font-mono">Radius: {bend.radius.toFixed(1)}mm</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Manual tapping notes from customer */}
+                                {part.tappingNotes && (
+                                  <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-200">
+                                    <p className="text-[7px] font-bold text-amber-500 uppercase tracking-widest mb-1">
+                                      Customer Tapping Instructions
+                                    </p>
+                                    <p className="text-[10px] text-amber-900 leading-relaxed whitespace-pre-wrap">
+                                      {part.tappingNotes}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Discount Tier */}
+                                {part.discountTier && (
+                                  <Badge variant="outline" className="text-[8px] font-bold border-purple-200 text-purple-600 uppercase">
+                                    Discount: {part.discountTier}
+                                  </Badge>
+                                )}
+
                                 {part.cadFile?.fileUrl && (
                                   <Button
                                     size="sm"
@@ -1444,6 +1639,7 @@ export default function AdminPanel() {
                                     <Download className="w-3.5 h-3.5" /> Download Design Data
                                   </Button>
                                 )}
+
                               </div>
                             </div>
                           ))}
@@ -2245,11 +2441,10 @@ export default function AdminPanel() {
                     </div>
 
                     <div
-                      className={`grid grid-cols-4 gap-3 p-4 rounded-xl border-2 border-dashed transition-all ${
-                        isDragging
-                          ? 'border-primary bg-primary/5 scale-[1.02]'
-                          : 'border-slate-200 bg-slate-50'
-                      }`}
+                      className={`grid grid-cols-4 gap-3 p-4 rounded-xl border-2 border-dashed transition-all ${isDragging
+                        ? 'border-primary bg-primary/5 scale-[1.02]'
+                        : 'border-slate-200 bg-slate-50'
+                        }`}
                       onDragOver={onDragOver}
                       onDragLeave={onDragLeave}
                       onDrop={onDrop}

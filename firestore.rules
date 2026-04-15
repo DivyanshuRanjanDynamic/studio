@@ -21,7 +21,10 @@ service cloud.firestore {
     }
 
     function isVendor() {
-      return isAuthenticated() && getUserData().role == 'vendor';
+      return isAuthenticated() && (
+      getUserData().role == 'vendor' ||
+      getUserData().role == 'mechmaster'
+      );
     }
 
     function isCustomer() {
@@ -38,7 +41,9 @@ service cloud.firestore {
     match /users/{userId} {
       // Public: read active vendor cards for landing page (unauthenticated ok)
       // Authenticated: any logged-in user can read any profile
-      allow read: if (resource != null && resource.data.role == 'vendor' && resource.data.isActive == true)
+      allow read: if (resource != null && 
+                      (resource.data.role == 'vendor' || resource.data.role == 'mechmaster') && 
+                      resource.data.isActive == true)
                   || isAuthenticated();
 
       // Users can create their own profile on registration
@@ -333,6 +338,39 @@ service cloud.firestore {
       
       // Only admin can read and manage demand index
       allow read, update, delete: if isAdmin();
+    }
+    // ─────────────────────────────────────────
+    // vendorApplications/{applicationId}
+    // ─────────────────────────────────────────
+    match /vendorApplications/{applicationId} {
+      // Admin can read all applications; owner can read their own.
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+
+      // Applicant can create their own pending application.
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.ndaAgreed == true;
+
+      // Only admin can review/update/delete.
+      allow update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────
+    // vendorApplications/{applicationId}
+    // ─────────────────────────────────────────
+    match /vendorApplications/{applicationId} {
+      // Admin can read all applications; owner can read their own.
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+
+      // Applicant can create their own pending application.
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.ndaAgreed == true;
+
+      // Only admin can review/update/delete.
+      allow update, delete: if isAdmin();
     }
 
   }

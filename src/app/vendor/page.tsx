@@ -59,6 +59,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import Image from 'next/image';
+import { isVendorRole } from '@/lib/roles';
 
 export default function VendorPortal() {
   const router = useRouter();
@@ -93,7 +94,7 @@ export default function VendorPortal() {
             const userDoc = await getDoc(doc(db, 'users', user.uid));
             if (
               userDoc.exists() &&
-              (userDoc.data()?.role === 'vendor' || userDoc.data()?.role === 'admin')
+              (isVendorRole(userDoc.data()?.role) || userDoc.data()?.role === 'admin')
             ) {
               setIsVendorConfirmed(true);
             } else {

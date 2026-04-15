@@ -25,7 +25,8 @@ import {
   ManufacturingService,
   NegotiationMessage,
   SERVICE_DISPLAY_NAMES,
-} from '@/types/project';
+} from '@/models/project.model';
+import { PartCreationWizard } from '@/components/part-creation/PartCreationWizard';
 import {
   ChevronLeft,
   Plus,
@@ -94,73 +95,78 @@ interface ProjectDetailPageProps {
 }
 
 const STATUS_MAP: Record<ProjectRFQStatus, { label: string; color: string; description: string }> =
-  {
-    draft: {
-      label: 'DRAFT',
-      color: 'bg-slate-100 text-slate-600 border-slate-200',
-      description: 'Add parts to your project',
-    },
-    quote_requested: {
-      label: 'QUOTE REQUESTED',
-      color: 'bg-blue-50 text-blue-700 border-blue-100',
-      description: 'Your order is being reviewed',
-    },
-    under_review: {
-      label: 'UNDER REVIEW',
-      color: 'bg-amber-50 text-amber-700 border-amber-100',
-      description: 'Analyzing your requirements',
-    },
-    quotation_sent: {
-      label: 'QUOTATION RECEIVED',
-      color: 'bg-emerald-600 text-white border-emerald-700',
-      description: 'Admin has provided a quote. Review and accept or negotiate.',
-    },
-    negotiation: {
-      label: 'NEGOTIATION',
-      color: 'bg-orange-500 text-white border-orange-600',
-      description: 'You are currently negotiating the price with Admin.',
-    },
-    deposit_pending: {
-      label: 'DEPOSIT PENDING',
-      color: 'bg-blue-600 text-white border-blue-700',
-      description: 'Please pay the 50% advance to start production.',
-    },
-    assigned: {
-      label: 'ASSIGNED',
-      color: 'bg-indigo-600 text-white border-indigo-700',
-      description: 'Order confirmed and assigned to workshop. Production starting soon.',
-    },
-    accepted: {
-      label: 'ACCEPTED',
-      color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      description: 'Project accepted and moving to production',
-    },
-    in_production: {
-      label: 'IN PRODUCTION',
-      color: 'bg-blue-600 text-white border-blue-600',
-      description: 'Manufacturing in progress',
-    },
-    completed: {
-      label: 'COMPLETED',
-      color: 'bg-green-600 text-white border-green-600',
-      description: 'Project delivered',
-    },
-    shipped: {
-      label: 'SHIPPED',
-      color: 'bg-indigo-600 text-white border-indigo-600',
-      description: 'Project has been shipped',
-    },
-    delivered: {
-      label: 'DELIVERED',
-      color: 'bg-emerald-600 text-white border-emerald-600',
-      description: 'Project delivered successfully',
-    },
-    shipping: {
-      label: 'SHIPPING',
-      color: 'bg-indigo-500 text-white border-indigo-500',
-      description: 'Project is in transit',
-    },
-  };
+{
+  draft: {
+    label: 'DRAFT',
+    color: 'bg-slate-100 text-slate-600 border-slate-200',
+    description: 'Add parts to your project',
+  },
+  quote_requested: {
+    label: 'QUOTE REQUESTED',
+    color: 'bg-blue-50 text-blue-700 border-blue-100',
+    description: 'Your order is being reviewed',
+  },
+  submitted: {
+    label: 'SUBMITTED',
+    color: 'bg-blue-50 text-blue-700 border-blue-100',
+    description: 'Your order has been submitted',
+  },
+  under_review: {
+    label: 'UNDER REVIEW',
+    color: 'bg-amber-50 text-amber-700 border-amber-100',
+    description: 'Analyzing your requirements',
+  },
+  quotation_sent: {
+    label: 'QUOTATION RECEIVED',
+    color: 'bg-emerald-600 text-white border-emerald-700',
+    description: 'Admin has provided a quote. Review and accept or negotiate.',
+  },
+  negotiation: {
+    label: 'NEGOTIATION',
+    color: 'bg-orange-500 text-white border-orange-600',
+    description: 'You are currently negotiating the price with Admin.',
+  },
+  deposit_pending: {
+    label: 'DEPOSIT PENDING',
+    color: 'bg-blue-600 text-white border-blue-700',
+    description: 'Please pay the 50% advance to start production.',
+  },
+  assigned: {
+    label: 'ASSIGNED',
+    color: 'bg-indigo-600 text-white border-indigo-700',
+    description: 'Order confirmed and assigned to workshop. Production starting soon.',
+  },
+  accepted: {
+    label: 'ACCEPTED',
+    color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    description: 'Project accepted and moving to production',
+  },
+  in_production: {
+    label: 'IN PRODUCTION',
+    color: 'bg-blue-600 text-white border-blue-600',
+    description: 'Manufacturing in progress',
+  },
+  completed: {
+    label: 'COMPLETED',
+    color: 'bg-green-600 text-white border-green-600',
+    description: 'Project delivered',
+  },
+  shipped: {
+    label: 'SHIPPED',
+    color: 'bg-indigo-600 text-white border-indigo-600',
+    description: 'Project has been shipped',
+  },
+  delivered: {
+    label: 'DELIVERED',
+    color: 'bg-emerald-600 text-white border-emerald-600',
+    description: 'Project delivered successfully',
+  },
+  shipping: {
+    label: 'SHIPPING',
+    color: 'bg-indigo-500 text-white border-indigo-500',
+    description: 'Project is in transit',
+  },
+};
 
 const SERVICE_ICONS: Record<ManufacturingService, React.ReactNode> = {
   cnc_machining: <Layers className="w-5 h-5 text-[#2F5FA7]" />,
@@ -439,6 +445,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const [isPaying, setIsPaying] = useState(false);
   const [optimisticParts, setOptimisticParts] = useState<MechanicalPart[]>([]);
   const [pendingPartDeleteId, setPendingPartDeleteId] = useState<string | null>(null);
+  const [isPartWizardOpen, setIsPartWizardOpen] = useState(false);
 
   // Read highlight param from URL on mount and load Razorpay
   useEffect(() => {
@@ -563,6 +570,35 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         title: 'Quote Requested!',
         description: 'Your order is being reviewed. You will receive your quotation shortly.',
       });
+
+      // Trigger notifications via internal API (fire-and-forget)
+      const customerName = user?.displayName || userProfile?.fullName || 'Customer';
+      const customerEmail = user?.email || '';
+      const partCount = parts?.length || 0;
+
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          events: [
+            {
+              type: 'rfq_submitted_customer',
+              customer: { email: customerEmail, name: customerName },
+              projectName: project.projectName,
+              projectId: project.id,
+              partCount: partCount,
+            },
+            {
+              type: 'admin_new_rfq',
+              customerName,
+              customerEmail,
+              projectName: project.projectName,
+              projectId: project.id,
+              partCount: partCount,
+            },
+          ],
+        }),
+      }).catch((err) => console.error('Failed to trigger RFQ notifications:', err));
     } catch (error: any) {
       console.error('Error requesting quote:', error);
       const msg = resolveUserFriendlyMessage(error);
@@ -592,6 +628,24 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         title: 'Counter-offer Sent',
         description: 'Your message has been sent to the Admin for review.',
       });
+
+      // Trigger admin notification (fire-and-forget)
+      const customerName = user?.displayName || userProfile?.fullName || 'Customer';
+      const customerEmail = user?.email || '';
+
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'admin_negotiation_customer_reply',
+          customerName,
+          customerEmail,
+          projectName: project.projectName,
+          projectId: project.id,
+          customerMessage: message,
+          proposedPrice: proposedPrice,
+        }),
+      }).catch((err) => console.error('Failed to trigger negotiation notification:', err));
     } catch (error: any) {
       console.error('Error negotiating:', error);
       const msg = resolveUserFriendlyMessage(error);
@@ -610,6 +664,35 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         title: 'Quote Accepted',
         description: 'Please provide delivery details and pay the advance to start production.',
       });
+
+      // Trigger notifications (fire-and-forget)
+      const customerName = user?.displayName || userProfile?.fullName || 'Customer';
+      const customerEmail = user?.email || '';
+      const acceptedPrice = project.quotedPrice || project.finalPrice || 0;
+
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          events: [
+            {
+              type: 'quote_accepted',
+              customer: { email: customerEmail, name: customerName },
+              projectName: project.projectName,
+              projectId: project.id,
+              finalPrice: acceptedPrice,
+            },
+            {
+              type: 'admin_quote_accepted',
+              customerName,
+              customerEmail,
+              projectName: project.projectName,
+              projectId: project.id,
+              acceptedPrice: acceptedPrice,
+            },
+          ],
+        }),
+      }).catch((err) => console.error('Failed to trigger quote acceptance notifications:', err));
     } catch (err: any) {
       console.error(err);
       const msg = resolveUserFriendlyMessage(err);
@@ -647,7 +730,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         }),
       });
 
-      const { data: order, success, error, razorpayKey } = await orderRes.json();
+      const { data: order, success, error, razorpayKey, customerName, customerEmail, customerPhone, projectName } = await orderRes.json();
       if (!success) {
         throw new Error(error?.message || 'Failed to create order');
       }
@@ -662,6 +745,16 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           ? `50% Advance for Project: ${project.projectName}`
           : `50% Balance for Project: ${project.projectName}`,
         order_id: order.razorpayOrderId,
+        prefill: {
+          name: customerName || '',
+          email: customerEmail || '',
+          contact: customerPhone || '',
+        },
+        notes: {
+          projectId: project.id,
+          projectName: projectName || project.projectName,
+          customerName: customerName || '',
+        },
         handler: async function (response: any) {
           // Verify & Sync
           const verifyRes = await fetch('/api/v1/order/verify', {
@@ -847,7 +940,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
             {project.status === 'draft' && (
               <Button
-                onClick={() => router.push(`/projects/${projectId}/add-part`)}
+                onClick={() => setIsPartWizardOpen(true)}
                 className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -879,14 +972,14 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 {(project.status === 'quotation_sent' ||
                   project.status === 'negotiation' ||
                   (project.negotiationHistory && project.negotiationHistory.length > 0)) && (
-                  <TabsTrigger
-                    value="negotiation"
-                    className="px-4 md:px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[120px] flex-shrink-0"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
-                    Negotiation
-                  </TabsTrigger>
-                )}
+                    <TabsTrigger
+                      value="negotiation"
+                      className="px-4 md:px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[120px] flex-shrink-0"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
+                      Negotiation
+                    </TabsTrigger>
+                  )}
               </TabsList>
 
               <TabsContent value="parts" className="space-y-4">
@@ -1037,7 +1130,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     {project.status === 'draft' && projectParts.length > 0 && (
                       <Button
                         variant="outline"
-                        onClick={() => router.push(`/projects/${projectId}/add-part`)}
+                        onClick={() => setIsPartWizardOpen(true)}
                         className="w-full h-12 tracking-widest uppercase text-[10px] font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -1056,7 +1149,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                         Add your first manufacturing part to get started
                       </p>
                       <Button
-                        onClick={() => router.push(`/projects/${projectId}/add-part`)}
+                        onClick={() => setIsPartWizardOpen(true)}
                         className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white"
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -1787,16 +1880,17 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           if (!open) setPendingPartDeleteId(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Part?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-slate-900 font-bold uppercase tracking-widest text-xs">Delete Part?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[10px] uppercase tracking-widest font-bold">
               This will remove the part from your draft project.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="uppercase tracking-widest text-[10px] font-bold">Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white uppercase tracking-widest text-[10px] font-bold"
               onClick={async () => {
                 if (!pendingPartDeleteId) return;
                 await handlePartDelete(pendingPartDeleteId);
@@ -1808,6 +1902,13 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PartCreationWizard
+        isOpen={isPartWizardOpen}
+        onClose={() => setIsPartWizardOpen(false)}
+        projectId={projectId}
+        onPartCreated={handlePartCreated}
+      />
     </div>
   );
 }

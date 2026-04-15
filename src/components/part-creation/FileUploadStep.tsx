@@ -20,7 +20,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { MechanicalPart, ManufacturingService } from '@/types/project';
+import { MechanicalPart, ManufacturingService } from '@/models/project.model';
+import { useStepConverter } from '@/hooks/use-step-converter';
+import { CADPreviewModal } from '@/components/viewer/CADPreviewModal';
+import { ConversionResult } from '@/types/viewer';
+import { Eye } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 interface FileUploadStepProps {
   partName: string;
@@ -29,6 +34,9 @@ interface FileUploadStepProps {
   onFileUpload: (file: { fileName: string; fileUrl: string; fileSize: number }) => void;
   onClearFile: () => void;
   selectedService: ManufacturingService | null;
+  onConversionComplete?: (buffer: ArrayBuffer, result: ConversionResult) => void;
+  onConversionStart?: () => void;
+  onConversionEnd?: () => void;
 }
 
 const STEP_EXTENSIONS = ['.step', '.stp'];
@@ -46,13 +54,36 @@ export function FileUploadStep({
   onFileUpload,
   onClearFile,
   selectedService,
+  onConversionComplete,
+  onConversionStart,
+  onConversionEnd,
 }: FileUploadStepProps) {
+  const { user } = useUser();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const { isConverting, result, stlBuffer, convertFile } = useStepConverter();
+
+  // Sync conversion status with parent wizard
+  useEffect(() => {
+    if (isConverting) {
+      onConversionStart?.();
+    } else {
+      onConversionEnd?.();
+    }
+  }, [isConverting, onConversionStart, onConversionEnd]);
+
+  useEffect(() => {
+    if (stlBuffer && result) {
+      onConversionComplete?.(stlBuffer, result);
+    }
+  }, [stlBuffer, result, onConversionComplete]);
 
   const isStepFile = (file: File): boolean => {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -128,6 +159,7 @@ export function FileUploadStep({
 
   const handleFile = async (file: File) => {
     if (!validateFile(file)) return;
+    setLastFile(file);
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -169,6 +201,12 @@ export function FileUploadStep({
         title: 'File Uploaded Successfully',
         description: 'Your file has been securely uploaded and is ready for production.',
       });
+
+      // Step 4: Auto-trigger CAD conversion for STEP files
+      // This ensures holes and bends are detected BEFORE the user reaches the secondary processes step
+      if (isStepFile(file)) {
+        convertFile(file);
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast({
@@ -184,6 +222,7 @@ export function FileUploadStep({
       setIsValidating(false);
       setUploadProgress(0);
     }
+
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,11 +299,10 @@ export function FileUploadStep({
           {!uploadedFile ? (
             <div className="space-y-4">
               <Card
-                className={`border-2 border-dashed transition-all duration-300 relative overflow-hidden cursor-pointer ${
-                  dragActive
-                    ? 'border-[#2F5FA7] bg-blue-50'
-                    : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
-                }`}
+                className={`border-2 border-dashed transition-all duration-300 relative overflow-hidden cursor-pointer ${dragActive
+                  ? 'border-[#2F5FA7] bg-blue-50'
+                  : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                  }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -273,11 +311,10 @@ export function FileUploadStep({
               >
                 <div className="p-8 text-center flex flex-col items-center gap-4">
                   <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-sm ${
-                      dragActive
-                        ? 'bg-[#2F5FA7] text-white border-[#2F5FA7]'
-                        : 'bg-blue-50 text-[#2F5FA7] border-blue-100'
-                    }`}
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-sm ${dragActive
+                      ? 'bg-[#2F5FA7] text-white border-[#2F5FA7]'
+                      : 'bg-blue-50 text-[#2F5FA7] border-blue-100'
+                      }`}
                   >
                     {isUploading ? (
                       <Loader2 className="w-8 h-8 animate-spin" />
@@ -362,20 +399,101 @@ export function FileUploadStep({
                       {formatFileSize(uploadedFile.fileSize)}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500"
-                    onClick={onClearFile}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-[9px] font-black uppercase tracking-widest border-[#2F5FA7]/30 text-[#2F5FA7] hover:bg-[#2F5FA7] hover:text-white transition-all gap-1.5"
+                      disabled={isConverting}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+
+                        // Case 1: Local file session exists
+                        if (lastFile) {
+                          if (!stlBuffer) {
+                            await convertFile(lastFile);
+                          }
+                          setIsPreviewOpen(true);
+                          return;
+                        }
+
+                        // Case 2: File exists on S3 but local session is gone
+                        if (uploadedFile?.fileUrl) {
+                          try {
+                            if (!stlBuffer) {
+                              const token = await user?.getIdToken();
+                              if (!token) throw new Error('Authorization required');
+
+                              // 1. Fetch file directly from our secure S3 proxy
+                              const response = await fetch(
+                                `/api/v1/files/retrieve?fileKey=${encodeURIComponent(uploadedFile.fileUrl)}`,
+                                {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                }
+                              );
+
+                              if (!response.ok) {
+                                const errorData = await response.json().catch(() => ({}));
+                                throw new Error(errorData.error || 'Could not get access to file');
+                              }
+
+                              // 2. Convert
+                              const blob = await response.blob();
+                              const file = new File([blob], uploadedFile.fileName, {
+                                type: 'application/octet-stream',
+                              });
+                              await convertFile(file);
+                            }
+                            setIsPreviewOpen(true);
+                          } catch (err: any) {
+                            toast({
+                              title: 'Preview Failed',
+                              description: err.message || 'Could not retrieve file from S3.',
+                              variant: 'destructive',
+                            });
+                          }
+                          return;
+                        }
+
+                        // Case 3: No file at all
+                        toast({
+                          title: 'File Session Expired',
+                          description: 'Please re-upload your file to view 3D preview.',
+                          variant: 'destructive',
+                        });
+                      }}
+                    >
+                      {isConverting ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                      Preview 3D
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 w-8 h-8"
+                      onClick={onClearFile}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </div>
           )}
         </div>
       </div>
+
+      <CADPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        stlBuffer={stlBuffer}
+        result={result}
+        fileName={uploadedFile?.fileName}
+        isConverting={isConverting}
+      />
 
       <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-[#2F5FA7] mt-0.5" />

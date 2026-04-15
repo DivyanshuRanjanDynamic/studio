@@ -1,9 +1,29 @@
-import * as admin from 'firebase-admin';
 import { logger } from '@/utils/logger';
 
+/**
+ * getFirebaseAdmin — Safely initializes and returns the Firebase Admin SDK.
+ * 
+ * CRITICAL: This function uses dynamic require and window checks to ensure
+ * that 'firebase-admin' is NEVER bundled into the client-side code.
+ * Static imports of 'firebase-admin' cause build failures in Next.js/Turbopack.
+ */
 export function getFirebaseAdmin() {
-  if (!admin.apps.length) {
-    try {
+  // 1. Browser Guard: Immediately return nulls if we're in the browser.
+  if (typeof window !== 'undefined') {
+    return {
+      adminAuth: null,
+      adminFirestore: null,
+      adminStorage: null,
+    };
+  }
+
+  try {
+    // 2. Dynamic Require: Only load the heavy Node-only SDK on the server.
+    // Using require here hides the dependency from some static analysis tools 
+    // that would otherwise try to bundle it.
+    const admin = require('firebase-admin');
+
+    if (!admin.apps.length) {
       if (
         process.env.FIREBASE_PROJECT_ID &&
         process.env.FIREBASE_CLIENT_EMAIL &&
@@ -58,26 +78,32 @@ export function getFirebaseAdmin() {
           }),
           storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
-        logger.info({
-          event: 'firebase_admin_init_success',
-        });
+        
+        logger.info({ event: 'firebase_admin_init_success' });
       } else {
+        // Only warn on server where we expect these to be present
         logger.warn({
           event: 'firebase_admin_init_skipped',
           reason: 'Missing env vars',
         });
       }
-    } catch (error) {
-      logger.error({
-        event: 'firebase_admin_init_failed',
-        error: (error as Error).message,
-      });
     }
-  }
 
-  return {
-    adminAuth: admin.apps.length > 0 ? admin.auth() : null,
-    adminFirestore: admin.apps.length > 0 ? admin.firestore() : null,
-    adminStorage: admin.apps.length > 0 ? admin.storage() : null,
-  };
+    return {
+      adminAuth: admin.apps.length > 0 ? admin.auth() : null,
+      adminFirestore: admin.apps.length > 0 ? admin.firestore() : null,
+      adminStorage: admin.apps.length > 0 ? admin.storage() : null,
+    };
+  } catch (error) {
+    logger.error({
+      event: 'firebase_admin_init_failed',
+      error: (error as Error).message,
+    });
+    return {
+      adminAuth: null,
+      adminFirestore: null,
+      adminStorage: null,
+    };
+  }
 }
+

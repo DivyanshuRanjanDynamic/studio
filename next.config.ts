@@ -4,6 +4,17 @@ import { withContentlayer } from 'next-contentlayer2';
 const nextConfig: NextConfig = {
   /* config options here */
   turbopack: {},
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+      };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {

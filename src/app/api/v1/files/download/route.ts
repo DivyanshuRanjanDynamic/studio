@@ -3,6 +3,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getPresignedDownloadUrl } from '@/lib/s3-client';
 import { logger } from '@/utils/logger';
 import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { isVendorRole } from '@/lib/roles';
 
 /**
  * GET /api/v1/files/download?key=[fileKey]
@@ -26,25 +27,80 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing fileKey parameter' }, { status: 400 });
     }
 
-    // 2. Verify file ownership by checking uploaded_files collection
+    // 2. Verify file access (owner/admin/authorized vendor only)
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) {
       return NextResponse.json({ error: 'Database service unavailable' }, { status: 500 });
     }
 
-    // Try to find the file by key in uploaded_files collection
-    const filesSnapshot = await adminFirestore.collection('uploaded_files')
-      .where('fileKey', '==', fileKey)
-      .limit(1)
-      .get();
+    const requesterSnap = await adminFirestore.collection('users').doc(auth.uid).get();
+    const requesterRole = requesterSnap.data()?.role as string | undefined;
+    const requesterIsAdmin = requesterRole === 'admin';
 
-    if (!filesSnapshot.empty) {
-      const fileData = filesSnapshot.docs[0].data();
-      // If file has a userId, verify ownership
-      if (fileData.userId && fileData.userId !== auth.uid) {
-        logger.warn({ event: 'API: Unauthorized file download attempt', fileKey, authUid: auth.uid, fileOwner: fileData.userId });
-        return forbiddenResponse('You do not have access to this file');
+    let canAccess = requesterIsAdmin;
+
+    if (!canAccess) {
+      const filesSnapshot = await adminFirestore
+        .collection('uploaded_files')
+        .where('fileKey', '==', fileKey)
+        .limit(1)
+        .get();
+
+      if (!filesSnapshot.empty) {
+        const fileData = filesSnapshot.docs[0].data();
+        if (fileData.userId === auth.uid) {
+          canAccess = true;
+        }
       }
+    }
+
+    if (!canAccess) {
+      const partsSnapshot = await adminFirestore
+        .collection('projectParts')
+        .where('cadFile.fileUrl', '==', fileKey)
+        .limit(20)
+        .get();
+
+      const projectCache = new Map<string, any>();
+      for (const partDoc of partsSnapshot.docs) {
+        const partData = partDoc.data() as { userId?: string; projectId?: string };
+
+        if (partData.userId === auth.uid) {
+          canAccess = true;
+          break;
+        }
+
+        const projectId = partData.projectId;
+        if (!projectId) continue;
+
+        let projectData = projectCache.get(projectId);
+        if (!projectData) {
+          const projectSnap = await adminFirestore.collection('projectRFQs').doc(projectId).get();
+          if (!projectSnap.exists) continue;
+          projectData = projectSnap.data();
+          projectCache.set(projectId, projectData);
+        }
+
+        if (projectData?.userId === auth.uid) {
+          canAccess = true;
+          break;
+        }
+
+        if (
+          isVendorRole(requesterRole) &&
+          (projectData?.assignedVendorId === auth.uid ||
+            (Array.isArray(projectData?.shortlistedVendorIds) &&
+              projectData.shortlistedVendorIds.includes(auth.uid)))
+        ) {
+          canAccess = true;
+          break;
+        }
+      }
+    }
+
+    if (!canAccess) {
+      logger.warn({ event: 'API: Unauthorized file download attempt', fileKey, authUid: auth.uid });
+      return forbiddenResponse('You do not have access to this file');
     }
 
     // 3. Generate Presigned URL

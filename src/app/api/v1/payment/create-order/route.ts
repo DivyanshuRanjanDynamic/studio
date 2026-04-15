@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
       // Fallback: calculate subtotal from associated parts if neither finalPrice nor quotedPrice exist
       const partsSnap = await db.collection('projectParts').where('projectId', '==', rfqId).get();
       let partsSubtotal = 0;
-      partsSnap.forEach(doc => {
+      partsSnap.forEach((doc: any) => {
         const p = doc.data();
         partsSubtotal += (p.unitCost || 0) * (p.quantity || 0);
       });
@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
         paymentType,
         userId,
         projectName: rfq.projectName || 'MechHub Order',
+        customerName: rfq.userName || rfq.contactName || '',
       },
     });
 

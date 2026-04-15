@@ -1,4 +1,4 @@
-import { ManufacturingService } from '@/types/project';
+import { ManufacturingService } from '@/models/project.model';
 
 export interface MaterialOption {
   id: string;

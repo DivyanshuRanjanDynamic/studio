@@ -43,11 +43,13 @@ import Link from 'next/link';
 import { collection, query, where, doc } from 'firebase/firestore';
 import {
   MechanicalPart,
-  ProjectRFQ,
   ProjectRFQStatus,
   ManufacturingService,
   SERVICE_DISPLAY_NAMES,
-} from '@/types/project';
+} from '@/models/project.model';
+import { ProjectRFQ } from '@/models/project.model';
+import { CADPreviewModal } from '@/components/viewer/CADPreviewModal';
+import { useStepConverter } from '@/hooks/use-step-converter';
 import { logger } from '@/utils/logger';
 
 import {
@@ -89,6 +91,11 @@ const STATUS_MAP: Record<ProjectRFQStatus, { label: string; color: string; icon:
   draft: { label: 'DRAFT', color: 'bg-slate-100 text-slate-600 border-slate-200', icon: FileText },
   quote_requested: {
     label: 'QUOTE REQUESTED',
+    color: 'bg-blue-50 text-blue-700 border-blue-100',
+    icon: Clock,
+  },
+  submitted: {
+    label: 'SUBMITTED',
     color: 'bg-blue-50 text-blue-700 border-blue-100',
     icon: Clock,
   },
@@ -197,12 +204,21 @@ function UserDashboardContent() {
   const [negPrice, setNegPrice] = useState('');
   const [negLeadTime, setNegLeadTime] = useState('');
   const [negMessage, setNegMessage] = useState('');
-  const [pendingRejectQuote, setPendingRejectQuote] = useState<any>(null);
   const [pendingDeleteProject, setPendingDeleteProject] = useState<ProjectRFQ | null>(null);
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<DashboardTab>('projects');
   const hasResolvedInitialTab = useRef(false);
   const syncingFromUrl = useRef(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewPartName, setPreviewPartName] = useState('');
+
+  const {
+    isConverting: isConverterLoading,
+    result: conversionResult,
+    stlBuffer,
+    convertFile,
+    reset: resetConverter,
+  } = useStepConverter();
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -523,27 +539,7 @@ function UserDashboardContent() {
     }
   };
 
-  const handleRejectQuotation = (quotation: any) => {
-    if (!db || !selectedOrder) return;
 
-    updateDocumentNonBlocking(doc(db, 'quotations', quotation.id), {
-      status: 'rejected',
-      updatedAt: new Date().toISOString(),
-    });
-
-    const remainingActionableQuotes =
-      (quotations as any[] | undefined)?.filter(
-        (q) => q.id !== quotation.id && q.status !== 'rejected'
-      ) || [];
-    if (remainingActionableQuotes.length === 0) {
-      updateDocumentNonBlocking(doc(db, 'projectRFQs', selectedOrder.id), {
-        status: 'rejected',
-        updatedAt: new Date().toISOString(),
-      });
-    }
-
-    toast({ title: 'Quotation Rejected', description: 'The offer has been declined.' });
-  };
 
   const handleProposeNegotiation = () => {
     if (!db || !negotiatingQuote) return;
@@ -607,6 +603,51 @@ function UserDashboardContent() {
         description: 'An unexpected error occurred while deleting the project.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handlePreviewDesign = async (part: MechanicalPart) => {
+    if (!part.cadFile?.fileUrl) {
+      toast({
+        title: 'Error',
+        description: 'CAD file not found for this part.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPreviewPartName(part.partName || 'Design Preview');
+    setIsPreviewModalOpen(true);
+
+    try {
+      // 1. Get current user's ID token for authentication
+      const token = await user?.getIdToken();
+      if (!token) throw new Error('Authorization required');
+
+      // 2. Fetch the file directly through our secure S3 proxy
+      // This bypasses CORS and signature issues of direct S3 URLs
+      const response = await fetch(`/api/v1/files/retrieve?fileKey=${encodeURIComponent(part.cadFile.fileUrl)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to retrieve file from storage');
+      }
+
+      const blob = await response.blob();
+      const file = new File([blob], part.cadFile.fileName, { type: 'application/octet-stream' });
+      await convertFile(file);
+    } catch (err: any) {
+      console.error('Preview error:', err);
+      toast({
+        title: 'Access Denied',
+        description: err.message || 'Could not retrieve the design file for preview.',
+        variant: 'destructive',
+      });
+      setIsPreviewModalOpen(false);
     }
   };
 
@@ -848,9 +889,22 @@ function UserDashboardContent() {
                                   <p className="font-bold text-slate-900 uppercase tracking-wide text-[11px] truncate">
                                     {part.partName || 'Untitled Part'}
                                   </p>
-                                  <span className="text-[8px] text-slate-400 font-mono italic">
-                                    {part.cadFile?.fileName.slice(-12)}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-[8px] font-black uppercase tracking-widest text-[#2F5FA7] hover:bg-blue-50 border border-blue-100 rounded-md"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePreviewDesign(part);
+                                      }}
+                                    >
+                                      Preview 3D
+                                    </Button>
+                                    <span className="text-[8px] text-slate-400 font-mono italic">
+                                      {part.cadFile?.fileName.slice(-12)}
+                                    </span>
+                                  </div>
                                 </div>
                                 <p className="text-[9px] font-bold text-[#2F5FA7] uppercase tracking-widest mt-0.5">
                                   {SERVICE_DISPLAY_NAMES[part.service] || part.service}
@@ -1191,13 +1245,7 @@ function UserDashboardContent() {
                                           >
                                             <MessageSquare className="w-3 h-3 mr-1" /> Negotiate
                                           </Button>
-                                          <Button
-                                            variant="destructive"
-                                            className="flex-1 tracking-widest h-11 text-[10px] uppercase bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all shadow-sm"
-                                            onClick={() => setPendingRejectQuote(quote)}
-                                          >
-                                            <AlertCircle className="w-3 h-3 mr-1" /> Reject
-                                          </Button>
+
                                         </div>
                                       </div>
                                     </div>
@@ -1769,33 +1817,7 @@ function UserDashboardContent() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={!!pendingRejectQuote}
-        onOpenChange={(open) => {
-          if (!open) setPendingRejectQuote(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reject Quotation?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This offer will be declined and the project status will be updated.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (!pendingRejectQuote) return;
-                handleRejectQuotation(pendingRejectQuote);
-                setPendingRejectQuote(null);
-              }}
-            >
-              Reject Quote
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       <AlertDialog
         open={!!pendingDeleteProject}
@@ -1839,6 +1861,18 @@ function UserDashboardContent() {
       <CreateProjectModal
         isOpen={isCreateProjectOpen}
         onClose={() => setIsCreateProjectOpen(false)}
+      />
+
+      <CADPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => {
+          setIsPreviewModalOpen(false);
+          resetConverter();
+        }}
+        stlBuffer={stlBuffer}
+        result={conversionResult}
+        fileName={previewPartName}
+        isConverting={isConverterLoading}
       />
     </div>
   );

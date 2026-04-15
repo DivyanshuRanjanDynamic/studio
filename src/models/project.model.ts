@@ -1,6 +1,4 @@
-// ═══════════════════════════════════════════════════
-// Project RFQ Types for Manufacturing Workflow
-// ═══════════════════════════════════════════════════
+import { HoleFeature, BendFeature, BoundingBox, FlatPattern } from '@/types/viewer';
 
 /** Main manufacturing service types */
 export type ManufacturingService =
@@ -28,7 +26,8 @@ export type SecondaryProcess =
   | 'chrome_plating'
   | 'sand_blasting'
   | 'heat_treatment'
-  | 'nickel_plating';
+  | 'nickel_plating'
+  | 'tapping';
 
 /** Coating/Anodizing color options */
 export type ColorOption =
@@ -41,8 +40,7 @@ export type ColorOption =
   | 'grey'
   | 'custom'
   | 'clear'
-  | 'gold'
-  | 'bronze';
+  | 'gold';
 
 /** Part status in the workflow */
 export type PartStatus = 'draft' | 'ready_for_quote';
@@ -50,6 +48,7 @@ export type PartStatus = 'draft' | 'ready_for_quote';
 /** Project RFQ status */
 export type ProjectRFQStatus =
   | 'draft'
+  | 'submitted' // Added for consistency with project.service.ts
   | 'quote_requested'
   | 'under_review'
   | 'quotation_sent'
@@ -62,6 +61,11 @@ export type ProjectRFQStatus =
   | 'shipped'
   | 'delivered'
   | 'shipping';
+
+export interface TapSelection {
+  readonly holeIndex: number;
+  readonly tapType: string;
+}
 
 /** Mechanical part in a project */
 export interface MechanicalPart {
@@ -84,10 +88,25 @@ export interface MechanicalPart {
   };
   readonly secondaryProcesses: SecondaryProcess[];
   readonly coatingColor?: ColorOption;
+  readonly taps?: TapSelection[];
+  readonly tappingNotes?: string;
+  readonly dimensions?: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+  };
   readonly quantity: number;
   readonly unitCost?: number;
   readonly discountTier?: string;
   readonly status: PartStatus;
+  readonly analysis?: {
+    readonly holes?: HoleFeature[];
+    readonly bends?: BendFeature[];
+    readonly triangleCount?: number;
+    readonly boundingBox?: BoundingBox;
+    readonly detectedThickness?: number;
+    readonly flatPattern?: FlatPattern;
+  };
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -129,21 +148,4 @@ export interface ProjectRFQ {
     };
   };
   readonly finalPrice?: number;
-}
-
-/** Step in the part creation wizard */
-export type PartCreationStep =
-  | 'service_selection'
-  | 'file_upload'
-  | 'material_selection'
-  | 'secondary_process'
-  | 'quantity_review';
-
-/** Service configuration for UI display */
-export interface ServiceConfig {
-  readonly id: ManufacturingService;
-  readonly name: string;
-  readonly description: string;
-  readonly icon: string;
-  readonly supportedMaterials: string[];
 }

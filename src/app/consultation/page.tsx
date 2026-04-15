@@ -102,6 +102,21 @@ function ConsultationPageContent() {
 
     try {
       setDocumentNonBlocking(docRef, requestData, { merge: true });
+
+      // Trigger admin notification via internal API
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'admin_consultation_booked',
+          customerName: requestData.name,
+          customerEmail: requestData.email,
+          customerPhone: requestData.phone,
+          message: requestData.message,
+          quoteRef: requestData.quoteRef || undefined,
+        }),
+      }).catch((err) => console.error('Failed to trigger consultation notification:', err));
+
       setIsSubmitted(true);
       toast({
         title: 'Request Sent!',

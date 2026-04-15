@@ -28,6 +28,8 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { NotificationService } from '@/services/notification.service';
+import { calculateProjectFinances } from '@/utils/finance';
 
 const VerifyPaymentSchema = z.object({
   razorpay_order_id: z.string().min(1),
@@ -176,7 +178,62 @@ export async function POST(req: NextRequest) {
       createdAt: paidAt,
     });
 
-    // ── Step 7: Return success ───────────────────────────────────────────
+    // ── Step 7: Send notification emails ────────────────────────────────
+    // Fire-and-forget: emails are sent asynchronously, never blocking the response
+    const customerName = rfq.userName || rfq.contactName || 'Customer';
+    const customerEmail = rfq.userEmail || rfq.contactEmail || '';
+    const customerPhone = rfq.userPhone || rfq.contactPhone || rfq.phone || '';
+    const projectName = rfq.projectName || 'MechHub Project';
+    const finalPrice = rfq.finalPrice || rfq.quotedPrice || 0;
+    const finances = calculateProjectFinances(finalPrice);
+
+    if (customerEmail) {
+      if (paymentType === 'advance') {
+        NotificationService.sendAllAsync([
+          {
+            type: 'payment_advance_confirmed',
+            customer: { email: customerEmail, name: customerName },
+            projectName,
+            projectId: rfqId,
+            amountPaid: finances.advance,
+            balanceDue: finances.balance,
+          },
+          {
+            type: 'admin_payment_received',
+            customerName,
+            customerEmail,
+            projectName,
+            projectId: rfqId,
+            paymentType: 'advance',
+            amount: finances.advance,
+            customerPhone,
+          },
+        ]);
+      } else if (paymentType === 'completion') {
+        NotificationService.sendAllAsync([
+          {
+            type: 'payment_balance_confirmed',
+            customer: { email: customerEmail, name: customerName },
+            projectName,
+            projectId: rfqId,
+            amountPaid: finances.balance,
+            totalPaid: finances.total,
+          },
+          {
+            type: 'admin_payment_received',
+            customerName,
+            customerEmail,
+            projectName,
+            projectId: rfqId,
+            paymentType: 'completion',
+            amount: finances.balance,
+            customerPhone,
+          },
+        ]);
+      }
+    }
+
+    // ── Step 8: Return success ───────────────────────────────────────────
     return NextResponse.json({ success: true, paymentType, paidAt });
   } catch (err: any) {
     // ── Error handling ───────────────────────────────────────────────────

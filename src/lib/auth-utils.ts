@@ -26,6 +26,7 @@ export const ADMIN_EMAILS = [
   'divyanshu.work914214@gmail.com',
   'outreach@mechhub.in',
   'admin@mechhub.in',
+  'ap.raamachandiran@gmail.com'
 ];
 
 /** @deprecated See ADMIN_EMAILS deprecation notice above. */

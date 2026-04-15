@@ -4,10 +4,10 @@ import { useState, useCallback } from 'react';
 import {
   type ShippingAddress,
   type ShippingOption,
-  type QuoteOrder,
   SHIPPING_OPTIONS,
-} from '@/types/checkout';
-import type { QuoteCartItem } from '@/types/quoting';
+  type QuoteOrder,
+} from '@/models/order.model';
+import { type QuoteCartItem } from '@/types/quoting';
 import { logger } from '@/utils/logger';
 import { useRouter } from 'next/navigation';
 

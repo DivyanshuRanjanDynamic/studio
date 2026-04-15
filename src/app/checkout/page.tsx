@@ -30,7 +30,7 @@ import { useRouter } from 'next/navigation';
 
 import { useQuoteCart } from '@/hooks/use-quote-cart';
 import { useQuoteCheckout } from '@/hooks/use-quote-checkout';
-import { SHIPPING_OPTIONS } from '@/types/checkout';
+import { SHIPPING_OPTIONS } from '@/models/order.model';
 import { QuoteCart } from '@/components/checkout/QuoteCart';
 import { ShippingForm } from '@/components/checkout/ShippingForm';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
@@ -152,13 +152,12 @@ export default function CheckoutPage() {
               <React.Fragment key={s.id}>
                 <div className="flex flex-col items-center gap-2">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                      checkout.step === s.id
+                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${checkout.step === s.id
                         ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white shadow-lg'
                         : i < ['cart', 'shipping', 'payment'].indexOf(checkout.step)
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'bg-white border-slate-200 text-slate-300'
-                    }`}
+                      }`}
                   >
                     <span className="text-[10px] font-black">{i + 1}</span>
                   </div>

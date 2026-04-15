@@ -1,4 +1,4 @@
-import { ManufacturingService } from '@/types/project';
+import { ManufacturingService } from '@/models/project.model';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -92,25 +92,23 @@ export function ServiceSelection({
             Select Manufacturing Service
           </Label>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {SERVICES.map((service) => (
             <Card
               key={service.id}
-              className={`cursor-pointer transition-all duration-300 overflow-hidden relative group ${
-                selectedService === service.id
+              className={`cursor-pointer transition-all duration-300 overflow-hidden relative group ${selectedService === service.id
                   ? 'bg-blue-50 border-[#2F5FA7] shadow-[0_10px_30px_rgba(47,95,167,0.15)] ring-1 ring-[#2F5FA7]/20'
                   : 'bg-white border-slate-200 hover:border-blue-200 hover:bg-slate-50'
-              }`}
+                }`}
               onClick={() => onSelect(service.id)}
             >
               <div className="p-5">
                 <div className="flex items-start gap-4">
                   <div
-                    className={`w-5 h-6 rounded-xl flex items-center justify-center border shadow-sm transition-colors ${
-                      selectedService === service.id
+                    className={`w-5 h-6 rounded-xl flex items-center justify-center border shadow-sm transition-colors ${selectedService === service.id
                         ? 'bg-[#2F5FA7] text-white border-[#2F5FA7]'
                         : 'bg-slate-50 text-[#2F5FA7] border-slate-100 group-hover:bg-blue-50'
-                    }`}
+                      }`}
                   >
                     {service.icon}
                   </div>
@@ -135,6 +133,7 @@ export function ServiceSelection({
       <ExpertCTA
         description="Providing elite manufacturing for precision parts. If your required service is not listed, our experts can help with custom fabrication."
         buttonText="Contact Expert"
+        className="mt-4"
       />
     </div>
   );

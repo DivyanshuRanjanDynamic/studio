@@ -1,8 +1,4 @@
-// ═══════════════════════════════════════════════════
-// Checkout Domain Types
-// ═══════════════════════════════════════════════════
-
-import type { QuoteCartItem } from './quoting';
+import type { QuoteCartItem } from '@/types/quoting';
 
 export interface ShippingAddress {
   readonly fullName: string;

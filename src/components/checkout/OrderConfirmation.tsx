@@ -3,7 +3,7 @@
 import React from 'react';
 import { CheckCircle2, Package, Calendar, ArrowRight, Home } from 'lucide-react';
 import Link from 'next/link';
-import type { QuoteOrder } from '@/types/checkout';
+import type { QuoteOrder } from '@/models/order.model';
 import { format, addDays } from 'date-fns';
 
 interface OrderConfirmationProps {

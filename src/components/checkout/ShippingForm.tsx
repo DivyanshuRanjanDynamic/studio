@@ -4,8 +4,8 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MapPin, Phone, User, Home, Building2, CreditCard } from 'lucide-react';
-import { shippingAddressSchema } from '@/lib/validation/checkout';
-import type { ShippingAddress } from '@/types/checkout';
+import { shippingAddressSchema } from '@/validators/order.validator';
+import type { ShippingAddress } from '@/models/order.model';
 
 interface ShippingFormProps {
   onSubmit: (data: ShippingAddress) => void;

@@ -2,7 +2,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
 
-import { Transaction, DocumentSnapshot } from 'firebase-admin/firestore';
+import type { Transaction, DocumentSnapshot } from 'firebase-admin/firestore';
 
 /**
  * Basic Firestore-based rate limiter for serverless environments.
@@ -25,7 +25,7 @@ export async function rateLimit(identifier: string, limit: number = 10, windowMs
 
   try {
     const result = await adminFirestore.runTransaction(async (transaction: Transaction) => {
-      const doc = (await transaction.get(limitRef)) as DocumentSnapshot;
+      const doc = (await transaction.get(limitRef)) as any;
       const data: any = doc.data() || { requests: [], count: 0 };
 
       // Filter out old requests

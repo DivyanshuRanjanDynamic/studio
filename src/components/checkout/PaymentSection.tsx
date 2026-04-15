@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { logger } from '@/utils/logger';
-import type { QuoteOrder } from '@/types/checkout';
+import type { QuoteOrder } from '@/models/order.model';
 
 interface PaymentSectionProps {
   order: QuoteOrder;

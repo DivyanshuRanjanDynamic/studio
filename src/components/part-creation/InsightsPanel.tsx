@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/utils';
-import { ManufacturingService, SecondaryProcess } from '@/types/project';
+import { ManufacturingService, SecondaryProcess } from '@/models/project.model';
 import { Box } from 'lucide-react';
 
 interface InsightsPanelProps {

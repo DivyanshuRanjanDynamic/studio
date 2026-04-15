@@ -1,62 +1,60 @@
-import { db } from '@/firebase/config';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { ProjectRepository } from '@/repositories/project.repository';
+import { rfqCreateSchema, RfqCreateInput } from '@/validators/project.validator';
+import { ProjectRFQ } from '@/models/project.model';
+import { Result, ok, err } from '@/utils/result';
+import { AppError, validationError } from '@/utils/errors';
 import { logger } from '@/utils/logger';
+import { nanoid } from 'nanoid';
 
 /**
- * ProjectService manages the lifecycle of innovation projects on MechHub.
- * This includes RFQ submissions, project creation, and part management.
+ * ProjectService manages the high-level business logic for MechHub projects,
+ * including RFQ submissions, status transitions, and vendor assignments.
  */
 export const ProjectService = {
   /**
-   * Submits a new Project RFQ.
+   * Submits a new Project RFQ with validation and orchestration.
    */
-  async submitProjectRfq(data: any) {
-    const rfqRef = doc(collection(db, 'projectRFQs'));
-    const rfqData = {
-      ...data,
-      id: rfqRef.id,
+  async submitProjectRfq(input: RfqCreateInput & { userId: string | null }): Promise<Result<string, AppError>> {
+    logger.info({ event: 'ProjectService: Submitting RFQ', projectName: input.projectName });
+
+    // 1. Validation
+    const validation = rfqCreateSchema.safeParse(input);
+    if (!validation.success) {
+      return err(validationError(validation.error.errors[0].message));
+    }
+
+    // 2. Data Preparation
+    const rfqId = `rfq_${nanoid(12)}`;
+    const rfqData: Partial<ProjectRFQ> & { id: string } = {
+      ...validation.data,
+      id: rfqId,
+      userId: input.userId || 'anonymous',
       status: 'submitted',
-      shortlistedVendorIds: data.selectedVendorIds,
-      assignedVendorId: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(rfqRef, rfqData);
-    logger.info({
-      event: 'Project RFQ submitted successfully',
-      rfqId: rfqRef.id,
-      projectName: data.projectName,
-    });
-    return rfqRef.id;
+    // 3. Persistence via Repository
+    const saveResult = await ProjectRepository.saveProjectRfq(rfqData);
+    
+    if (saveResult.success) {
+      logger.info({ event: 'ProjectService: RFQ submitted successfully', rfqId });
+    }
+
+    return saveResult;
   },
 
   /**
    * Retrieves a Project RFQ by its ID.
    */
-  async getProjectRfqById(id: string) {
-    try {
-      const rfqRef = doc(db, 'projectRFQs', id);
-      const docSnap = await getDoc(rfqRef);
-      if (!docSnap.exists()) return null;
-      return docSnap.data();
-    } catch (error) {
-      logger.error({ event: 'Failed to fetch Project RFQ', error, rfqId: id });
-      throw error;
-    }
+  async getProjectRfqById(id: string): Promise<Result<ProjectRFQ, AppError>> {
+    return ProjectRepository.getProjectRfqById(id);
   },
 
   /**
    * Fetches all RFQs belonging to a specific user.
    */
-  async getUserProjectRfqs(userId: string) {
-    try {
-      const q = query(collection(db, 'projectRFQs'), where('userId', '==', userId));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => doc.data());
-    } catch (error) {
-      logger.error({ event: 'Failed to fetch user Project RFQs', error, userId });
-      throw error;
-    }
+  async getUserProjectRfqs(userId: string): Promise<Result<ProjectRFQ[], AppError>> {
+    return ProjectRepository.getRfqsByUserId(userId);
   },
 };
