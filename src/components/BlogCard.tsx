@@ -5,10 +5,21 @@ import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { Clock, Calendar, ArrowRight, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { Post } from 'contentlayer/generated';
+
+type BlogCardPost = {
+  id?: string;
+  title: string;
+  image: string;
+  tags?: string[];
+  date: string;
+  readingTime: { text: string };
+  summary: string;
+  author: string;
+  url: string;
+};
 
 interface BlogCardProps {
-  post: Post;
+  post: BlogCardPost;
   index: number;
 }
 

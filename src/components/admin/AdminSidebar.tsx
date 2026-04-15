@@ -9,6 +9,7 @@ import {
   Factory,
   MessageCircleQuestion,
   MessageSquare,
+  BookOpen
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -27,6 +28,7 @@ const sidebarItems = [
   { key: 'vendors', label: 'MechMasters', icon: Factory },
   { key: 'consultations', label: 'Consultations', icon: MessageCircleQuestion },
   { key: 'contact_queries', label: 'Contact Queries', icon: MessageSquare },
+   {key: 'blogs', label: 'Blogs', icon: BookOpen },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
