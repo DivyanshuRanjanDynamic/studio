@@ -38,7 +38,7 @@ export const sendTestEmail = inngest.createFunction(
     await step.run(`send-test-email-${Date.now()}`, async () => {
       await resend.emails.send({
         from: 'MechHub Team <outreach@mechhub.in>',
-        to: 'sharmatijil06@gmail.com',
+        to: 'admin@mechhub.in',
         subject: post?.title ?? 'New Article',
 
         html: `
