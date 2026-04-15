@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
   const snapshot = await baseQuery.get();
 
   const applications = snapshot.docs
-    .map((doc): Record<string, any> => ({
+    .map((doc: any): Record<string, any> => ({
       id: doc.id,
       ...doc.data(),
     }))
-    .filter((application) => (status ? application.status === status : true))
-    .sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
+    .filter((application: any) => (status ? application.status === status : true))
+    .sort((a: any, b: any) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
 
   return NextResponse.json({
     applications,
