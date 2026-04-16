@@ -45,9 +45,7 @@ export const vendorApplicationBaseSchema = z.object({
     .optional()
     .transform((v) => v || undefined)
     .refine((v) => !v || v.length >= 2, 'Please specify the other capability'),
-  commissionStructure: z.string().trim().optional().transform((v) => v || undefined),
   monthlyRevenue: z.string().trim().optional().transform((v) => v || undefined),
-  paymentTerms: z.string().trim().optional().transform((v) => v || undefined),
   ndaAgreed: z.literal(true, {
     errorMap: () => ({ message: 'You must agree to the Confidentiality & NDA Agreement' }),
   }),
@@ -67,9 +65,7 @@ export interface VendorApplicationRecord {
   workshopAddress: string;
   gstNumber?: string;
   capabilities: string[];
-  commissionStructure?: string;
   monthlyRevenue?: string;
-  paymentTerms?: string;
   ndaAgreed: true;
   status: VendorApplicationStatus;
   submittedAt: string;

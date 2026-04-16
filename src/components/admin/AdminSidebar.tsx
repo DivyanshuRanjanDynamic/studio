@@ -9,6 +9,7 @@ import {
   Factory,
   MessageCircleQuestion,
   MessageSquare,
+  UserCheck,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -24,6 +25,7 @@ const sidebarItems = [
   { key: 'demand', label: 'Demand Hub', icon: TrendingUp },
   { key: 'products', label: 'Products', icon: ShoppingCart },
   { key: 'users', label: 'Buyers', icon: UserIcon },
+  { key: 'vendor_approvals', label: 'Vendor Approvals', icon: UserCheck },
   { key: 'vendors', label: 'MechMasters', icon: Factory },
   { key: 'consultations', label: 'Consultations', icon: MessageCircleQuestion },
   { key: 'contact_queries', label: 'Contact Queries', icon: MessageSquare },

@@ -127,6 +127,9 @@ export function verificationEmail(name: string, verificationUrl: string): string
     <div class="cta-wrap">
       <a href="${verificationUrl}" class="cta">Verify Email</a>
     </div>
+    <div class="cta-wrap" style="margin-top: -10px;">
+      <a href="${APP_URL}/login" class="cta-outline">Go to Login</a>
+    </div>
     <p class="meta">This secure link expires in 24 hours.</p>
     <p class="meta">If the button does not work, copy and paste this URL into your browser:</p>
     <div class="link-box" style="margin: 18px 0 0; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background-color: #f6f9ff; word-break: break-all; font-size: 12px; line-height: 1.6; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">${verificationUrl}</div>
@@ -853,10 +856,46 @@ export function adminVendorPendingReminderEmail(
     </div>
     `,
     {
-      previewText: `${pendingCount} vendor application(s) pending review on MechHub.`,
+      previewText: 'Admin reminder: there are pending vendor applications.',
       heroPill: 'Action Required',
-      heroTitle: 'Vendor Approvals Pending',
-      heroSubtitle: `${pendingCount} awaiting review`,
+      heroTitle: 'Pending Vendors',
+      heroSubtitle: `${pendingCount} vendors waiting`,
+    }
+  );
+}
+
+export function adminNewVendorApplicationEmail(
+  companyName: string,
+  ownerName: string,
+  email: string
+): string {
+  return baseLayout(
+    `
+    <h2 class="title">New Vendor Application</h2>
+    <div class="highlight-box">
+      <div class="field">
+        <div class="field-label">Company Name</div>
+        <div class="field-value">${companyName}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Owner Name</div>
+        <div class="field-value">${ownerName}</div>
+      </div>
+      <div class="field" style="margin-bottom: 0;">
+        <div class="field-label">Email</div>
+        <div class="field-value"><a href="mailto:${email}" style="color: #2F5FA7; text-decoration: none;">${email}</a></div>
+      </div>
+    </div>
+    <p class="paragraph">A new vendor has applied to join MechHub. Please review their application in the Admin Dashboard.</p>
+    <div class="cta-wrap">
+      <a href="${APP_URL}/admin/vendors" class="cta">Review Application</a>
+    </div>
+    `,
+    {
+      previewText: `New Vendor Application from ${companyName} (${ownerName}).`,
+      heroPill: 'Action Required',
+      heroTitle: 'New Vendor Application',
+      heroSubtitle: companyName,
     }
   );
 }

@@ -51,6 +51,11 @@ import { ProjectRFQ } from '@/models/project.model';
 import { CADPreviewModal } from '@/components/viewer/CADPreviewModal';
 import { useStepConverter } from '@/hooks/use-step-converter';
 import { logger } from '@/utils/logger';
+import {
+  normalizeWorkflowStatus,
+  CanonicalProjectStatus,
+  CANONICAL_PROJECT_STATUSES
+} from '@/lib/project-workflow';
 
 import {
   FileText,
@@ -80,6 +85,9 @@ import {
   MessageSquare,
   CreditCard,
   LogOut,
+  UserCheck,
+  Eye,
+  Image,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { checkIsAdmin } from '@/lib/auth-utils';
@@ -87,7 +95,8 @@ import { getIdTokenResult, signOut } from 'firebase/auth';
 import { CreateProjectModal } from '@/components/CreateProjectModal';
 import { calculateProjectFinances } from '@/utils/finance';
 
-const STATUS_MAP: Record<ProjectRFQStatus, { label: string; color: string; icon: any }> = {
+const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
+  // Legacy / Basic mappings
   draft: { label: 'DRAFT', color: 'bg-slate-100 text-slate-600 border-slate-200', icon: FileText },
   quote_requested: {
     label: 'QUOTE REQUESTED',
@@ -146,6 +155,16 @@ const STATUS_MAP: Record<ProjectRFQStatus, { label: string; color: string; icon:
     icon: ShieldCheck,
   },
   shipping: { label: 'SHIPPING', color: 'bg-indigo-500 text-white border-indigo-500', icon: Truck },
+
+  // Canonical Workflow Mappings
+  RFQ_SENT: { label: 'VALIDATING SPECS', color: 'bg-blue-50 text-blue-700 border-blue-100', icon: Clock },
+  ACCEPTED: { label: 'ENGINEER ASSIGNED', color: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: UserCheck },
+  QUOTATION_SENT: { label: 'QUOTATION RECEIVED', color: 'bg-emerald-600 text-white border-emerald-700', icon: CheckCircle2 },
+  APPROVED_BY_CUSTOMER: { label: 'DEPOSIT CONFIRMED', color: 'bg-blue-600 text-white', icon: ShieldCheck },
+  IN_PRODUCTION: { label: 'IN FABRICATION', color: 'bg-amber-50 text-amber-700 border-amber-100', icon: Hammer },
+  QUALITY_CHECK: { label: 'QUALITY CONTROL', color: 'bg-purple-50 text-purple-700 border-purple-100', icon: ShieldCheck },
+  DISPATCHED: { label: 'IN TRANSIT', color: 'bg-indigo-600 text-white', icon: Truck },
+  DELIVERED: { label: 'DELIVERED', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Package },
 };
 
 const SERVICE_ICONS: Record<ManufacturingService, any> = {
@@ -161,14 +180,21 @@ type DashboardTab = (typeof DASHBOARD_TABS)[number];
 const BADGE_BASE_CLASS =
   'rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] shadow-sm';
 
-function getStatusBadgeTone(status: string | undefined) {
-  if (!status) return 'border-slate-200 bg-slate-50 text-slate-600';
+function getStatusBadgeTone(rfq: ProjectRFQ | undefined) {
+  if (!rfq) return 'border-slate-200 bg-slate-50 text-slate-600';
+
+  const canonical = normalizeWorkflowStatus(rfq.workflowStatus, rfq.status);
+  if (canonical && STATUS_MAP[canonical]) {
+    return STATUS_MAP[canonical].color;
+  }
+
+  const status = rfq.status;
   if (status === 'draft') return 'border-slate-200 bg-slate-50 text-slate-600';
   if (status === 'quotation_sent' || status === 'accepted' || status === 'completed') {
     return 'border-emerald-100 bg-emerald-50 text-emerald-700';
   }
   if (status === 'quote_requested' || status === 'in_production' || status === 'assigned') {
-    return 'border-blue-100 bg-blue-50 text-[`#2F5FA7`]';
+    return 'border-blue-100 bg-blue-50 text-[#2F5FA7]';
   }
   if (
     status === 'under_review' ||
@@ -372,6 +398,14 @@ function UserDashboardContent() {
     ? selectedOrder.finalPrice || selectedOrder.quotedPrice || partsSubtotal || 0
     : 0;
 
+  const selectedOrderStatusInfo = React.useMemo(() => {
+    if (!selectedOrder) return STATUS_MAP.draft;
+    const canonical = normalizeWorkflowStatus(selectedOrder.workflowStatus, selectedOrder.status);
+    return (canonical && STATUS_MAP[canonical]) ||
+      STATUS_MAP[selectedOrder.status] ||
+      STATUS_MAP.draft;
+  }, [selectedOrder]);
+
   const quotationQuery = useMemoFirebase(() => {
     if (!db || !user || !selectedOrder) return null;
     return query(
@@ -425,31 +459,42 @@ function UserDashboardContent() {
     }
   };
 
-  const handleSelectVendor = (quotation: any) => {
-    if (!db || !selectedOrder) return;
+  const handleSelectVendor = async (quotation: any) => {
+    if (!selectedOrder) return;
     setIsConfirming(true);
 
-    updateDocumentNonBlocking(doc(db, 'projectRFQs', selectedOrder.id), {
-      status: 'accepted',
-      assignedVendorId: quotation.vendorId,
-      acceptedQuotationId: quotation.id,
-      finalPrice: quotation.quotedPrice,
-      finalLeadTime: quotation.leadTimeDays,
-      // initialise paymentStatus so UI can check it reactively
-      paymentStatus: { advance: null, completion: null },
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      const idToken = await user?.getIdToken();
+      if (!idToken) throw new Error('Auth required');
 
-    updateDocumentNonBlocking(doc(db, 'quotations', quotation.id), {
-      status: 'accepted',
-      updatedAt: new Date().toISOString(),
-    });
+      const response = await fetch(
+        `/api/v1/projects/${selectedOrder.id}/quotations/${quotation.id}/accept`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
 
-    setIsConfirming(false);
-    toast({
-      title: 'Offer Accepted!',
-      description: 'Please complete the advance payment to begin production.',
-    });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to accept quotation');
+      }
+
+      toast({
+        title: 'Offer Accepted!',
+        description: 'Please complete the advance payment to begin production.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   // ── Razorpay payment handler ───────────────────────────────────────────────
@@ -541,33 +586,40 @@ function UserDashboardContent() {
 
 
 
-  const handleProposeNegotiation = () => {
-    if (!db || !negotiatingQuote) return;
+  const handleProposeNegotiation = async () => {
+    if (!negotiatingQuote || !selectedOrder) return;
 
-    const historyItem = {
-      party: 'user',
-      price: Number(negPrice),
-      leadTime: Number(negLeadTime),
-      message: negMessage,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const idToken = await user?.getIdToken();
+      if (!idToken) throw new Error('Auth required');
 
-    const newHistory = [...(negotiatingQuote.negotiationHistory || []), historyItem];
+      const response = await fetch(
+        `/api/v1/projects/${selectedOrder.id}/quotations/${negotiatingQuote.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            price: Number(negPrice),
+            leadTime: Number(negLeadTime),
+            message: negMessage,
+          }),
+        }
+      );
 
-    updateDocumentNonBlocking(doc(db, 'quotations', negotiatingQuote.id), {
-      status: 'negotiating',
-      negotiationHistory: newHistory,
-      updatedAt: new Date().toISOString(),
-    });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send counter-offer');
+      }
 
-    updateDocumentNonBlocking(doc(db, 'projectRFQs', selectedOrder!.id), {
-      status: 'under_negotiation',
-      updatedAt: new Date().toISOString(),
-    });
-
-    setIsNegotiating(false);
-    setNegotiatingQuote(null);
-    toast({ title: 'Proposal Sent', description: 'The vendor will review your counter-offer.' });
+      setIsNegotiating(false);
+      setNegotiatingQuote(null);
+      toast({ title: 'Proposal Sent', description: 'The vendor will review your counter-offer.' });
+    } catch (error: any) {
+      toast({ title: 'Negotiation Failed', description: error.message, variant: 'destructive' });
+    }
   };
 
   const handleDeleteProject = async (rfq: ProjectRFQ) => {
@@ -657,6 +709,29 @@ function UserDashboardContent() {
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
+
+  if (!isProfileLoading && profile?.role === 'vendor_pending') {
+    return (
+      <div className="min-h-screen pt-2 pb-12 bg-[#F6F8FC] font-sans text-slate-600">
+        <LandingNav />
+        <div className="container mx-auto px-4 flex items-center justify-center min-h-[70vh]">
+          <div className="max-w-md text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm animate-in zoom-in-95 duration-500">
+            <Clock className="w-16 h-16 text-[#2F5FA7] mx-auto mb-6" />
+            <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Application Under Review</h2>
+            <p className="text-slate-500 mb-8 leading-relaxed">
+              Thank you for applying to be a MechMaster. Our team is currently reviewing your workshop capabilities. You will receive an email once your vendor profile is approved.
+            </p>
+            <Button
+              onClick={handleOnboardingLogout}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold tracking-widest uppercase text-xs w-full py-6 rounded-xl"
+            >
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-2 pb-12 bg-[#F6F8FC] font-sans text-slate-600 selection:bg-blue-500/10 selection:text-blue-600">
@@ -774,8 +849,10 @@ function UserDashboardContent() {
                       projectParts.length > 0 ? projectParts[0].material.name : 'No Parts';
                     const totalQty = projectParts.reduce((sum, p) => sum + (p.quantity || 0), 0);
 
-                    const statusInfo =
-                      STATUS_MAP[order.status as ProjectRFQStatus] || STATUS_MAP.draft;
+                    const canonicalStatus = normalizeWorkflowStatus(order.workflowStatus, order.status);
+                    const statusInfo = (canonicalStatus && STATUS_MAP[canonicalStatus]) ||
+                      STATUS_MAP[order.status] ||
+                      STATUS_MAP.draft;
                     const StatusIcon = statusInfo.icon;
                     return (
                       <Card
@@ -810,7 +887,7 @@ function UserDashboardContent() {
                                 </span>
                                 <Badge
                                   variant="outline"
-                                  className={`${BADGE_BASE_CLASS} ${getStatusBadgeTone(order.status)}`}
+                                  className={`${BADGE_BASE_CLASS} ${getStatusBadgeTone(order)}`}
                                 >
                                   {statusInfo.label}
                                 </Badge>
@@ -1071,9 +1148,9 @@ function UserDashboardContent() {
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
-                          className={`${BADGE_BASE_CLASS} ${getStatusBadgeTone(selectedOrder.status)}`}
+                          className={`${BADGE_BASE_CLASS} ${getStatusBadgeTone(selectedOrder)}`}
                         >
-                          {STATUS_MAP[selectedOrder.status as ProjectRFQStatus]?.label}
+                          {selectedOrderStatusInfo.label}
                         </Badge>
                         {selectedOrder.status === 'draft' && (
                           <Button
@@ -1553,7 +1630,66 @@ function UserDashboardContent() {
                         })()}
                       </div>
                     )}
-                  </CardContent>
+                    
+                    {/* ── ARTIFACTS / EVIDENCE ── */}
+                    {selectedOrder.artifacts && selectedOrder.artifacts.length > 0 && (
+                        <div className="pt-6 mt-6 border-t border-slate-100">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                            Build Evidence & Artifacts
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {selectedOrder.artifacts.map((art: any) => (
+                              <div
+                                key={art.id}
+                                className="group flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all"
+                              >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                                    {art.type === 'qc_report' || art.type === 'shipping_doc' ? (
+                                      <FileText className="w-4 h-4 text-blue-500" />
+                                    ) : (
+                                      <Image className="w-4 h-4 text-emerald-500" />
+                                    )}
+                                  </div>
+                                  <div className="overflow-hidden">
+                                    <p className="text-[10px] font-bold text-slate-900 uppercase truncate">
+                                      {art.fileName}
+                                    </p>
+                                    <p className="text-[9px] text-slate-400 uppercase tracking-tighter">
+                                      {art.type.replace('_', ' ')} • {new Date(art.uploadedAt).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-white rounded-full transition-all"
+                                  onClick={async () => {
+                                    try {
+                                      const token = await user?.getIdToken();
+                                      const url = `/api/v1/files/retrieve?fileKey=${encodeURIComponent(art.fileKey)}`;
+                                      const response = await fetch(url, {
+                                        headers: { Authorization: `Bearer ${token}` }
+                                      });
+                                      if (!response.ok) throw new Error('Retrieval failed');
+                                      const blob = await response.blob();
+                                      const link = document.createElement('a');
+                                      link.href = window.URL.createObjectURL(blob);
+                                      link.download = art.fileName;
+                                      link.click();
+                                    } catch (err) {
+                                      toast({ title: 'View Failed', variant: 'destructive' });
+                                    }
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
                 </Card>
               </div>
             ) : (

@@ -12,9 +12,7 @@ interface VendorApplication {
   workshopAddress: string;
   gstNumber?: string | null;
   capabilities: string[];
-  commissionStructure?: string | null;
   monthlyRevenue?: string | null;
-  paymentTerms?: string | null;
   ndaAgreed: boolean;
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string;
@@ -76,7 +74,7 @@ export function VendorDetailDrawer({ open, onOpenChange, application }: VendorDe
               <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-2">
                 Workshop Address
               </p>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 leading-6 text-slate-700">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 leading-5 text-slate-700">
                 {application.workshopAddress}
               </div>
             </div>
@@ -95,9 +93,7 @@ export function VendorDetailDrawer({ open, onOpenChange, application }: VendorDe
             </div>
 
             <div className="space-y-3">
-              <Info label="Commission Structure" value={application.commissionStructure || 'Not provided'} />
               <Info label="Monthly Revenue" value={application.monthlyRevenue || 'Not provided'} />
-              <Info label="Payment Terms" value={application.paymentTerms || 'Not provided'} />
               <Info
                 label="NDA Agreement"
                 value={application.ndaAgreed ? 'Accepted' : 'Not accepted'}

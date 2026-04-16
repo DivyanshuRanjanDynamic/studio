@@ -12,18 +12,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Plus, ShieldCheck, Star, MapPin, Edit3 } from 'lucide-react';
+import { Plus, ShieldCheck, Star, MapPin, Edit3, Trash2 } from 'lucide-react';
 
 interface VendorRegistryProps {
   vendors: any[];
   onAddVendor: () => void;
   onEditVendor: (vendor: any) => void;
+  onDeleteVendor?: (vendor: any) => void;
 }
 
 export const VendorRegistry: React.FC<VendorRegistryProps> = ({
   vendors,
   onAddVendor,
   onEditVendor,
+  onDeleteVendor,
 }) => {
   return (
     <div className="space-y-6">
@@ -32,9 +34,6 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
           MechMaster Registry
         </h1>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/vendors">Review Applications</Link>
-          </Button>
           <Button onClick={onAddVendor} className="gap-2" size="sm">
             <Plus className="w-4 h-4" /> Add MechMaster
           </Button>
@@ -78,7 +77,8 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
                     {v.specializations?.map((s: string, i: number) => (
                       <Badge
                         key={i}
-                        className="text-[8px] uppercase border-secondary/20 bg-secondary/5 text-secondary"
+                        variant="secondary"
+                        className="text-[10px] uppercase border-blue-200 bg-blue-50 text-[#1E3A66] hover:bg-blue-100 transition-colors"
                       >
                         {s}
                       </Badge>
@@ -95,14 +95,26 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
                   {v.location}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => onEditVendor(v)}
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-slate-500 hover:text-blue-600"
+                      onClick={() => onEditVendor(v)}
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </Button>
+                    {onDeleteVendor && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => onDeleteVendor(v)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -32,6 +32,7 @@ import {
   LogOut,
   Package,
   Clock,
+  Truck,
   Eye,
   FileText,
   MapPin,
@@ -40,6 +41,7 @@ import {
   Gavel,
   Check,
   Zap,
+  Plus,
   ShieldCheck,
   History,
   TrendingUp,
@@ -215,69 +217,199 @@ export default function VendorPortal() {
   };
 
   const handleSubmitQuote = async () => {
-    if (!db || !user || !selectedRfq) return;
+    if (!selectedRfq) return;
 
-    const quotationData = {
-      rfqId: selectedRfq.id,
-      userId: selectedRfq.userId,
-      vendorId: user.uid,
-      vendorName: user.displayName || 'Verified MechMaster',
-      quotedPrice: Number(quotePrice),
-      leadTimeDays: Number(quoteLeadTime),
-      notes: quoteNotes,
-      status: 'pending',
-      negotiationHistory: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        toast({ title: 'Auth required', variant: 'destructive' });
+        return;
+      }
 
-    addDocumentNonBlocking(collection(db, 'quotations'), quotationData);
-    updateDocumentNonBlocking(doc(db, 'projectRFQs', selectedRfq.id), {
-      status: 'quotations_received',
-      updatedAt: new Date().toISOString(),
-    });
-
-    setIsQuoting(false);
-    setShowDetails(false);
-    toast({ title: 'Quotation Submitted', description: 'The innovator will review your bid.' });
-  };
-
-  const handleRespondNegotiation = (partyAction: 'accept' | 'counter') => {
-    if (!db || !negotiatingQuote) return;
-
-    if (partyAction === 'accept') {
-      updateDocumentNonBlocking(doc(db, 'quotations', negotiatingQuote.id), {
-        status: 'pending',
-        updatedAt: new Date().toISOString(),
+      const response = await fetch(`/api/v1/projects/${selectedRfq.id}/quotations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          quotedPrice: Number(quotePrice),
+          leadTimeDays: Number(quoteLeadTime),
+          notes: quoteNotes,
+        }),
       });
-      toast({ title: 'Offer Accepted', description: 'Waiting for platform finalization.' });
-    } else {
-      const historyItem = {
-        party: 'vendor',
-        price: Number(resPrice),
-        leadTime: Number(resLeadTime),
-        message: resMessage,
-        createdAt: new Date().toISOString(),
-      };
-      const newHistory = [...(negotiatingQuote.negotiationHistory || []), historyItem];
 
-      updateDocumentNonBlocking(doc(db, 'quotations', negotiatingQuote.id), {
-        negotiationHistory: newHistory,
-        status: 'revised',
-        updatedAt: new Date().toISOString(),
-      });
-      toast({ title: 'Counter-Proposal Sent' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to submit bid');
+
+      setIsQuoting(false);
+      setShowDetails(false);
+      toast({ title: 'Quotation Submitted', description: 'The customer will review your bid.' });
+    } catch (error: any) {
+      toast({ title: 'Bid Submission Failed', description: error.message, variant: 'destructive' });
     }
-    setIsResponding(false);
   };
 
-  const handleUpdateStatus = (rfqId: string, newStatus: string) => {
-    if (!db) return;
-    updateDocumentNonBlocking(doc(db, 'projectRFQs', rfqId), {
-      status: newStatus,
-      updatedAt: new Date().toISOString(),
-    });
-    toast({ title: 'Production Status Updated' });
+  const handleClaimProject = async (rfqId: string) => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+
+      const response = await fetch(`/api/v1/projects/${rfqId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        toast({ title: 'Project Claimed!', description: 'You have been assigned to this project.' });
+      } else {
+        toast({ title: 'Claim Failed', description: data.error, variant: 'destructive' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Claim Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleRespondNegotiation = async (partyAction: 'accept' | 'counter') => {
+    if (!negotiatingQuote) return;
+
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+
+      if (partyAction === 'accept') {
+        const response = await fetch(
+          `/api/v1/projects/${negotiatingQuote.rfqId}/quotations/${negotiatingQuote.id}/accept`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to accept terms');
+        }
+        toast({ title: 'Terms Accepted', description: 'Project is now assigned to you.' });
+      } else {
+        const response = await fetch(
+          `/api/v1/projects/${negotiatingQuote.rfqId}/quotations/${negotiatingQuote.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              price: Number(resPrice),
+              leadTime: Number(resLeadTime),
+              message: resMessage,
+            }),
+          }
+        );
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to send counter-offer');
+        }
+        toast({ title: 'Counter-Proposal Sent' });
+      }
+      setIsResponding(false);
+    } catch (error: any) {
+      toast({ title: 'Negotiation Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleUpdateStatus = async (rfqId: string, nextStatus: string) => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+
+      const response = await fetch(`/api/v1/projects/${rfqId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          nextStatus,
+          note: 'Updated from MechMaster workspace',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update status');
+      }
+
+      toast({ title: 'Production Stage Updated' });
+    } catch (error: any) {
+      console.error('status update failed', error);
+      toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleUploadArtifact = async (rfqId: string, type: string, file: File) => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+
+      // 1. Get Presigned URL
+      const intentRes = await fetch('/api/v1/files/upload-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          contentType: file.type,
+        }),
+      });
+
+      const intentData = await intentRes.json();
+      if (!intentRes.ok) throw new Error(intentData.error || 'Failed to get upload intent');
+
+      // 2. Upload to S3
+      const s3Res = await fetch(intentData.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!s3Res.ok) throw new Error('S3 Upload failed');
+
+      // 3. Register Artifact
+      const regRes = await fetch(`/api/v1/projects/${rfqId}/artifacts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          type,
+          fileKey: intentData.fileKey,
+          fileName: file.name,
+          notes: `Uploaded via Vendor Workspace`,
+        }),
+      });
+
+      if (!regRes.ok) {
+        const data = await regRes.json();
+        throw new Error(data.error || 'Failed to register artifact');
+      }
+
+      toast({ title: 'Evidence Uploaded', description: `${file.name} saved to build log.` });
+    } catch (error: any) {
+      toast({ title: 'Upload Failed', description: error.message, variant: 'destructive' });
+    }
   };
 
   if (isVendorConfirmed === null || isUserLoading)
@@ -435,6 +567,13 @@ export default function VendorPortal() {
                               Respond to Bid
                             </Button>
                           </div>
+                        ) : rfq.status === 'quote_requested' ? (
+                          <Button
+                            className="w-full gap-2 tracking-widest uppercase text-[10px] h-11 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all font-bold"
+                            onClick={() => handleClaimProject(rfq.id)}
+                          >
+                            <Zap className="w-4 h-4" /> Claim Project Now
+                          </Button>
                         ) : (
                           <Button
                             variant="outline"
@@ -513,24 +652,84 @@ export default function VendorPortal() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            {rfq.status === 'assigned' && (
+                          <div className="flex flex-wrap gap-2">
+                            {rfq.workflowStatus === 'ACCEPTED' && (
                               <Button
                                 size="sm"
                                 className=" uppercase tracking-widest text-[10px] bg-cyan-600 hover:bg-cyan-500 text-white border-none shadow-[0_0_10px_rgba(34,211,238,0.3)] transition-all"
-                                onClick={() => handleUpdateStatus(rfq.id, 'in_progress')}
+                                onClick={() => handleUpdateStatus(rfq.id, 'QUOTATION_SENT')}
                               >
-                                <Zap className="w-3 h-3 mr-1" /> Start Build
+                                <Plus className="w-3 h-3 mr-1" /> Submit Detailed Quote
                               </Button>
                             )}
-                            {rfq.status === 'in_progress' && (
+
+                            {(rfq.workflowStatus === 'APPROVED_BY_CUSTOMER' || rfq.status === 'deposit_pending') && (
+                              <Button
+                                size="sm"
+                                className=" uppercase tracking-widest text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white border-none shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all"
+                                onClick={() => handleUpdateStatus(rfq.id, 'IN_PRODUCTION')}
+                              >
+                                <Hammer className="w-3 h-3 mr-1" /> Start Manufacturing
+                              </Button>
+                            )}
+
+                            {rfq.workflowStatus === 'IN_PRODUCTION' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className=" uppercase tracking-widest text-[10px] border-cyan-500/30 text-cyan-400 hover:bg-cyan-950/30 transition-all"
+                                  onClick={() => handleUpdateStatus(rfq.id, 'QUALITY_CHECK')}
+                                >
+                                  <CheckCircle2 className="w-3 h-3 mr-1" /> Submit to QC
+                                </Button>
+                                <Label className="cursor-pointer inline-flex items-center justify-center rounded-md text-[10px] font-bold uppercase tracking-widest h-8 px-3 border border-white/10 hover:bg-white/5 text-zinc-400">
+                                  <Plus className="w-3 h-3 mr-1" /> Photo
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleUploadArtifact(rfq.id, 'production_photo', file);
+                                    }}
+                                  />
+                                </Label>
+                              </div>
+                            )}
+
+                            {rfq.workflowStatus === 'QUALITY_CHECK' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  className=" uppercase tracking-widest text-[10px] bg-blue-600 hover:bg-blue-500 text-white"
+                                  onClick={() => handleUpdateStatus(rfq.id, 'DISPATCHED')}
+                                >
+                                  <Truck className="w-3 h-3 mr-1" /> Dispatch Order
+                                </Button>
+                                <Label className="cursor-pointer inline-flex items-center justify-center rounded-md text-[10px] font-bold uppercase tracking-widest h-8 px-3 border border-white/10 hover:bg-white/5 text-zinc-400">
+                                  <FileText className="w-3 h-3 mr-1" /> QC Report
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="application/pdf,image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleUploadArtifact(rfq.id, 'qc_report', file);
+                                    }}
+                                  />
+                                </Label>
+                              </div>
+                            )}
+
+                            {rfq.workflowStatus === 'DISPATCHED' && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className=" uppercase tracking-widest text-[10px] border-cyan-500/30 text-cyan-400 hover:bg-cyan-950/30 hover:text-cyan-300 transition-all font-bold"
-                                onClick={() => handleUpdateStatus(rfq.id, 'completed')}
+                                className=" uppercase tracking-widest text-[10px] border-green-500/30 text-green-400"
+                                onClick={() => handleUpdateStatus(rfq.id, 'DELIVERED')}
                               >
-                                <Check className="w-3 h-3 mr-1" /> Complete Build
+                                <Package className="w-3 h-3 mr-1" /> Mark Delivered
                               </Button>
                             )}
                           </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { NotificationService } from '@/services/notification.service';
+import { logger } from '@/utils/logger';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 
@@ -14,8 +15,8 @@ export async function PATCH(
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const { adminFirestore } = getFirebaseAdmin();
-  if (!adminFirestore) {
+  const { adminAuth, adminFirestore } = getFirebaseAdmin();
+  if (!adminAuth || !adminFirestore) {
     return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
   }
 
@@ -47,15 +48,34 @@ export async function PATCH(
   });
 
   if (appData.userId) {
-    await adminFirestore.collection('users').doc(appData.userId).set(
+    const batch = adminFirestore.batch();
+    batch.set(
+      adminFirestore.collection('users').doc(appData.userId),
       {
         role: 'mechmaster',
         status: 'active',
         onboarded: true,
+        // Sync onboarding data
+        teamName: appData.companyName,
+        fullName: appData.ownerName,
+        phone: appData.contactNumber,
+        location: appData.workshopAddress,
+        specializations: appData.capabilities || [],
+        gstNumber: appData.gstNumber || null,
+        monthlyRevenue: appData.monthlyRevenue || null,
+        portfolio: appData.otherCapability || null,
         updatedAt: nowIso,
       },
       { merge: true }
     );
+    await batch.commit();
+
+    // Mark user as verified in Auth so they can log in directly
+    try {
+      await adminAuth.updateUser(appData.userId, { emailVerified: true });
+    } catch (authError: any) {
+      logger.error({ event: 'approve_vendor_auth_update_failed', uid: appData.userId, error: authError.message });
+    }
   }
 
   NotificationService.sendAsync({

@@ -1,5 +1,5 @@
-import crypto from 'crypto';
 import { NextResponse } from 'next/server';
+import { createHash, randomBytes } from 'crypto';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getClientIdentifier } from '@/lib/auth-safety';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
@@ -8,6 +8,9 @@ import { NotificationService } from '@/services/notification.service';
 import { logger } from '@/utils/logger';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+
+// Ensure Node.js runtime for crypto module support
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   let createdUid: string | null = null;
@@ -22,6 +25,7 @@ export async function POST(req: Request) {
     const payload = await req.json();
     const parsed = vendorApplyRequestSchema.safeParse(payload);
     if (!parsed.success) {
+      console.error('[Vendor Onboarding] Invalid form data:', parsed.error.flatten(), 'Payload:', payload);
       return NextResponse.json(
         {
           error: 'Invalid form data',
@@ -94,9 +98,7 @@ export async function POST(req: Request) {
       workshopAddress: body.workshopAddress,
       gstNumber: body.gstNumber || null,
       capabilities,
-      commissionStructure: body.commissionStructure || null,
       monthlyRevenue: body.monthlyRevenue || null,
-      paymentTerms: body.paymentTerms || null,
       ndaAgreed: true,
       status: 'pending',
       submittedAt: nowIso,
@@ -117,6 +119,11 @@ export async function POST(req: Request) {
         email: body.email,
         phone: body.contactNumber,
         teamName: body.companyName,
+        location: body.workshopAddress,
+        specializations: capabilities,
+        gstNumber: body.gstNumber || null,
+        monthlyRevenue: body.monthlyRevenue || null,
+        portfolio: body.otherCapability || null,
         role: 'vendor_pending',
         onboarded: true,
         status: 'pending_review',
@@ -127,8 +134,8 @@ export async function POST(req: Request) {
       { merge: true }
     );
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
     batch.set(adminFirestore.collection('verification_tokens').doc(tokenHash), {
@@ -144,9 +151,10 @@ export async function POST(req: Request) {
     await batch.commit();
 
     NotificationService.sendAsync({
-      type: 'verification',
-      customer: { email: body.email, name: body.ownerName },
-      verificationUrl: `${APP_URL}/api/v1/auth/verify?token=${token}`,
+      type: 'admin_new_vendor_application',
+      companyName: body.companyName,
+      ownerName: body.ownerName,
+      email: body.email,
     });
 
     return NextResponse.json({

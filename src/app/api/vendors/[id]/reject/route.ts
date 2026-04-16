@@ -37,32 +37,38 @@ export async function PATCH(
     return NextResponse.json({ success: true, status: 'rejected' });
   }
 
-  const nowIso = new Date().toISOString();
-
-  await appRef.update({
-    status: 'rejected',
-    reviewedAt: nowIso,
-    reviewedBy: auth.uid,
-    updatedAt: nowIso,
-  });
-
-  if (appData.userId) {
-    await adminFirestore.collection('users').doc(appData.userId).set(
-      {
-        role: 'vendor_pending',
-        status: 'rejected',
-        updatedAt: nowIso,
-      },
-      { merge: true }
-    );
-  }
-
-  NotificationService.sendAsync({
+  // 1. Send the rejection email first while we still have all data
+  await NotificationService.sendAsync({
     type: 'vendor_rejected',
     vendorName: appData.ownerName || 'Partner',
     vendorEmail: appData.email,
     reapplyUrl: `${APP_URL}/onboard`,
   });
 
-  return NextResponse.json({ success: true, status: 'rejected' });
+  // 2. Perform cleanup in Firestore and Auth
+  const batch = adminFirestore.batch();
+
+  // Delete the application
+  batch.delete(appRef);
+
+  // If a user was created, remove them entirely
+  if (appData.userId) {
+    const { adminAuth } = getFirebaseAdmin();
+    // Delete from Firestore users collection
+    batch.delete(adminFirestore.collection('users').doc(appData.userId));
+
+    // Delete from Firebase Auth if auth provider is available
+    if (adminAuth) {
+      try {
+        await adminAuth.deleteUser(appData.userId);
+      } catch (authError: any) {
+        console.error(`[Reject] Failed to delete Auth user ${appData.userId}:`, authError.message);
+        // We continue anyway to ensure the DB is cleaned up even if Auth deletion fails (e.g. already gone)
+      }
+    }
+  }
+
+  await batch.commit();
+
+  return NextResponse.json({ success: true, status: 'deleted' });
 }

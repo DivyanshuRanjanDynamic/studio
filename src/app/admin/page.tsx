@@ -82,6 +82,8 @@ import {
   MessageSquare,
   Phone,
   ArrowUpRight,
+  Users,
+  Info,
 } from 'lucide-react';
 import {
   useFirestore,
@@ -113,11 +115,13 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { RfqManagement } from '@/components/admin/RfqManagement';
 import { UserDirectory } from '@/components/admin/UserDirectory';
 import { VendorRegistry } from '@/components/admin/VendorRegistry';
+import { VendorApprovals } from '@/components/admin/VendorApprovals';
 import { ProductCatalogue } from '@/components/admin/ProductCatalogue';
 import { ConsultationRequests } from '@/components/admin/ConsultationRequests';
 import { OrderManagement } from '@/components/admin/OrderManagement';
 import { IndustrialDemandHub } from '@/components/admin/IndustrialDemandHub';
 import { ContactQueries } from '@/components/admin/ContactQueries';
+import { MechMasterDetailDrawer } from '@/components/admin/MechMasterDetailDrawer';
 
 // Constants moved to @/config/constants
 
@@ -135,6 +139,7 @@ export default function AdminPanel() {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
+  const [showMechMasterDrawer, setShowMechMasterDrawer] = useState(false);
   const [showSendQuoteModal, setShowSendQuoteModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
 
@@ -172,6 +177,7 @@ export default function AdminPanel() {
   } | null>(null);
   const [pendingImageDelete, setPendingImageDelete] = useState<any>(null);
   const [pendingProductDeleteId, setPendingProductDeleteId] = useState<string | null>(null);
+  const [pendingVendorDeleteId, setPendingVendorDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const productImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -433,7 +439,55 @@ export default function AdminPanel() {
     const oldStatus = rfq.status;
 
     try {
-      await AdminService.updateProjectRfqStatus(rfqId, newStatus);
+      const legacyToCanonical: Record<string, string> = {
+        assigned: 'ACCEPTED',
+        accepted: 'ACCEPTED',
+        quotation_sent: 'QUOTATION_SENT',
+        in_progress: 'IN_PRODUCTION',
+        in_production: 'IN_PRODUCTION',
+        shipped: 'DISPATCHED',
+        completed: 'DELIVERED',
+        delivered: 'DELIVERED',
+      };
+
+      const nextStatus = legacyToCanonical[newStatus];
+      const idToken = await auth.currentUser?.getIdToken();
+      let usedWorkflowApi = false;
+
+      if (idToken && nextStatus) {
+        const response = await fetch(`/api/v1/projects/${rfqId}/status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            nextStatus,
+            note: 'Updated from admin panel',
+          }),
+        });
+
+        if (response.ok) {
+          usedWorkflowApi = true;
+          toast({
+            title: 'Workflow Updated',
+            description: `Project moved to ${nextStatus} via secure controller.`,
+          });
+        } else {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result?.error || `Workflow API Error: ${response.status}`);
+        }
+      }
+
+      if (!usedWorkflowApi) {
+        // Fallback for non-canonical or failed API (if allowed)
+        await AdminService.updateProjectRfqStatus(rfqId, newStatus);
+        toast({
+          title: 'Direct Update',
+          description: `Status updated in database (legacy bypass).`,
+        });
+      }
+
       toast({
         title: 'Status Synchronized',
         description: `RFQ lifecycle stage set to ${newStatus}.`,
@@ -480,21 +534,88 @@ export default function AdminPanel() {
   const handleShortlistVendor = (rfqId: string, vendorId: string) => {
     if (!db || !selectedRfq) return;
     const currentList = selectedRfq.shortlistedVendorIds || [];
-    const newList = currentList.includes(vendorId)
-      ? currentList.filter((id: string) => id !== vendorId)
-      : [...currentList, vendorId];
+    const isAdding = !currentList.includes(vendorId);
+    const newList = isAdding
+      ? [...currentList, vendorId]
+      : currentList.filter((id: string) => id !== vendorId);
+    
     updateDocumentNonBlocking(doc(db, 'projectRFQs', rfqId), { shortlistedVendorIds: newList });
-    toast({ title: 'Shortlist Updated', description: 'MechMaster selection refined.' });
+    
+    // Update local state for immediate UI feedback if needed
+    setSelectedRfq({ ...selectedRfq, shortlistedVendorIds: newList });
+    
+    toast({ 
+      title: isAdding ? 'Added to Shortlist' : 'Removed from Shortlist', 
+      description: 'Vendor selection refined.' 
+    });
   };
 
-  const handleAssignVendor = (rfqId: string, vendorId: string) => {
-    if (!db) return;
-    updateDocumentNonBlocking(doc(db, 'projectRFQs', rfqId), {
-      assignedVendorId: vendorId,
-      status: 'assigned',
-      updatedAt: new Date().toISOString(),
-    });
-    toast({ title: 'Vendor Assigned', description: 'Project has been officially assigned.' });
+  const [isDispatching, setIsDispatching] = useState(false);
+
+  const handleDispatchRfq = async (rfqId: string) => {
+    if (!selectedRfq || (selectedRfq.shortlistedVendorIds || []).length === 0) {
+      toast({
+        title: 'Dispatch Failed',
+        description: 'You must shortlist at least one vendor first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsDispatching(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/v1/projects/${rfqId}/rfq/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          vendorIds: selectedRfq.shortlistedVendorIds,
+          expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days default
+        }),
+      });
+
+      if (res.ok) {
+        toast({ 
+          title: 'RFQ Dispatched', 
+          description: `Request for Quote sent to ${selectedRfq.shortlistedVendorIds.length} vendors.` 
+        });
+        // Details modal will update via rfq listener
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to dispatch');
+      }
+    } catch (e: any) {
+      toast({ title: 'Dispatch Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
+  const handleAssignVendor = async (rfqId: string, vendorId: string) => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+
+      const res = await fetch(`/api/v1/projects/${rfqId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ vendorId }),
+      });
+
+      if (res.ok) {
+        toast({ title: 'Vendor Assigned', description: 'Project has been officially assigned.' });
+      } else {
+        const data = await res.json();
+        toast({ title: 'Assignment Failed', description: data.error, variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: 'Failed to assign vendor.', variant: 'destructive' });
+    }
   };
 
   const handleSaveVendor = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -535,6 +656,49 @@ export default function AdminPanel() {
     setProfileImage(null);
     setVendorStep(1);
     toast({ title: 'Vendor Registry Updated' });
+  };
+
+  const handleUpdateMechMasterProfile = async (id: string, data: any) => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/admin/vendors/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to update profile');
+      }
+    } catch (e: any) {
+      throw e;
+    }
+  };
+
+  const handleDeleteVendor = async (vendorId: string) => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/admin/vendors/${vendorId}/delete`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result?.error || 'Failed to remove vendor');
+      }
+
+      toast({ title: 'MechMaster Removed', description: 'Vendor and account completely purged from system.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to remove vendor.', variant: 'destructive' });
+    }
   };
 
   const handleAdminReviseQuote = async () => {
@@ -1028,6 +1192,8 @@ export default function AdminPanel() {
 
           {activeTab === 'users' && <UserDirectory users={buyers || []} />}
 
+          {activeTab === 'vendor_approvals' && <VendorApprovals />}
+
           {activeTab === 'vendors' && (
             <VendorRegistry
               vendors={vendors || []}
@@ -1037,9 +1203,9 @@ export default function AdminPanel() {
               }}
               onEditVendor={(v) => {
                 setSelectedVendorProfile(v);
-                setProfileImage(v.imageUrl);
-                setShowVendorModal(true);
+                setShowMechMasterDrawer(true);
               }}
+              onDeleteVendor={(v) => setPendingVendorDeleteId(v.id)}
             />
           )}
 
@@ -1728,6 +1894,63 @@ export default function AdminPanel() {
                       </div>
                     </div>
 
+                    {/* MechMaster Shortlisting & Dispatch */}
+                    {(selectedRfq.status === 'submitted' || selectedRfq.status === 'under_review') && (
+                      <div className="mb-8">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-600">
+                            <Users className="w-3.5 h-3.5 text-indigo-500" /> MechMaster Selection Registry
+                          </h3>
+                          {(selectedRfq.shortlistedVendorIds || []).length > 0 && (
+                            <Button 
+                              size="sm" 
+                              className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-indigo-200"
+                              onClick={() => handleDispatchRfq(selectedRfq.id)}
+                              disabled={isDispatching}
+                            >
+                              {isDispatching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                              Dispatch RFQ to {(selectedRfq.shortlistedVendorIds || []).length} Vendors
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <div className="rounded-xl border border-indigo-100 bg-indigo-50/20 overflow-hidden shadow-sm">
+                          <div className="max-h-[300px] overflow-y-auto p-4 space-y-2">
+                             {vendors?.filter(v => v.isActive).map((vendor: any) => {
+                               const isShortlisted = (selectedRfq.shortlistedVendorIds || []).includes(vendor.id);
+                               return (
+                                 <div key={vendor.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
+                                   <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-bold text-slate-900 text-xs truncate">{vendor.teamName || vendor.fullName}</p>
+                                        {vendor.isVerified && <Badge className="bg-blue-500 h-3 w-3 p-0 rounded-full flex items-center justify-center border-none"><Check className="w-2 h-2 text-white" /></Badge>}
+                                      </div>
+                                      <p className="text-[10px] text-slate-500 uppercase font-medium">{vendor.location} • {vendor.rating || 'N/A'} ⭐</p>
+                                   </div>
+                                   <Button
+                                      size="sm"
+                                      variant={isShortlisted ? 'default' : 'outline'}
+                                      className={`h-7 text-[9px] font-bold uppercase ${isShortlisted ? 'bg-indigo-600 hover:bg-indigo-700' : 'border-slate-200'}`}
+                                      onClick={() => handleShortlistVendor(selectedRfq.id, vendor.id)}
+                                   >
+                                      {isShortlisted ? 'Shortlisted' : 'Shortlist'}
+                                   </Button>
+                                 </div>
+                               );
+                             })}
+                             {(!vendors || vendors.length === 0) && (
+                               <div className="text-center py-6 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                 No active MechMasters found in registry
+                               </div>
+                             )}
+                          </div>
+                          <div className="p-3 bg-indigo-50 border-t border-indigo-100 italic text-[9px] text-indigo-600 flex items-center gap-2">
+                            <Info className="w-3 h-3" /> Shortlisting vendors allows you to batch-invite them. Dispatching transitions the project to "RFQ SENT".
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-primary mb-4">
                       <TrendingUp className="w-3.5 h-3.5" /> Bidding & Negotiations
                     </h3>
@@ -1959,6 +2182,14 @@ export default function AdminPanel() {
           </Card>
         </div>
       )}
+
+      {/* MechMaster Detail Drawer */}
+      <MechMasterDetailDrawer
+        open={showMechMasterDrawer}
+        onOpenChange={setShowMechMasterDrawer}
+        vendor={selectedVendorProfile}
+        onUpdate={handleUpdateMechMasterProfile}
+      />
 
       {showVendorModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
@@ -2594,6 +2825,34 @@ export default function AdminPanel() {
               }}
             >
               Delete Product
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={!!pendingVendorDeleteId}
+        onOpenChange={(open) => {
+          if (!open) setPendingVendorDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove MechMaster?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently purges the vendor's profile from the system. This action cannot be reversed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                if (!pendingVendorDeleteId) return;
+                await handleDeleteVendor(pendingVendorDeleteId);
+                setPendingVendorDeleteId(null);
+              }}
+            >
+              Confirm Removal
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

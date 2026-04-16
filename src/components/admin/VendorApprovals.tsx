@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { LandingNav } from '@/components/LandingNav';
 import { VendorDetailDrawer } from '@/components/VendorDetailDrawer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,9 +37,7 @@ interface VendorApplication {
   contactNumber: string;
   workshopAddress: string;
   gstNumber?: string | null;
-  commissionStructure?: string | null;
   monthlyRevenue?: string | null;
-  paymentTerms?: string | null;
   ndaAgreed: boolean;
   reviewedAt?: string | null;
   reviewedBy?: string | null;
@@ -60,8 +57,7 @@ function formatDate(value: string) {
   });
 }
 
-export default function AdminVendorsPage() {
-  const router = useRouter();
+export function VendorApprovals() {
   const { toast } = useToast();
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -78,17 +74,7 @@ export default function AdminVendorsPage() {
   }, [db, user?.uid]);
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login?redirect=/admin/vendors');
-    }
-  }, [isUserLoading, user, router]);
 
-  useEffect(() => {
-    if (!profileLoading && profile && profile.role !== 'admin') {
-      router.push('/dashboard');
-    }
-  }, [profileLoading, profile, router]);
 
   const loadApplications = useCallback(async () => {
     if (!user) return;
@@ -180,10 +166,7 @@ export default function AdminVendorsPage() {
   if (!user || !profile) return null;
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] text-slate-900">
-      <LandingNav />
-
-      <main className="container mx-auto px-4 py-8 md:py-10 space-y-6">
+    <div className="space-y-6">
         <Card className="border-blue-100 bg-white">
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -306,7 +289,6 @@ export default function AdminVendorsPage() {
             )}
           </CardContent>
         </Card>
-      </main>
 
       <VendorDetailDrawer open={detailOpen} onOpenChange={setDetailOpen} application={selected} />
     </div>

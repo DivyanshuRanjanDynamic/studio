@@ -202,6 +202,13 @@ export interface AdminVendorReminderEvent {
   readonly reviewUrl: string;
 }
 
+export interface AdminNewVendorApplicationEvent {
+  readonly type: 'admin_new_vendor_application';
+  readonly companyName: string;
+  readonly ownerName: string;
+  readonly email: string;
+}
+
 // ─── Union Type ──────────────────────────────────────────────
 
 export type NotificationEvent =
@@ -226,4 +233,5 @@ export type NotificationEvent =
   | AdminQuoteAcceptedEvent
   | VendorApprovedEvent
   | VendorRejectedEvent
-  | AdminVendorReminderEvent;
+  | AdminVendorReminderEvent
+  | AdminNewVendorApplicationEvent;

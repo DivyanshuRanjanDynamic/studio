@@ -122,11 +122,9 @@ export function resolveUserFriendlyMessage(error: any): UserFriendlyMessage {
     // If it's a generic Error but has a helpful message, we might use it sparingly,
     // but for a premium feel, we should mask raw technical messages.
     if (error.message.includes('Missing or insufficient permissions')) {
-      return {
-        title: 'Access Denied',
-        description: "Your account doesn't have the necessary permissions to view this data.",
-        variant: 'destructive',
-      };
+      // Silently ignore generic permission errors from useCollection/useDoc 
+      // during login/logout transitions to improve UX.
+      return null;
     }
   }
 

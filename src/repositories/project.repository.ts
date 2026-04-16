@@ -90,5 +90,66 @@ export const ProjectRepository = {
    */
   async updateStatus(id: string, status: ProjectRFQStatus): Promise<Result<void, AppError>> {
     return this.saveProjectRfq({ id, status }).then(res => res.success ? ok(undefined) : res as any);
+  },
+
+  /**
+   * Atomically assigns an RFQ to a vendor using Firestore Transactions.
+   * Fails if already assigned or not in quote_requested status.
+   */
+  async atomicAssignRfq(rfqId: string, vendorId: string): Promise<Result<void, AppError>> {
+    try {
+      const { adminFirestore } = getFirebaseAdmin();
+      
+      if (!adminFirestore) {
+        return err(internalError('Database error: admin SDK not available for atomic operations.'));
+      }
+
+      const docRef = adminFirestore.collection(COLLECTION_NAME).doc(rfqId);
+
+      await adminFirestore.runTransaction(async (transaction: any) => {
+        const doc = await transaction.get(docRef);
+        if (!doc.exists) {
+          throw new Error('NOT_FOUND');
+        }
+
+        const data = doc.data() as ProjectRFQ;
+        if (data.status !== 'quote_requested') {
+          throw new Error('INVALID_STATUS');
+        }
+        if (data.assignedVendorId) {
+          throw new Error('ALREADY_ASSIGNED');
+        }
+
+        const timestamp = new Date().toISOString();
+        
+        transaction.update(docRef, {
+          assignedVendorId: vendorId,
+          status: 'accepted',
+          updatedAt: timestamp,
+          timelineEvents: [
+            ...(data.timelineEvents || []),
+            {
+              id: `evt_${Math.random().toString(36).substring(2, 11)}`,
+              type: 'vendor_assigned',
+              projectId: rfqId,
+              actorType: 'vendor',
+              actorId: vendorId,
+              content: 'Vendor accepted the project assignment.',
+              channel: 'internal',
+              timestamp,
+            }
+          ]
+        });
+      });
+
+      return ok(undefined);
+    } catch (e: any) {
+      if (e.message === 'NOT_FOUND') return err(notFoundError('ProjectRFQ', rfqId));
+      if (e.message === 'INVALID_STATUS') return err(internalError('Project RFQ is not open for assignment.'));
+      if (e.message === 'ALREADY_ASSIGNED') return err(internalError('Project has already been assigned to another vendor.'));
+      
+      logger.error({ event: 'ProjectRepository: Failed to atomic assign RFQ', error: e.message, rfqId });
+      return err(internalError('Database error while assigning RFQ'));
+    }
   }
 };

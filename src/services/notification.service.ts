@@ -255,13 +255,24 @@ function composeEmail(event: NotificationEvent): EmailPayload {
     case 'admin_quote_accepted':
       return {
         to: ADMIN_EMAILS,
-        subject: `Quote Accepted: "${event.projectName}" by ${event.customerName} — ₹${event.acceptedPrice.toLocaleString('en-IN')}`,
+        subject: `Quote Accepted by ${event.customerName} - Action Required`,
         html: templates.adminQuoteAcceptedEmail(
           event.customerName,
           event.customerEmail,
           event.projectName,
           event.projectId,
           event.acceptedPrice
+        ),
+      };
+
+    case 'admin_new_vendor_application':
+      return {
+        to: ADMIN_EMAILS,
+        subject: `New Vendor Application: ${event.companyName}`,
+        html: templates.adminNewVendorApplicationEmail(
+          event.companyName,
+          event.ownerName,
+          event.email
         ),
       };
 
