@@ -128,7 +128,7 @@ function LoginPageContent() {
    */
   const createSession = async (firebaseUser: any) => {
     try {
-      const idToken = await firebaseUser.getIdToken();
+      const idToken = await firebaseUser.getIdToken(true);
       const res = await fetch('/api/v1/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,7 +137,7 @@ function LoginPageContent() {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to establish secure session.');
+        throw new Error(errorData.error || errorData.message || 'Failed to establish secure session.');
       }
       return await res.json();
     } catch (error: any) {
@@ -162,8 +162,8 @@ function LoginPageContent() {
             uid: user.uid,
             name: user.displayName || 'Innovator',
           });
-          await signOut(auth);
-          await fetch('/api/v1/auth/session', { method: 'DELETE' });
+          // Note: We no longer signOut(auth) here. 
+          // This keeps auth.currentUser available for the 'Resend' functionality.
           return;
         }
 
@@ -282,7 +282,6 @@ function LoginPageContent() {
           uid: userCred.user.uid,
           name: userCred.user.displayName || 'Innovator',
         });
-        await signOut(auth);
         setLoading(false);
         return;
       }
@@ -346,7 +345,6 @@ function LoginPageContent() {
 
       setVerificationState({ email, uid: userCred.user.uid, name: trimmedName });
       setResendCooldown(60);
-      await signOut(auth);
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
@@ -470,7 +468,11 @@ function LoginPageContent() {
             </p>
             <div className="space-y-4">
               <Button
-                onClick={() => setVerificationState(null)}
+                onClick={async () => {
+                  await signOut(auth);
+                  await fetch('/api/v1/auth/session', { method: 'DELETE' });
+                  setVerificationState(null);
+                }}
                 className="w-full h-12 font-bold variant-outline border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full transition-all"
               >
                 Back to Sign In

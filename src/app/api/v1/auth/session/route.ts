@@ -70,6 +70,7 @@ export async function POST(req: Request) {
         email: decodedToken.email || '',
         fullName: (decodedToken.name as string) || (decodedToken.email?.split('@')[0] as string),
         emailVerified: decodedToken.email_verified || false,
+        allowCreation: true,
       });
     } catch (syncError: any) {
       logger.warn({
