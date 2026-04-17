@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     // 3. Send email using NotificationService
     const verificationUrl = `${APP_URL}/api/v1/auth/verify?token=${token}`;
     
-    NotificationService.sendAsync({
+    await NotificationService.send({
       type: 'verification',
       customer: {
         email: normalizedEmail,

@@ -67,8 +67,8 @@ export async function POST(req: Request) {
 
     // 3. Send email using NotificationService
     const name = firebaseUser.displayName || email.split('@')[0] || 'there';
-    
-    NotificationService.sendAsync({
+
+    await NotificationService.send({
       type: 'password_reset',
       customer: {
         email,
