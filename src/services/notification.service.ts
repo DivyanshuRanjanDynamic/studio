@@ -8,6 +8,8 @@
 
 import { Resend } from 'resend';
 import { logger } from '@/utils/logger';
+import { Result, ok, err } from '@/utils/result';
+import { AppError, ErrorCode, internalError } from '@/utils/errors';
 import type { NotificationEvent, EmailPayload } from '@/types/notification';
 import * as templates from './email-templates';
 
@@ -320,15 +322,15 @@ function composeEmail(event: NotificationEvent): EmailPayload {
 
 export const NotificationService = {
   /**
-   * Sends a notification email. Fire-and-forget: logs errors
-   * but never throws so it won't break calling API routes.
+   * Main dispatch method.
+   * Awaits confirmation from Resend and returns a Result.
    */
-  async send(event: NotificationEvent): Promise<void> {
+  async send(event: NotificationEvent): Promise<Result<void, AppError>> {
     try {
       const resend = getResend();
       const payload = composeEmail(event);
 
-      const { error } = await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: FROM_ADDRESS,
         to: Array.isArray(payload.to) ? payload.to : [payload.to],
         subject: payload.subject,
@@ -340,25 +342,38 @@ export const NotificationService = {
         logger.error({
           event: 'notification_send_failed',
           type: event.type,
-          error: error.message,
           to: payload.to,
+          error: error, // Log the full error object for deep debugging
+          resendMessage: error.message,
+          resendName: error.name,
         });
-        return;
+
+        return err(new AppError({
+          code: ErrorCode.SERVICE_UNAVAILABLE,
+          message: `Email provider error: ${error.message}`,
+          context: { resendError: error }
+        }));
       }
 
       logger.info({
         event: 'notification_sent',
+        id: data?.id,
         type: event.type,
         to: payload.to,
         subject: payload.subject,
       });
-    } catch (err: any) {
-      // Never throw — notifications must not break business logic
+
+      return ok(undefined);
+    } catch (err_obj: any) {
+      const error_msg = err_obj.message || String(err_obj);
       logger.error({
         event: 'notification_send_exception',
         type: event.type,
-        error: err.message || String(err),
+        error: error_msg,
+        stack: err_obj.stack,
       });
+
+      return err(internalError(`Critical internal error in notification service: ${error_msg}`, err_obj));
     }
   },
 

@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
 
     // 3. Send email using NotificationService
     const verificationUrl = `${APP_URL}/api/v1/auth/verify?token=${token}`;
-    
-    await NotificationService.send({
+
+    const dispatchResult = await NotificationService.send({
       type: 'verification',
       customer: {
         email: normalizedEmail,
@@ -97,6 +97,16 @@ export async function POST(req: NextRequest) {
       },
       verificationUrl,
     });
+
+    if (!dispatchResult.success) {
+      logger.error({
+        event: 'verification_dispatch_failed',
+        email: normalizedEmail,
+        error: dispatchResult.error.toJSON(),
+      });
+      // We still return success to the user to prevent email enumeration,
+      // but the failure is now clearly visible in server logs.
+    }
 
     return NextResponse.json({ success: true, message: 'Verification email sent' });
   } catch (error: any) {

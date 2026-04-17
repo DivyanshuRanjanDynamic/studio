@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     // 3. Send email using NotificationService
     const name = firebaseUser.displayName || email.split('@')[0] || 'there';
 
-    await NotificationService.send({
+    const dispatchResult = await NotificationService.send({
       type: 'password_reset',
       customer: {
         email,
@@ -76,6 +76,16 @@ export async function POST(req: Request) {
       },
       resetUrl: customResetUrl,
     });
+
+    if (!dispatchResult.success) {
+      logger.error({
+        event: 'forgot_password_dispatch_failed',
+        email,
+        error: dispatchResult.error.toJSON(),
+      });
+      // We still return success to the user to prevent email enumeration,
+      // but the failure is now clearly visible in server logs.
+    }
 
     return NextResponse.json({
       success: true,
