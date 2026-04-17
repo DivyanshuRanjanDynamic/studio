@@ -234,4 +234,11 @@ export type NotificationEvent =
   | VendorApprovedEvent
   | VendorRejectedEvent
   | AdminVendorReminderEvent
-  | AdminNewVendorApplicationEvent;
+  | AdminNewVendorApplicationEvent
+  | VendorApplicationReceivedEvent;
+
+export interface VendorApplicationReceivedEvent {
+  readonly type: 'vendor_application_received';
+  readonly vendor: NotificationRecipient;
+  readonly companyName: string;
+}

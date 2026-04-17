@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import { calculateProjectFinances } from '@/utils/finance';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const CreateOrderSchema = z.object({
@@ -59,6 +59,12 @@ export async function POST(req: NextRequest) {
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'customer', 'admin');
+    if (roleBlock) return roleBlock;
 
     // ── Step 2: Parse and validate the request body ─────────────────────
     const parseResult = CreateOrderSchema.safeParse(await req.json());

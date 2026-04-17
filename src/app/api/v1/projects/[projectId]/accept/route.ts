@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import { normalizeWorkflowStatus, toLegacyStatus } from '@/lib/project-workflow';
+
 
 export async function POST(
   req: NextRequest,
@@ -14,17 +15,18 @@ export async function POST(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'mechmaster', 'vendor', 'vendor_pending');
+    if (roleBlock) return roleBlock;
+
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
     }
 
-    const requester = await adminFirestore.collection('users').doc(auth.uid).get();
-    const requesterData = requester.data() || {};
-    if (!['mechmaster', 'vendor', 'vendor_pending'].includes(requesterData.role)) {
-      return forbiddenResponse('Vendor access required');
-    }
-    if (requesterData.role === 'vendor_pending' || requesterData.status !== 'active') {
+    if (auth.role === 'vendor_pending' || auth.status !== 'active') {
       return forbiddenResponse('Vendor is not active');
     }
 

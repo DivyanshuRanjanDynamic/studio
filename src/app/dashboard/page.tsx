@@ -417,9 +417,10 @@ function UserDashboardContent() {
 
   const { data: quotations } = useCollection(quotationQuery);
 
-  const handleOnboardingSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleOnboardingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!db || !user) return;
+    if (!user) return;
+    
     setIsSubmittingProfile(true);
     const formData = new FormData(e.currentTarget);
     const profileData = {
@@ -429,13 +430,39 @@ function UserDashboardContent() {
       designation: formData.get('designation') as string,
       location: formData.get('location') as string,
       onboarded: true,
-      updatedAt: new Date().toISOString(),
     };
 
-    updateDocumentNonBlocking(doc(db, 'users', user.uid), profileData);
-    setIsOnboardingOpen(false);
-    setIsSubmittingProfile(false);
-    toast({ title: 'Profile Completed!', description: `Ready to build, ${profileData.fullName}.` });
+    try {
+      const response = await fetch('/api/v1/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      setIsOnboardingOpen(false);
+      toast({ 
+        title: 'Profile Completed!', 
+        description: `Your manufacturing hub is ready, ${profileData.fullName}.` 
+      });
+      
+      // Force refresh to sync with updated server-side data
+      router.refresh();
+    } catch (err: any) {
+      toast({
+        title: 'Error Saving Profile',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingProfile(false);
+    }
   };
 
   const handleOnboardingLogout = async () => {
@@ -464,16 +491,10 @@ function UserDashboardContent() {
     setIsConfirming(true);
 
     try {
-      const idToken = await user?.getIdToken();
-      if (!idToken) throw new Error('Auth required');
-
       const response = await fetch(
         `/api/v1/projects/${selectedOrder.id}/quotations/${quotation.id}/accept`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
         }
       );
 

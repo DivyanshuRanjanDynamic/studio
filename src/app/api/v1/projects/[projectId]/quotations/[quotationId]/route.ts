@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authenticateRequest, forbiddenResponse, unauthorizedResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles, unauthorizedResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { QuotationRepository } from '@/repositories/quotation.repository';
 import { ProjectRepository } from '@/repositories/project.repository';
@@ -36,11 +36,8 @@ export async function PATCH(
     }
 
     // 2. Identify actor type
-    const userDoc = await adminFirestore.collection('users').doc(auth.uid).get();
-    const userData = userDoc.data();
-    
     let actorType: 'vendor' | 'customer' | 'admin' | null = null;
-    if (userData?.role === 'admin') actorType = 'admin';
+    if (auth.role === 'admin') actorType = 'admin';
     else if (quotation.userId === auth.uid) actorType = 'customer';
     else if (quotation.vendorId === auth.uid) actorType = 'vendor';
 

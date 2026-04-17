@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authenticateRequest, forbiddenResponse, unauthorizedResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles, unauthorizedResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { QuotationRepository } from '@/repositories/quotation.repository';
 import { ProjectRepository } from '@/repositories/project.repository';
@@ -22,18 +22,25 @@ export async function POST(
     const auth = await authenticateRequest(req);
     if (!auth.success) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'mechmaster');
+    if (roleBlock) return roleBlock;
+
     const { projectId } = await params;
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
 
-    // 1. Get user data for role/status check
-    const userDoc = await adminFirestore.collection('users').doc(auth.uid).get();
-    const userData = userDoc.data();
-    if (userData?.role !== 'mechmaster' || userData?.status !== 'active') {
-      return forbiddenResponse('Active MechMaster access required');
+    if (auth.status !== 'active') {
+      return forbiddenResponse('Active MechMaster account required');
     }
 
-    // 2. Validate Project existence and eligibility
+    // 2. Resolve vendor profile for naming
+    const userDoc = await adminFirestore.collection('users').doc(auth.uid).get();
+    const userData = userDoc.data() || {};
+
+    // 3. Validate Project existence and eligibility
     const projectResult = await ProjectRepository.getProjectRfqById(projectId);
     if (!projectResult.success) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     const project = projectResult.data;
@@ -132,11 +139,9 @@ export async function GET(
     if (!projectResult.success) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     const project = projectResult.data;
 
-    const userDoc = await adminFirestore.collection('users').doc(auth.uid).get();
-    const userData = userDoc.data();
-    const isAdmin = userData?.role === 'admin';
+    const isAdmin = auth.role === 'admin';
     const isOwner = project.userId === auth.uid;
-    const isVendor = userData?.role === 'mechmaster';
+    const isVendor = auth.role === 'mechmaster' || auth.role === 'vendor';
 
     if (!isAdmin && !isOwner && !isVendor) {
       return forbiddenResponse('Access denied');

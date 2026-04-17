@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { logger } from '@/utils/logger';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -26,6 +26,12 @@ export async function POST(req: NextRequest) {
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'customer', 'admin');
+    if (roleBlock) return roleBlock;
 
     const parseResult = ShopVerifySchema.safeParse(await req.json());
     if (!parseResult.success) {

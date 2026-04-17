@@ -1,14 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import crypto from 'crypto';
 import { getClientIdentifier, normalizeEmail, escapeHtml } from '@/lib/auth-safety';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { NotificationService } from '@/services/notification.service';
+import { authenticateRequest } from '@/lib/auth-middleware';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const ip = getClientIdentifier(req.headers);
     const limiter = await rateLimit(`auth-verify:${ip}`, 3, 60000);
@@ -16,21 +17,25 @@ export async function POST(req: Request) {
       return rateLimitResponse(limiter.reset);
     }
 
-    let payload: unknown;
+    const auth = await authenticateRequest(req);
+    if (!auth.success) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    let payload: any;
     try {
       payload = await req.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+      payload = {};
     }
 
-    const email = (payload as { email?: unknown })?.email;
-    const name = (payload as { name?: unknown })?.name;
-    const uid = (payload as { uid?: unknown })?.uid;
+    const email = payload?.email;
+    const name = payload?.name;
     const normalizedEmail = normalizeEmail(email);
-    const normalizedUid = typeof uid === 'string' ? uid.trim() : '';
+    const normalizedUid = auth.uid; // Trust the authenticated UID
 
-    if (!normalizedEmail || !normalizedUid || normalizedUid.length < 6 || normalizedUid.length > 128) {
-      return NextResponse.json({ error: 'Email and UID are required' }, { status: 400 });
+    if (!normalizedEmail) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     const { adminFirestore, adminAuth } = getFirebaseAdmin();

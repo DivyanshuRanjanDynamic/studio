@@ -26,7 +26,7 @@ import crypto from 'crypto'; // Node.js built-in module for cryptographic operat
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { NotificationService } from '@/services/notification.service';
 import { calculateProjectFinances } from '@/utils/finance';
@@ -65,6 +65,12 @@ export async function POST(req: NextRequest) {
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'customer', 'admin');
+    if (roleBlock) return roleBlock;
 
     // ── Step 2: Parse the request body ───────────────────────────────────
     const parseResult = VerifyPaymentSchema.safeParse(await req.json());

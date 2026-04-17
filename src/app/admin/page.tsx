@@ -201,7 +201,11 @@ export default function AdminPanel() {
       }
 
       try {
-        // 2. Perform secure admin checks (custom claim + server profile role).
+        // 2. FORCE REFRESH the token to pick up any new custom claims (Admin elevation)
+        // This is crucial for users who were just whitelisted on the server.
+        await user.getIdToken(true);
+
+        // 3. Perform secure admin checks (custom claim + server profile role).
         const tokenResult = await getIdTokenResult(user);
         const hasAdminClaim = checkIsAdmin(tokenResult.claims);
         const profileIsAdmin = profile?.role === 'admin';
@@ -209,17 +213,16 @@ export default function AdminPanel() {
         if (hasAdminClaim || profileIsAdmin) {
           setIsAdminConfirmed(true);
         } else {
-          // Only redirect if absolutely all checks fail
+          // If the profile loads and definitely shows a non-admin role, 
+          // and the claim is also missing, then we redirect.
+          // We do this SILENTLY because the server already guarded this route.
+          // A toast here is often a false-positive during refresh sync.
           setIsAdminConfirmed(false);
-          toast({
-            title: 'Access Denied',
-            description: 'Administrative privileges are required for this section.',
-            variant: 'destructive',
-          });
           router.push('/dashboard');
         }
       } catch (err) {
-        console.error('Admin verification failed:', err);
+        // Silent fail - the Server Layout Guard is our primary security.
+        // Client-side transient errors shouldn't kick the user out with a scary toast.
         router.push('/dashboard');
       }
     }
@@ -343,8 +346,13 @@ export default function AdminPanel() {
   }, [selectedRfqParts]);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
+    try {
+      await signOut(auth);
+      await fetch('/api/v1/auth/session', { method: 'DELETE' });
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const handleDownload = async (fileUrl: string, fileName: string) => {
@@ -538,15 +546,15 @@ export default function AdminPanel() {
     const newList = isAdding
       ? [...currentList, vendorId]
       : currentList.filter((id: string) => id !== vendorId);
-    
+
     updateDocumentNonBlocking(doc(db, 'projectRFQs', rfqId), { shortlistedVendorIds: newList });
-    
+
     // Update local state for immediate UI feedback if needed
     setSelectedRfq({ ...selectedRfq, shortlistedVendorIds: newList });
-    
-    toast({ 
-      title: isAdding ? 'Added to Shortlist' : 'Removed from Shortlist', 
-      description: 'Vendor selection refined.' 
+
+    toast({
+      title: isAdding ? 'Added to Shortlist' : 'Removed from Shortlist',
+      description: 'Vendor selection refined.'
     });
   };
 
@@ -578,9 +586,9 @@ export default function AdminPanel() {
       });
 
       if (res.ok) {
-        toast({ 
-          title: 'RFQ Dispatched', 
-          description: `Request for Quote sent to ${selectedRfq.shortlistedVendorIds.length} vendors.` 
+        toast({
+          title: 'RFQ Dispatched',
+          description: `Request for Quote sent to ${selectedRfq.shortlistedVendorIds.length} vendors.`
         });
         // Details modal will update via rfq listener
       } else {
@@ -1902,8 +1910,8 @@ export default function AdminPanel() {
                             <Users className="w-3.5 h-3.5 text-indigo-500" /> MechMaster Selection Registry
                           </h3>
                           {(selectedRfq.shortlistedVendorIds || []).length > 0 && (
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-indigo-200"
                               onClick={() => handleDispatchRfq(selectedRfq.id)}
                               disabled={isDispatching}
@@ -1913,36 +1921,36 @@ export default function AdminPanel() {
                             </Button>
                           )}
                         </div>
-                        
+
                         <div className="rounded-xl border border-indigo-100 bg-indigo-50/20 overflow-hidden shadow-sm">
                           <div className="max-h-[300px] overflow-y-auto p-4 space-y-2">
-                             {vendors?.filter(v => v.isActive).map((vendor: any) => {
-                               const isShortlisted = (selectedRfq.shortlistedVendorIds || []).includes(vendor.id);
-                               return (
-                                 <div key={vendor.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
-                                   <div className="min-w-0 flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <p className="font-bold text-slate-900 text-xs truncate">{vendor.teamName || vendor.fullName}</p>
-                                        {vendor.isVerified && <Badge className="bg-blue-500 h-3 w-3 p-0 rounded-full flex items-center justify-center border-none"><Check className="w-2 h-2 text-white" /></Badge>}
-                                      </div>
-                                      <p className="text-[10px] text-slate-500 uppercase font-medium">{vendor.location} • {vendor.rating || 'N/A'} ⭐</p>
-                                   </div>
-                                   <Button
-                                      size="sm"
-                                      variant={isShortlisted ? 'default' : 'outline'}
-                                      className={`h-7 text-[9px] font-bold uppercase ${isShortlisted ? 'bg-indigo-600 hover:bg-indigo-700' : 'border-slate-200'}`}
-                                      onClick={() => handleShortlistVendor(selectedRfq.id, vendor.id)}
-                                   >
-                                      {isShortlisted ? 'Shortlisted' : 'Shortlist'}
-                                   </Button>
-                                 </div>
-                               );
-                             })}
-                             {(!vendors || vendors.length === 0) && (
-                               <div className="text-center py-6 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-                                 No active MechMasters found in registry
-                               </div>
-                             )}
+                            {vendors?.filter(v => v.isActive).map((vendor: any) => {
+                              const isShortlisted = (selectedRfq.shortlistedVendorIds || []).includes(vendor.id);
+                              return (
+                                <div key={vendor.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-bold text-slate-900 text-xs truncate">{vendor.teamName || vendor.fullName}</p>
+                                      {vendor.isVerified && <Badge className="bg-blue-500 h-3 w-3 p-0 rounded-full flex items-center justify-center border-none"><Check className="w-2 h-2 text-white" /></Badge>}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 uppercase font-medium">{vendor.location} • {vendor.rating || 'N/A'} ⭐</p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant={isShortlisted ? 'default' : 'outline'}
+                                    className={`h-7 text-[9px] font-bold uppercase ${isShortlisted ? 'bg-indigo-600 hover:bg-indigo-700' : 'border-slate-200'}`}
+                                    onClick={() => handleShortlistVendor(selectedRfq.id, vendor.id)}
+                                  >
+                                    {isShortlisted ? 'Shortlisted' : 'Shortlist'}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                            {(!vendors || vendors.length === 0) && (
+                              <div className="text-center py-6 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                No active MechMasters found in registry
+                              </div>
+                            )}
                           </div>
                           <div className="p-3 bg-indigo-50 border-t border-indigo-100 italic text-[9px] text-indigo-600 flex items-center gap-2">
                             <Info className="w-3 h-3" /> Shortlisting vendors allows you to batch-invite them. Dispatching transitions the project to "RFQ SENT".

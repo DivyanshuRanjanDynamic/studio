@@ -10,6 +10,10 @@ import { ErrorCode } from '@/utils/errors';
 export const QuoteController = {
   /**
    * Generates a new instant quote.
+   * 
+   * SECURITY NOTE: This endpoint is intentionally unauthenticated to allow 
+   * anonymous users to receive instant estimates. Rate limiting is enforced 
+   * at the edge/middleware level.
    */
   async createQuote(request: Request) {
     const reqId = Math.random().toString(36).substring(7);

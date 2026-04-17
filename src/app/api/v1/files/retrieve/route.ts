@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { logger } from '@/utils/logger';
 import { s3Client, S3_BUCKET } from '@/lib/s3-client';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
     const { searchParams } = new URL(req.url);
     const fileKey = searchParams.get('fileKey');
 
@@ -34,9 +37,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Authorize file access (owner/admin/authorized vendor only)
-    const requesterSnap = await adminFirestore.collection('users').doc(auth.uid).get();
-    const requesterRole = requesterSnap.data()?.role as string | undefined;
-    const requesterIsAdmin = requesterRole === 'admin';
+    const requesterIsAdmin = auth.role === 'admin';
 
     let canAccess = requesterIsAdmin;
 
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (
-          isVendorRole(requesterRole) &&
+          isVendorRole(auth.role) &&
           (projectData?.assignedVendorId === auth.uid ||
             (Array.isArray(projectData?.shortlistedVendorIds) &&
               projectData.shortlistedVendorIds.includes(auth.uid)))

@@ -1,4 +1,5 @@
-export type UserRole = 'admin' | 'customer' | 'vendor' | 'vendor_pending' | 'mechmaster';
+import { UserRole } from '@/models/user.model';
+
 
 export function isVendorRole(role: string | null | undefined): boolean {
   return role === 'vendor' || role === 'mechmaster';

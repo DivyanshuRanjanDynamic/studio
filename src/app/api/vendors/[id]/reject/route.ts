@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { NotificationService } from '@/services/notification.service';
 
@@ -19,10 +19,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
   }
 
-  const requester = await adminFirestore.collection('users').doc(auth.uid).get();
-  if (requester.data()?.role !== 'admin') {
-    return forbiddenResponse('Admin access required');
-  }
+  const roleBlock = authorizeRoles(auth, 'admin');
+  if (roleBlock) return roleBlock;
 
   const { id } = await params;
   const appRef = adminFirestore.collection('vendorApplications').doc(id);

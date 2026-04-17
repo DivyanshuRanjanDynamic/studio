@@ -301,6 +301,13 @@ function composeEmail(event: NotificationEvent): EmailPayload {
         ),
       };
 
+    case 'vendor_application_received':
+      return {
+        to: event.vendor.email,
+        subject: `Application Received: ${event.companyName} — Under Review`,
+        html: templates.vendorApplicationReceivedEmail(event.vendor.name, event.companyName),
+      };
+
     default: {
       // TypeScript exhaustive check — if this errors, we missed an event type
       const _exhaustive: never = event;

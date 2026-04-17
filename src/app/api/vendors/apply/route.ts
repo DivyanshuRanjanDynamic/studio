@@ -150,6 +150,17 @@ export async function POST(req: Request) {
 
     await batch.commit();
 
+    // 1. Notify the Vendor (Confirmation & Verification)
+    NotificationService.sendAsync({
+      type: 'vendor_application_received',
+      vendor: {
+        email: body.email,
+        name: body.ownerName,
+      },
+      companyName: body.companyName,
+    });
+
+    // 2. Notify the Admin Team
     NotificationService.sendAsync({
       type: 'admin_new_vendor_application',
       companyName: body.companyName,

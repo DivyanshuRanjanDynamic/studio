@@ -899,3 +899,25 @@ export function adminNewVendorApplicationEmail(
     }
   );
 }
+
+export function vendorApplicationReceivedEmail(name: string, companyName: string): string {
+  return baseLayout(
+    `
+    <h2 class="title">Application Received</h2>
+    <p class="paragraph">Hi ${name},</p>
+    <p class="paragraph">Thank you for applying to join the MechHub partner network as <strong>${companyName}</strong>.</p>
+    <p class="paragraph">Our engineering team is currently reviewing your workshop capabilities and business details. We maintain a high standard for our MechMaster partners to ensure precision and reliability for our customers.</p>
+    <div class="highlight-box">
+      <div class="field-label">Status: <span class="badge badge-blue">UNDER REVIEW</span></div>
+      <p class="paragraph" style="margin: 8px 0 0;">Once our engineers verify your profile, you will receive an official approval email with access to the MechMaster portal.</p>
+    </div>
+    <p class="meta">This process typically takes 2-3 business days. Thank you for your patience.</p>
+    `,
+    {
+      previewText: 'Your MechMaster application has been received and is under engineering review.',
+      heroPill: 'Application Received',
+      heroTitle: 'Application Review',
+      heroSubtitle: companyName,
+    }
+  );
+}

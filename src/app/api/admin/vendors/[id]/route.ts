@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 
@@ -18,12 +18,8 @@ export async function PATCH(
   }
 
   // 1. Verify requester is admin
-  if (auth.role !== 'admin') {
-    const requester = await adminFirestore.collection('users').doc(auth.uid).get();
-    if (requester.data()?.role !== 'admin') {
-      return forbiddenResponse('Admin access required');
-    }
-  }
+  const roleBlock = authorizeRoles(auth, 'admin');
+  if (roleBlock) return roleBlock;
 
   const { id } = await params;
   const body = await req.json();

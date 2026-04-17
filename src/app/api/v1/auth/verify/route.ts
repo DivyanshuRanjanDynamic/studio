@@ -5,10 +5,14 @@ import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { getClientIdentifier } from '@/lib/auth-safety';
 import { UserService } from '@/services/user.service';
 import { logger } from '@/utils/logger';
+import crypto from 'crypto';
 
 /**
  * Verification API route called from email links.
  * Orchestrates Firebase Auth status update and Firestore profile sync.
+ *
+ * IMPORTANT: The send-verification route stores the token document under
+ * SHA256(rawToken), so we must hash the incoming raw token before lookup.
  */
 export async function GET(req: Request) {
   const ip = getClientIdentifier(req.headers);
@@ -31,8 +35,9 @@ export async function GET(req: Request) {
     const { adminFirestore, adminAuth } = getFirebaseAdmin();
     if (!adminFirestore || !adminAuth) throw new Error('Firebase Admin uninitialized');
 
-    // 1. Resolve Token
-    const tokenRef = adminFirestore.collection('verification_tokens').doc(token);
+    // 1. Resolve Token — hash it to match how send-verification stored it
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenRef = adminFirestore.collection('verification_tokens').doc(tokenHash);
     const tokenDoc = await tokenRef.get();
 
     if (!tokenDoc.exists || tokenDoc.data()?.used) {
@@ -51,13 +56,14 @@ export async function GET(req: Request) {
 
     // 3. Sync Profile & Roles via UserService
     const userRole = isAdmin(email) ? 'admin' : 'customer';
-    
+
     const syncResult = await UserService.syncUserFromAuth({
       uid,
       email,
       fullName: name,
-      role: userRole as any,
-      emailVerified: true
+      role: userRole,
+      emailVerified: true,
+      allowCreation: true,
     });
 
     if (!syncResult.success) throw new Error(syncResult.error.message);
@@ -73,7 +79,7 @@ export async function GET(req: Request) {
       verifiedAt: new Date().toISOString(),
     });
 
-    return NextResponse.redirect(`${loginUrl}?verified=true`);
+    return NextResponse.redirect(`${APP_URL}/dashboard?verified=true`);
 
   } catch (error: any) {
     logger.error({ event: 'API: Auth verification failed', error: error.message, token });

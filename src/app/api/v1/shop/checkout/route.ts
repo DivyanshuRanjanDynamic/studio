@@ -3,7 +3,7 @@ import Razorpay from 'razorpay';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -47,6 +47,12 @@ export async function POST(req: NextRequest) {
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'customer', 'admin');
+    if (roleBlock) return roleBlock;
 
     // 3. Data Validation
     const body = await req.json();

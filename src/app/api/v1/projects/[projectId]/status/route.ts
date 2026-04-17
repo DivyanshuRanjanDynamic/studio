@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import {
@@ -27,19 +27,19 @@ export async function POST(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'admin', 'mechmaster');
+    if (roleBlock) return roleBlock;
+
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
     }
 
-    const requester = await adminFirestore.collection('users').doc(auth.uid).get();
-    const requesterData = requester.data() || {};
-    const isAdmin = requesterData.role === 'admin';
-    const isVendor = requesterData.role === 'mechmaster' && requesterData.status === 'active';
-
-    if (!isAdmin && !isVendor) {
-      return forbiddenResponse('Admin or active MechMaster access required');
-    }
+    const isAdmin = auth.role === 'admin';
+    const isVendor = auth.role === 'mechmaster' && auth.status === 'active';
 
     const parsed = UpdateStatusSchema.safeParse(await req.json());
     if (!parsed.success) {

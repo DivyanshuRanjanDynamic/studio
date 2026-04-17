@@ -23,6 +23,7 @@ export const userProfileUpdateSchema = z.object({
   teamName: z.string().max(100).trim().optional().or(z.literal('')),
   designation: z.string().max(100).trim().optional().or(z.literal('')),
   location: z.string().max(200).trim().optional().or(z.literal('')),
+  onboarded: z.boolean().optional(),
   preferences: userPreferencesSchema.optional(),
 });
 

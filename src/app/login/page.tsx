@@ -4,8 +4,6 @@ import Image from 'next/image';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { checkIsAdmin } from '@/lib/auth-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +17,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LandingNav } from '@/components/LandingNav';
-import { Loader2, UserPlus, LogIn, ShieldCheck } from 'lucide-react';
+import { Loader2, UserPlus, LogIn, ShieldCheck, Factory, User as UserIcon, Clock, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   signInWithEmailAndPassword,
@@ -28,7 +26,6 @@ import {
   updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
-  getIdTokenResult,
 } from 'firebase/auth';
 import { resolveUserFriendlyMessage } from '@/lib/error-mapping';
 import { getSafeRedirectPath } from '@/lib/auth-safety';
@@ -71,16 +68,48 @@ function LoginPageContent() {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [loginRole, setLoginRole] = useState<'customer' | 'vendor'>('customer');
+  const [isPendingReview, setIsPendingReview] = useState<{
+    email: string;
+    name: string;
+  } | null>(null);
 
-  // Handle verified=true from callback
+  // Handle callback query params (verified=true or error=...)
   useEffect(() => {
-    if (searchParams.get('verified') === 'true') {
+    const verified = searchParams.get('verified');
+    const error = searchParams.get('error');
+
+    if (verified === 'true') {
       toast({
         title: 'Email Verified',
         description: 'Your account is now verified. You can sign in.',
         variant: 'default',
       });
-      // Clean up URL
+      router.replace('/login');
+    } else if (error) {
+      const errorMessages: Record<string, { title: string; description: string }> = {
+        token_unavailable: {
+          title: 'Link Already Used',
+          description: 'This verification link has already been used. Please sign in with your email and password.',
+        },
+        invalid_token: {
+          title: 'Invalid Link',
+          description: 'The verification link is invalid. Please request a new one.',
+        },
+        expired_token: {
+          title: 'Link Expired',
+          description: 'This verification link has expired. Please request a new one.',
+        },
+        verification_failed: {
+          title: 'Verification Failed',
+          description: 'Something went wrong during verification. Please try again.',
+        },
+      };
+      const msg = errorMessages[error] || {
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+      };
+      toast({ variant: 'destructive', title: msg.title, description: msg.description });
       router.replace('/login');
     }
   }, [searchParams, router, toast]);
@@ -107,24 +136,26 @@ function LoginPageContent() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to establish secure session.');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to establish secure session.');
       }
-      return true;
-    } catch (error) {
+      return await res.json();
+    } catch (error: any) {
       console.error('Session creation failed:', error);
       toast({
         title: 'Session Error',
-        description: 'We could not secure your session. Please try again.',
+        description: error.message || 'We could not secure your session. Please try again.',
         variant: 'destructive',
       });
-      return false;
+      return null;
     }
   };
 
   useEffect(() => {
     async function syncUserAndRedirect() {
       if (user && db) {
-        // 1. Enforce email verification
+        // 1. Enforce email verification — reload to get latest status from server
+        await user.reload();
         if (!user.emailVerified && user.providerData?.[0]?.providerId === 'password') {
           setVerificationState({
             email: user.email || '',
@@ -139,46 +170,81 @@ function LoginPageContent() {
         setLoading(true);
         try {
           // 2. Establish Server Session
-          const sessionCreated = await createSession(user);
-          if (!sessionCreated) {
+          const sessionData = await createSession(user);
+          if (!sessionData || sessionData.status !== 'success') {
+            toast({
+              title: sessionData?.message === 'Account not found. Please register manually via the signup form.'
+                ? 'Registration Required'
+                : 'Authentication Failed',
+              description: sessionData?.message || 'We could not establish your secure session. Please try again.',
+              variant: 'destructive',
+            });
             await signOut(auth);
+            setLoading(false);
             return;
           }
 
-          // 3. Check Claims and Sync Profile
-          const tokenResult = await getIdTokenResult(user);
-          const isAdmin = checkIsAdmin(tokenResult.claims);
-          
-          const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
+          // 3. Flow Normalization (Layer 3)
+          // Profile is now synced server-side in /api/v1/auth/session.
+          // We use the role and status returned from there directly.
+          const { role, accountStatus } = sessionData;
 
-          let role = isAdmin ? 'admin' : 'customer';
+          if (accountStatus === 'suspended') {
+            toast({
+              title: 'Account Suspended',
+              description: 'Please contact support for assistance.',
+              variant: 'destructive',
+            });
+            await signOut(auth);
+            await fetch('/api/v1/auth/session', { method: 'DELETE' });
+            return;
+          }
 
-          if (!userSnap.exists()) {
-            const initialProfile = {
-              uid: user.uid,
-              fullName: user.displayName || '',
-              email: user.email,
-              role: role,
-              onboarded: false,
-              status: 'active',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              emailVerified: user.emailVerified,
-            };
-            await setDoc(userRef, initialProfile);
-          } else {
-            const profileData = userSnap.data();
-            // Sync Firestore role with claims if needed
-            if (role === 'admin' && profileData.role !== 'admin') {
-              await setDoc(userRef, { role: 'admin' }, { merge: true });
-            } else {
-              role = profileData.role || 'customer';
+          // 4. Role-Toggle Validation (Layer 4)
+          // Ensure Customers use the Customer toggle and Vendors use the Vendor toggle.
+          // ADMINS are allowed via either toggle.
+          if (role !== 'admin') {
+            if (loginRole === 'customer' && (isVendorRole(role) || role === 'vendor_pending')) {
+              toast({
+                title: 'Registration Mismatch',
+                description: 'You are registered as a MechMaster Partner. Please switch to the Vendor portal to sign in.',
+                variant: 'destructive',
+              });
+              await signOut(auth);
+              await fetch('/api/v1/auth/session', { method: 'DELETE' });
+              setLoading(false);
+              return;
+            }
+
+            if (loginRole === 'vendor' && role === 'customer') {
+              toast({
+                title: 'Registration Mismatch',
+                description: 'You are registered as a Customer. Please switch to the Customer hub to sign in.',
+                variant: 'destructive',
+              });
+              await signOut(auth);
+              await fetch('/api/v1/auth/session', { method: 'DELETE' });
+              setLoading(false);
+              return;
             }
           }
 
-          // 4. Redirect based on role
+          // 5. Redirect based on role
           const redirectPath = getSafeRedirectPath(searchParams.get('redirect'));
+
+          if (role === 'vendor_pending') {
+            toast({
+              title: 'Application Under Review',
+              description: 'Our engineers are currently reviewing your workshop details. We will notify you via email once you are verified.',
+            });
+            setIsPendingReview({
+              email: user.email || '',
+              name: user.displayName || 'Partner'
+            });
+            setLoading(false);
+            return;
+          }
+
           if (role === 'admin') {
             router.push('/admin');
           } else if (isVendorRole(role)) {
@@ -206,7 +272,10 @@ function LoginPageContent() {
 
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
-      // If not verified, useEffect will handle it.
+      // CRITICAL: Reload user to get the latest emailVerified status from the server.
+      // The Admin SDK may have verified the email server-side, but the client token
+      // still caches the old `emailVerified: false` until explicitly refreshed.
+      await userCred.user.reload();
       if (!userCred.user.emailVerified) {
         setVerificationState({
           email: userCred.user.email || '',
@@ -265,9 +334,13 @@ function LoginPageContent() {
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCred.user, { displayName: trimmedName });
 
+      const idToken = await userCred.user.getIdToken();
       await fetch('/api/v1/auth/send-verification', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
         body: JSON.stringify({ email, name: trimmedName, uid: userCred.user.uid }),
       });
 
@@ -294,9 +367,13 @@ function LoginPageContent() {
       setResendCooldown(60);
       toast({ title: 'Sending...', description: 'Requesting a new verification email.' });
 
+      const idToken = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/v1/auth/send-verification', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+        },
         body: JSON.stringify(verificationState),
       });
 
@@ -367,7 +444,7 @@ function LoginPageContent() {
     }
   };
 
-  if (isUserLoading || (user && !verificationState)) {
+  if (isUserLoading || (user && !verificationState && !isPendingReview)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <Loader2 className="w-10 h-10 animate-spin text-[#2F5FA7]" />
@@ -415,6 +492,55 @@ function LoginPageContent() {
     );
   }
 
+  if (isPendingReview) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-24">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
+        <LandingNav />
+        <div className="flex-1 flex items-center justify-center p-4 relative z-10">
+          <Card className="w-full max-w-md bg-white border-slate-100 shadow-xl relative overflow-hidden text-center p-8 rounded-[2rem]">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-amber-500" />
+            <div className="mx-auto w-16 h-16 bg-amber-50 border border-amber-100 flex items-center justify-center rounded-full mb-6 relative">
+              <Clock className="w-8 h-8 text-amber-500 relative z-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Application Pending</h2>
+            <div className="space-y-4 text-left bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
+              <div className="flex gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Application Received</p>
+                  <p className="text-xs text-slate-500">Your details have reached our onboarding team.</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Under Review</p>
+                  <p className="text-xs text-slate-500">We are currently verifying your workshop capabilities.</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+              Hello <strong className="text-slate-900">{isPendingReview.name}</strong>, your application for
+              <strong className="text-slate-900 ml-1">{isPendingReview.email}</strong> is being processed.
+              We'll email you as soon as your MechMaster account is active.
+            </p>
+            <Button
+              onClick={async () => {
+                await signOut(auth);
+                await fetch('/api/v1/auth/session', { method: 'DELETE' });
+                setIsPendingReview(null);
+              }}
+              className="w-full h-12 font-bold variant-outline border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full transition-all"
+            >
+              Sign Out
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 relative flex flex-col pt-16 lg:pt-0">
       <LandingNav />
@@ -425,12 +551,32 @@ function LoginPageContent() {
             <div className="flex flex-col items-center gap-4 mb-2 lg:hidden">
               <div className="text-center space-y-2">
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
-                  Secure Access
+                  {loginRole === 'vendor' ? 'MechMaster Access' : 'Secure Access'}
                 </h1>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
-                  Sign in to your manufacturing workspace
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
+                  {loginRole === 'vendor'
+                    ? 'Connect your factory to our managed supply chain.'
+                    : 'The precision manufacturing portal for innovators.'}
                 </p>
               </div>
+            </div>
+
+            {/* Role Toggle */}
+            <div className="mb-6 p-1 bg-slate-100/80 rounded-2xl flex relative max-w-[280px] mx-auto border border-slate-200">
+              <button
+                onClick={() => setLoginRole('customer')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all relative z-10 ${loginRole === 'customer' ? 'text-[#2F5FA7] bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <UserIcon className="w-3.5 h-3.5" />
+                Customer
+              </button>
+              <button
+                onClick={() => setLoginRole('vendor')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all relative z-10 ${loginRole === 'vendor' ? 'text-[#2F5FA7] bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <Factory className="w-3.5 h-3.5" />
+                Vendor
+              </button>
             </div>
 
             <Tabs
@@ -440,15 +586,15 @@ function LoginPageContent() {
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100 border border-slate-200 p-1 rounded-2xl">
                 <TabsTrigger
                   value="login"
-                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500"
+                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500 uppercase tracking-widest text-[10px]"
                 >
                   Sign In
                 </TabsTrigger>
                 <TabsTrigger
                   value="register"
-                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500"
+                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500 uppercase tracking-widest text-[10px]"
                 >
-                  Register
+                  {loginRole === 'vendor' ? 'Join Portal' : 'Register'}
                 </TabsTrigger>
               </TabsList>
 
@@ -460,10 +606,10 @@ function LoginPageContent() {
                       <CardTitle className="text-2xl font-bold text-slate-900">
                         Reset Password
                       </CardTitle>
-                      <CardDescription className="text-slate-500 font-medium">
+                      <CardDescription className="text-slate-500 font-medium leading-relaxed">
                         {resetEmailSent
                           ? 'Check your email for a reset link.'
-                          : 'Enter your verified email to receive a reset link.'}
+                          : `Enter your ${loginRole === 'vendor' ? 'registered' : 'verified'} email to receive a recovery link.`}
                       </CardDescription>
                     </CardHeader>
                     {!resetEmailSent ? (
@@ -527,10 +673,12 @@ function LoginPageContent() {
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
                     <CardHeader>
                       <CardTitle className="text-2xl font-bold text-slate-900">
-                        Account Access
+                        {loginRole === 'vendor' ? 'Vendor Portal' : 'Customer Hub'}
                       </CardTitle>
-                      <CardDescription className="text-slate-500 font-medium">
-                        Enter your verified credentials to continue.
+                      <CardDescription className="text-slate-500 font-medium leading-relaxed">
+                        {loginRole === 'vendor'
+                          ? 'Access your workshop orders and quoting tools.'
+                          : 'The precision manufacturing portal for innovators.'}
                       </CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSignIn}>
@@ -617,88 +765,129 @@ function LoginPageContent() {
               </TabsContent>
 
               <TabsContent value="register">
-                <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-slate-900">
-                      Create Hub Account
-                    </CardTitle>
-                    <CardDescription className="text-slate-500 font-medium">
-                      Join the managed manufacturing network.
-                    </CardDescription>
-                  </CardHeader>
-                  <form onSubmit={handleSignUp}>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="reg-name"
-                          className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                        >
-                          Full Name
-                        </Label>
-                        <Input
-                          id="reg-name"
-                          name="fullName"
-                          type="text"
-                          placeholder="John Doe"
-                          className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-slate-400 h-11 px-4 rounded-xl"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="reg-email"
-                          className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                        >
-                          Work Email
-                        </Label>
-                        <Input
-                          id="reg-email"
-                          name="email"
-                          type="email"
-                          placeholder="name@organization.com"
-                          className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-slate-400 h-11 px-4 rounded-xl"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="reg-password"
-                          className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                        >
-                          Create Password
-                        </Label>
-                        <Input
-                          id="reg-password"
-                          name="password"
-                          type="password"
-                          placeholder="Min. 8 characters"
-                          className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-slate-400 h-11 px-4 rounded-xl"
-                          minLength={8}
-                          required
-                        />
-                      </div>
-                      <div className="pt-2 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                        <ShieldCheck className="w-4 h-4 text-[#2F5FA7]" />
-                        All accounts subject to verification & NDA protocols.
+                {loginRole === 'vendor' ? (
+                  <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600" />
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                        Join as Partner
+                      </CardTitle>
+                      <CardDescription className="text-slate-500 font-medium leading-relaxed">
+                        Become a verified MechMaster. Scale your workshop and access global production RFQs.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pb-8">
+                      <div className="space-y-4">
+                        <div className="flex gap-4 items-start bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100">
+                          <ShieldCheck className="w-6 h-6 text-indigo-600 shrink-0" />
+                          <div>
+                            <p className="text-sm font-bold text-slate-900 shadow-sm-indigo">Vetted Network</p>
+                            <p className="text-xs text-slate-600">Join elite manufacturing partners verified for precision and trust.</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-4 items-start bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">Exclusive Demand</p>
+                            <p className="text-xs text-slate-600">Access high-value projects directly from global innovators.</p>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
+                    <CardFooter>
                       <Button
-                        type="submit"
-                        className="w-full h-12 font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-full shadow-lg shadow-blue-900/10 transition-all font-sans"
-                        disabled={loading}
+                        onClick={() => router.push('/onboard')}
+                        className="w-full h-12 font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 group"
                       >
-                        {loading ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <UserPlus className="mr-2 h-4 w-4" />
-                        )}
-                        Register as Innovator
+                        Apply for MechMaster Role
+                        <UserPlus className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                       </Button>
                     </CardFooter>
-                  </form>
-                </Card>
+                  </Card>
+                ) : (
+                  <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold text-slate-900">
+                        Create Hub Account
+                      </CardTitle>
+                      <CardDescription className="text-slate-500 font-medium leading-relaxed">
+                        Join the managed manufacturing network.
+                      </CardDescription>
+                    </CardHeader>
+                    <form onSubmit={handleSignUp}>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="reg-name"
+                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
+                          >
+                            Full Name
+                          </Label>
+                          <Input
+                            id="reg-name"
+                            name="fullName"
+                            type="text"
+                            placeholder="John Doe"
+                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-slate-400 h-11 px-4 rounded-xl"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="reg-email"
+                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
+                          >
+                            Work Email
+                          </Label>
+                          <Input
+                            id="reg-email"
+                            name="email"
+                            type="email"
+                            placeholder="name@organization.com"
+                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-slate-400 h-11 px-4 rounded-xl"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="reg-password"
+                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
+                          >
+                            Create Password
+                          </Label>
+                          <Input
+                            id="reg-password"
+                            name="password"
+                            type="password"
+                            placeholder="Min. 8 characters"
+                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-slate-400 h-11 px-4 rounded-xl"
+                            minLength={8}
+                            required
+                          />
+                        </div>
+                        <div className="pt-2 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                          <ShieldCheck className="w-4 h-4 text-[#2F5FA7]" />
+                          All accounts subject to verification & NDA protocols.
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex flex-col gap-4">
+                        <Button
+                          type="submit"
+                          className="w-full h-12 font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-full shadow-lg shadow-blue-900/10 transition-all font-sans"
+                          disabled={loading}
+                        >
+                          {loading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserPlus className="mr-2 h-4 w-4" />
+                          )}
+                          Register as Innovator
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Card>
+                )}
               </TabsContent>
             </Tabs>
           </div>

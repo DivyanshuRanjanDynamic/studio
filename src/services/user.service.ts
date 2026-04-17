@@ -5,6 +5,8 @@ import { Result, ok, err } from '@/utils/result';
 import { AppError, validationError, internalError } from '@/utils/errors';
 import { logger } from '@/utils/logger';
 import { NotificationService } from '@/services/notification.service';
+import { isAdmin } from '@/lib/auth-utils';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 /**
  * UserService orchestrates business logic for users,
@@ -13,7 +15,10 @@ import { NotificationService } from '@/services/notification.service';
 export const UserService = {
   /**
    * Synchronizes an Auth user with their Firestore document.
-   * Typically called after email verification or registration.
+   *
+   * IMPORTANT: This is called on EVERY login via the session API.
+   * It must NOT overwrite role, status, or createdAt for existing users,
+   * EXCEPT to elevate whitelisted admins.
    */
   async syncUserFromAuth(params: {
     uid: string;
@@ -21,43 +26,100 @@ export const UserService = {
     fullName?: string;
     role?: UserRole;
     emailVerified?: boolean;
+    allowCreation?: boolean;
   }): Promise<Result<void, AppError>> {
-    const { uid, email, fullName, role = 'customer', emailVerified = false } = params;
+    const { uid, email, fullName, role: providedRole, emailVerified = false, allowCreation = false } = params;
 
     logger.info({ event: 'UserService: Syncing user from auth', uid, email });
 
+    // Identify the intended role based on configuration and provided hints
+    // The whitelist (isAdmin) is the absolute source of truth for admins.
+    const isWhitelistedAdmin = isAdmin(email);
+    const targetRole: UserRole = isWhitelistedAdmin ? 'admin' : (providedRole || 'customer');
+
+    // 1. Check if the user document already exists
+    const existingUser = await UserRepository.getUserById(uid);
+
+    if (existingUser.success) {
+      // ── Layer 1: Sync Existing User ───────────────────────────────
+      const updateData: Record<string, any> = {
+        id: uid,
+        emailVerified,
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      // Admin Elevation: Whitelist is the source of truth
+      if (isAdmin(email) && existingUser.data.role !== 'admin') {
+        logger.info({ event: 'UserService: Elevating user to admin', uid, email });
+        updateData.role = 'admin';
+
+        const { adminAuth } = getFirebaseAdmin();
+        if (adminAuth) {
+          await adminAuth.setCustomUserClaims(uid, { admin: true });
+        }
+      }
+
+      const saveResult = await UserRepository.saveUser(updateData as any);
+      return saveResult;
+    }
+
+    // ── Layer 2: Self-Registration Bypass Guard ───────────────────
+    // Unless the user is a whitelisted Admin OR we are explicitly 
+    // allowing creation (e.g. during manual registration verification),
+    // we forbid auto-creating a user document.
+    if (!isAdmin(email) && !allowCreation) {
+      logger.warn({ event: 'UserService: Blocked unauthorized auto-registration', email, uid });
+      throw new Error('Account not found. Please register manually via the signup form.');
+    }
+
+    // ── Layer 3: Provision New User ──────────────────────────────
+    const isActuallyAdmin = targetRole === 'admin';
+
+    logger.info({ event: 'UserService: Provisioning user', email, uid, role: targetRole });
+
+    const nowIso = new Date().toISOString();
     const userCreateData = {
       id: uid,
       email,
       fullName: fullName || email.split('@')[0],
-      role,
+      role: targetRole as UserRole,
       status: 'active' as UserStatus,
       emailVerified,
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      lastLoginAt: nowIso,
     };
-
-    // Validate initial creation data
-    const validation = userCreateSchema.safeParse(userCreateData);
-    if (!validation.success) {
-      return err(validationError('Invalid user data for synchronization'));
-    }
 
     const saveResult = await UserRepository.saveUser(userCreateData);
     if (!saveResult.success) return saveResult;
 
-    // Trigger post-registration logic (e.g., welcome email)
+    // Set claims ONLY for admins
+    if (isActuallyAdmin) {
+      const { adminAuth } = getFirebaseAdmin();
+      if (adminAuth) {
+        await adminAuth.setCustomUserClaims(uid, { admin: true });
+      }
+    }
+
+    // Trigger post-registration logic (welcome email)
     if (emailVerified) {
-      await NotificationService.sendAllAsync([
+      const notificationStack: any[] = [
         {
           type: 'welcome',
           customer: { email, name: userCreateData.fullName },
         },
-        {
+      ];
+
+      // Only notify other admins if a new ADMIN is provisioned via whitelist
+      if (isActuallyAdmin) {
+        notificationStack.push({
           type: 'admin_new_user',
           userName: userCreateData.fullName,
           userEmail: email,
-        },
-      ]);
+        });
+      }
+
+      NotificationService.sendAllAsync(notificationStack);
     }
 
     return ok(undefined);

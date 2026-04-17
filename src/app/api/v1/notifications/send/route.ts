@@ -8,7 +8,7 @@
  * consultation page) cannot call Resend directly from the browser.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { NotificationService } from '@/services/notification.service';
 import { logger } from '@/utils/logger';
@@ -44,7 +44,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    // 3. Parse payload
+    // 3. Verify & Authorize
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    const roleBlock = authorizeRoles(auth, 'admin', 'mechmaster');
+    if (roleBlock) return roleBlock;
+
+    // 4. Parse payload
     const body = await req.json();
     const events: NotificationEvent[] = Array.isArray(body.events) ? body.events : [body];
 

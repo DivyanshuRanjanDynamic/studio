@@ -148,8 +148,13 @@ export default function VendorPortal() {
   const { data: myQuotes } = useCollection(myQuotesQuery);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
+    try {
+      await signOut(auth);
+      await fetch('/api/v1/auth/session', { method: 'DELETE' });
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const handleDownload = async (fileUrl: string, fileName: string) => {

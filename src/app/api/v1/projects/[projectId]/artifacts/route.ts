@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authenticateRequest, forbiddenResponse, unauthorizedResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles, unauthorizedResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { ProjectRepository } from '@/repositories/project.repository';
 import { logger } from '@/utils/logger';
@@ -23,6 +23,9 @@ export async function POST(
     const auth = await authenticateRequest(req);
     if (!auth.success) return unauthorizedResponse();
 
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
     const { projectId } = await params;
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
@@ -31,9 +34,7 @@ export async function POST(
     if (!projectResult.success) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     const project = projectResult.data;
 
-    const userDoc = await adminFirestore.collection('users').doc(auth.uid).get();
-    const userData = userDoc.data();
-    const isAdmin = userData?.role === 'admin';
+    const isAdmin = auth.role === 'admin';
     const isAssignedVendor = project.assignedVendorId === auth.uid;
 
     if (!isAdmin && !isAssignedVendor) {
@@ -107,8 +108,7 @@ export async function GET(
     const project = projectResult.data;
 
     // Check ownership/admin/assigned vendor
-    const { adminFirestore } = getFirebaseAdmin();
-    const isAdmin = (await adminFirestore?.collection('users').doc(auth.uid).get())?.data()?.role === 'admin';
+    const isAdmin = auth.role === 'admin';
     const isOwner = project.userId === auth.uid;
     const isVendor = project.assignedVendorId === auth.uid;
 

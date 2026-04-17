@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid';
 import { s3Client } from '@/lib/s3-client';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequest, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 
 // ═══════════════════════════════════════════════════
 // POST /api/v1/files/upload-intent — Real S3 Presigned URL
@@ -37,6 +37,12 @@ export async function POST(request: NextRequest) {
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const verifyBlock = checkVerification(auth);
+    if (verifyBlock) return verifyBlock;
+
+    // Any verified user (customer, vendor, admin) can trigger upload intent for now
+    // as it's needed for designs, artifacts, etc.
 
     const { fileName, fileSize, contentType } = await request.json();
 

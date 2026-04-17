@@ -22,12 +22,10 @@ export function checkIsAdmin(claims: any): boolean {
  *
  * NEVER use this to gate UI access or API authorization.
  */
-export const ADMIN_EMAILS = [
-  'divyanshu.work914214@gmail.com',
-  'outreach@mechhub.in',
-  'admin@mechhub.in',
-  'ap.raamachandiran@gmail.com'
-];
+export const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 /** @deprecated See ADMIN_EMAILS deprecation notice above. */
 export function isAdmin(email: string | null | undefined): boolean {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function GET(req: NextRequest) {
@@ -8,14 +8,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
+  const roleBlock = authorizeRoles(auth, 'admin');
+  if (roleBlock) return roleBlock;
+
   const { adminFirestore } = getFirebaseAdmin();
   if (!adminFirestore) {
     return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
-  }
-
-  const requester = await adminFirestore.collection('users').doc(auth.uid).get();
-  if (requester.data()?.role !== 'admin') {
-    return forbiddenResponse('Admin access required');
   }
 
   const statusParam = req.nextUrl.searchParams.get('status');

@@ -3,6 +3,8 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { getClientIdentifier } from '@/lib/auth-safety';
+import { UserService } from '@/services/user.service';
+import { UserRole } from '@/models/user.model';
 
 /**
  * SESSION MANAGEMENT API
@@ -15,7 +17,7 @@ export async function POST(req: Request) {
   try {
     const ip = getClientIdentifier(req.headers);
     const limiter = await rateLimit(`auth-session:${ip}`, 5, 60000); // 5 attempts per minute
-    
+
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);
     }
@@ -57,11 +59,47 @@ export async function POST(req: Request) {
     // Set session expiration to 5 days.
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
 
-    // Create the session cookie. This will also verify the ID token in the process.
-    // The library will throw an error if the ID token is invalid, expired, or not signed by the relevant project.
+    // Create the session cookie. 
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
-    const response = NextResponse.json({ status: 'success' }, { status: 200 });
+    // ── Profile Sync & Data Resolution ───────────────────────────────
+    // Ensure the user document exists in Firestore and retrieve the role/status.
+    try {
+      await UserService.syncUserFromAuth({
+        uid: decodedToken.uid,
+        email: decodedToken.email || '',
+        fullName: (decodedToken.name as string) || (decodedToken.email?.split('@')[0] as string),
+        emailVerified: decodedToken.email_verified || false,
+      });
+    } catch (syncError: any) {
+      logger.warn({
+        event: 'session_profile_sync_failed',
+        uid: decodedToken.uid,
+        error: syncError.message
+      });
+
+      return NextResponse.json({
+        status: 'error',
+        message: syncError.message || 'Profile synchronization failed'
+      }, { status: 403 });
+    }
+
+    // Fetch the actual role/status from Firestore (the source of truth)
+    let userRole: UserRole = 'customer';
+    let userStatus = 'active';
+
+    const userResult = await UserService.getProfile(decodedToken.uid);
+    if (userResult.success) {
+      userRole = userResult.data.role;
+      userStatus = userResult.data.status;
+    }
+
+    const response = NextResponse.json({
+      status: 'success',
+      role: userRole,
+      accountStatus: userStatus,
+      emailVerified: decodedToken.email_verified || false
+    }, { status: 200 });
 
     // Set cookie parameters
     response.cookies.set('session', sessionCookie, {
@@ -69,7 +107,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/',
+      path: '/'
     });
 
     return response;
@@ -88,7 +126,7 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
   const response = NextResponse.json({ status: 'logged-out' }, { status: 200 });
-  
+
   // Clear the session cookie
   response.cookies.set('session', '', {
     maxAge: 0,

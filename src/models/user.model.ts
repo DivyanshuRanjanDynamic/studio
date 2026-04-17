@@ -1,7 +1,7 @@
 /**
  * User roles in the MechHub ecosystem.
  */
-export type UserRole = 'customer' | 'vendor' | 'admin' | 'mechmaster';
+export type UserRole = 'customer' | 'vendor' | 'vendor_pending' | 'admin' | 'mechmaster';
 
 /**
  * User status lifecycle.
@@ -27,6 +27,7 @@ export interface User {
   readonly updatedAt: string;
   readonly lastLoginAt?: string;
   readonly emailVerified: boolean;
+  readonly onboarded?: boolean;
 }
 
 /**

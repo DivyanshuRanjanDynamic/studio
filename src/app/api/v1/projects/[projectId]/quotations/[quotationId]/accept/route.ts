@@ -17,9 +17,7 @@ export async function POST(
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
 
-    const userDoc = await adminFirestore.collection('users').doc(auth.uid).get();
-    const userData = userDoc.data();
-    const isAdmin = userData?.role === 'admin';
+    const isAdmin = auth.role === 'admin';
 
     // 1. Transaction context
     const txResult = await adminFirestore.runTransaction(async (tx: any) => {
