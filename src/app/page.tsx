@@ -151,6 +151,19 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
                   </Button>
                 </Link>
+                <Link
+                  href="/onboard"
+                  className="w-full md:w-auto"
+                >
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full md:w-auto h-16 md:h-16 px-10 md:px-12 text-base md:text-lg font-bold bg-white hover:bg-white/90 text-[#2F5FA7] rounded-xl md:rounded-full shadow-2xl hover:-translate-y-1 transition-all duration-300 group"
+                  >
+                    Become a MechMaster
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className="lg:col-span-1" /> {/* Spacer */}

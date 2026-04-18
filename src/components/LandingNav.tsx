@@ -270,18 +270,6 @@ export function LandingNav() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Link
-                      href="/onboard"
-                      className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#1a5fad] border border-[#1a5fad]/30 rounded-full bg-white hover:bg-blue-50 transition-all duration-200"
-                    >
-                      Onboard as Vendor
-                    </Link>
-                    <Link
-                      href="/login"
-                      className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#64748B] hover:text-[#2F5FA7] rounded-full hover:bg-slate-50 transition-all duration-200"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
                       href="/login"
                       className="relative inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-6 sm:py-2 text-[10px] sm:text-sm font-bold text-white rounded-full bg-[#2F5FA7] hover:bg-[#1E3A66] shadow-md hover:shadow-lg transition-all duration-300 mr-2 sm:mr-0"
                     >
@@ -337,20 +325,6 @@ export function LandingNav() {
             <div className="border-t border-slate-100 mt-4 pt-3 flex flex-col gap-2">
               {!user ? (
                 <>
-                  <Link
-                    href="/onboard"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-center border border-[#1a5fad]/25 text-[#1a5fad] font-bold rounded-2xl h-12 text-sm bg-blue-50/50 hover:bg-blue-50 transition-colors"
-                  >
-                    Onboard as Vendor
-                  </Link>
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-start px-5 font-bold text-[#64748B] text-sm h-12 rounded-2xl hover:bg-slate-50 transition-colors"
-                  >
-                    Sign In
-                  </Link>
                   <Link
                     href="/login"
                     onClick={() => setMobileOpen(false)}

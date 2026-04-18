@@ -616,21 +616,21 @@ function LoginPageContent() {
             </div>
 
             <Tabs
-              defaultValue={searchParams.get('tab') === 'register' ? 'register' : 'login'}
+              defaultValue={searchParams.get('tab') === 'login' ? 'login' : 'register'}
               className="w-full"
             >
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100 border border-slate-200 p-1 rounded-2xl">
-                <TabsTrigger
-                  value="login"
-                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500 uppercase tracking-widest text-[10px]"
-                >
-                  Sign In
-                </TabsTrigger>
                 <TabsTrigger
                   value="register"
                   className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500 uppercase tracking-widest text-[10px]"
                 >
                   {loginRole === 'vendor' ? 'Join Portal' : 'Register'}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="login"
+                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-slate-500 uppercase tracking-widest text-[10px]"
+                >
+                  Sign In
                 </TabsTrigger>
               </TabsList>
 
