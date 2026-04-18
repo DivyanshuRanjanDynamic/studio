@@ -160,10 +160,17 @@ export default function ShopPage() {
 
   useEffect(() => {
     const categoryFromParams = searchParams.get('category');
+    const queryFromParams = searchParams.get('q');
+
     if (categoryFromParams && CATEGORIES.some((category) => category.id === categoryFromParams)) {
       setSelectedCategory(categoryFromParams);
     } else {
       setSelectedCategory('all');
+    }
+
+    if (queryFromParams) {
+      setSearchQuery(queryFromParams);
+      setDebouncedSearchQuery(queryFromParams);
     }
   }, [searchParams]);
 
@@ -385,11 +392,10 @@ export default function ShopPage() {
                       key={`${item.id}-dot`}
                       onClick={() => heroCarouselApi?.scrollTo(index)}
                       aria-label={`Go to product ${index + 1}`}
-                      className={`h-2.5 rounded-full transition-all ${
-                        heroCarouselIndex === index
-                          ? 'w-8 bg-white'
-                          : 'w-2.5 bg-blue-100/45 hover:bg-blue-100/70'
-                      }`}
+                      className={`h-2.5 rounded-full transition-all ${heroCarouselIndex === index
+                        ? 'w-8 bg-white'
+                        : 'w-2.5 bg-blue-100/45 hover:bg-blue-100/70'
+                        }`}
                     />
                   ))}
                 </div>
@@ -475,11 +481,10 @@ export default function ShopPage() {
                         <button
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
-                          className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${
-                            selectedCategory === category.id
-                              ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
-                          }`}
+                          className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${selectedCategory === category.id
+                            ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
+                            }`}
                         >
                           {category.label}
                         </button>
@@ -496,11 +501,10 @@ export default function ShopPage() {
                         <button
                           key={band.id}
                           onClick={() => setPriceBand(band.id)}
-                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                            priceBand === band.id
-                              ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                              : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                          }`}
+                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${priceBand === band.id
+                            ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
+                            : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
                         >
                           {band.label}
                         </button>
@@ -517,11 +521,10 @@ export default function ShopPage() {
                         <button
                           key={stock.id}
                           onClick={() => setStockFilter(stock.id)}
-                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                            stockFilter === stock.id
-                              ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                              : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                          }`}
+                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${stockFilter === stock.id
+                            ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
+                            : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
                         >
                           {stock.label}
                         </button>
@@ -577,11 +580,10 @@ export default function ShopPage() {
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition ${
-                      selectedCategory === category.id
-                        ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white shadow-lg shadow-blue-900/15'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
-                    }`}
+                    className={`rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition ${selectedCategory === category.id
+                      ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white shadow-lg shadow-blue-900/15'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
+                      }`}
                   >
                     {category.label}
                   </button>
@@ -617,11 +619,10 @@ export default function ShopPage() {
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
-                        selectedCategory === category.id
-                          ? 'border-[#2F5FA7] bg-blue-50'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
+                      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${selectedCategory === category.id
+                        ? 'border-[#2F5FA7] bg-blue-50'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
                     >
                       <span className="text-sm font-semibold text-slate-800">{category.label}</span>
                       <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500 shadow-sm">
@@ -641,11 +642,10 @@ export default function ShopPage() {
                     <button
                       key={band.id}
                       onClick={() => setPriceBand(band.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                        priceBand === band.id
-                          ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                          : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
+                      className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${priceBand === band.id
+                        ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
+                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
                     >
                       {band.label}
                     </button>
@@ -662,11 +662,10 @@ export default function ShopPage() {
                     <button
                       key={stock.id}
                       onClick={() => setStockFilter(stock.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                        stockFilter === stock.id
-                          ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                          : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
+                      className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${stockFilter === stock.id
+                        ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
+                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
                     >
                       {stock.label}
                     </button>

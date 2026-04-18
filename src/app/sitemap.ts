@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next';
 const BASE_URL = 'https://www.mechhub.in';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
+  const now = new Date().toISOString();
 
   return [
     {

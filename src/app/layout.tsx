@@ -9,8 +9,12 @@ import { CartProvider } from '@/context/CartContext';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.mechhub.in'),
   title: 'MechHub – From CAD to Reality Faster',
   description: 'A Managed Marketplace for Custom Manufacturing Needs.',
+  alternates: {
+    canonical: '/',
+  },
   icons: {
     icon: '/mechhub.png',
     shortcut: '/mechhub.png',
@@ -47,6 +51,47 @@ export default function RootLayout({
           </CartProvider>
         </FirebaseClientProvider>
         <Analytics />
+        <Script
+          id="json-ld-org"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'MechHub',
+              url: 'https://www.mechhub.in',
+              logo: 'https://www.mechhub.in/mechhub.png',
+              sameAs: [
+                'https://www.instagram.com/mechhub.in',
+                'https://www.linkedin.com/company/mechhub',
+              ],
+              contactPoint: {
+                '@type': 'ContactPoint',
+                contactType: 'customer service',
+                areaServed: 'IN',
+                availableLanguage: 'en',
+              },
+            }),
+          }}
+        />
+        <Script
+          id="json-ld-website"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              url: 'https://www.mechhub.in',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: 'https://www.mechhub.in/shop?q={search_term_string}',
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
       </body>
     </html>
