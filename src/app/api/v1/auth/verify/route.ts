@@ -55,23 +55,16 @@ export async function GET(req: Request) {
     await adminAuth.updateUser(uid, { emailVerified: true });
 
     // 3. Sync Profile & Roles via UserService
-    const userRole = isAdmin(email) ? 'admin' : 'customer';
-
+    // This now handles admin elevation and claims internally.
     const syncResult = await UserService.syncUserFromAuth({
       uid,
       email,
       fullName: name,
-      role: userRole,
       emailVerified: true,
       allowCreation: true,
     });
 
     if (!syncResult.success) throw new Error(syncResult.error.message);
-
-    // 4. Set Custom Claims for Admins
-    if (userRole === 'admin') {
-      await adminAuth.setCustomUserClaims(uid, { admin: true });
-    }
 
     // 5. Cleanup Token
     await tokenRef.update({
@@ -79,7 +72,7 @@ export async function GET(req: Request) {
       verifiedAt: new Date().toISOString(),
     });
 
-    return NextResponse.redirect(`${APP_URL}/dashboard?verified=true`);
+    return NextResponse.redirect(`${APP_URL}/login?redirect=/dashboard&verified=true`);
 
   } catch (error: any) {
     logger.error({ event: 'API: Auth verification failed', error: error.message, token });

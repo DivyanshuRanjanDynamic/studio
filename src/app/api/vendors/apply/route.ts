@@ -59,13 +59,16 @@ export async function POST(req: Request) {
     const existingApplication = await adminFirestore
       .collection('vendorApplications')
       .where('email', '==', body.email)
-      .limit(1)
       .get();
 
-    if (!existingApplication.empty) {
+    const hasActiveApplication = existingApplication.docs.some((doc: any) =>
+      ['pending', 'approved'].includes(doc.data().status)
+    );
+
+    if (hasActiveApplication) {
       return NextResponse.json(
         {
-          error: 'An application with this email already exists.',
+          error: 'An active application with this email already exists.',
         },
         { status: 409 }
       );

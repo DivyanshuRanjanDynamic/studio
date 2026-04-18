@@ -26,10 +26,12 @@ import {
   updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
+  User,
 } from 'firebase/auth';
 import { resolveUserFriendlyMessage } from '@/lib/error-mapping';
 import { getSafeRedirectPath } from '@/lib/auth-safety';
 import { isVendorRole } from '@/lib/roles';
+import { logger } from '@/utils/logger';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" {...props}>
@@ -126,19 +128,14 @@ function LoginPageContent() {
    * CREATE SESSION COOKE
    * Exchanges Firebase ID Token for a server-side HttpOnly cookie.
    */
-  const createSession = async (firebaseUser: any) => {
+  const createSession = async (user: User, expectedRole: string) => {
     try {
-      const idToken = await firebaseUser.getIdToken(true);
+      const idToken = await user.getIdToken();
       const res = await fetch('/api/v1/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, expectedRole }),
       });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || 'Failed to establish secure session.');
-      }
       return await res.json();
     } catch (error: any) {
       console.error('Session creation failed:', error);
@@ -154,39 +151,46 @@ function LoginPageContent() {
   useEffect(() => {
     async function syncUserAndRedirect() {
       if (user && db) {
-        // 1. Enforce email verification — reload to get latest status from server
-        await user.reload();
-        if (!user.emailVerified && user.providerData?.[0]?.providerId === 'password') {
-          setVerificationState({
-            email: user.email || '',
-            uid: user.uid,
-            name: user.displayName || 'Innovator',
-          });
-          // Note: We no longer signOut(auth) here. 
-          // This keeps auth.currentUser available for the 'Resend' functionality.
-          return;
-        }
-
         setLoading(true);
         try {
-          // 2. Establish Server Session
-          const sessionData = await createSession(user);
+          // 2. Establish Server Session with expected role
+          const sessionData = await createSession(user, loginRole);
+
+          // Handle Session Failures (e.g., Email Verification Required or Role Mismatch)
           if (!sessionData || sessionData.status !== 'success') {
+            const isUnverifiedError = sessionData?.error?.includes('Email verification required') ||
+              sessionData?.message?.includes('Email verification required');
+
+            if (isUnverifiedError && user.providerData?.[0]?.providerId === 'password') {
+              setVerificationState({
+                email: user.email || '',
+                uid: user.uid,
+                name: user.displayName || 'Innovator',
+              });
+              setLoading(false);
+              return;
+            }
+
+            const msg = sessionData?.message || '';
+            const isRegistrationRequired = msg.includes('not registered yet');
+            const isMismatch = msg.includes('already registered');
+
             toast({
-              title: sessionData?.message === 'Account not found. Please register manually via the signup form.'
+              title: isRegistrationRequired
                 ? 'Registration Required'
-                : 'Authentication Failed',
-              description: sessionData?.message || 'We could not establish your secure session. Please try again.',
+                : isMismatch
+                  ? 'Registration Mismatch'
+                  : 'Authentication Failed',
+              description: msg || 'We could not establish your secure session. Please try again.',
               variant: 'destructive',
             });
+
             await signOut(auth);
             setLoading(false);
             return;
           }
 
-          // 3. Flow Normalization (Layer 3)
-          // Profile is now synced server-side in /api/v1/auth/session.
-          // We use the role and status returned from there directly.
+          // 3. Flow Normalization
           const { role, accountStatus } = sessionData;
 
           if (accountStatus === 'suspended') {
@@ -200,9 +204,7 @@ function LoginPageContent() {
             return;
           }
 
-          // 4. Role-Toggle Validation (Layer 4)
-          // Ensure Customers use the Customer toggle and Vendors use the Vendor toggle.
-          // ADMINS are allowed via either toggle.
+          // 4. Role-Toggle Validation
           if (role !== 'admin') {
             if (loginRole === 'customer' && (isVendorRole(role) || role === 'vendor_pending')) {
               toast({
@@ -233,10 +235,6 @@ function LoginPageContent() {
           const redirectPath = getSafeRedirectPath(searchParams.get('redirect'));
 
           if (role === 'vendor_pending') {
-            toast({
-              title: 'Application Under Review',
-              description: 'Our engineers are currently reviewing your workshop details. We will notify you via email once you are verified.',
-            });
             setIsPendingReview({
               email: user.email || '',
               name: user.displayName || 'Partner'
@@ -272,19 +270,10 @@ function LoginPageContent() {
 
     try {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
-      // CRITICAL: Reload user to get the latest emailVerified status from the server.
-      // The Admin SDK may have verified the email server-side, but the client token
-      // still caches the old `emailVerified: false` until explicitly refreshed.
-      await userCred.user.reload();
-      if (!userCred.user.emailVerified) {
-        setVerificationState({
-          email: userCred.user.email || '',
-          uid: userCred.user.uid,
-          name: userCred.user.displayName || 'Innovator',
-        });
-        setLoading(false);
-        return;
-      }
+      // Handle the Auth success. 
+      // The actual redirection and session sync is handled by the useEffect(syncUserAndRedirect) 
+      // watcher which responds to the changes in the 'user' object from useAuthState.
+      setLoading(false);
     } catch (error: any) {
       setLoading(false);
       const msg = resolveUserFriendlyMessage(error);
@@ -334,6 +323,19 @@ function LoginPageContent() {
       await updateProfile(userCred.user, { displayName: trimmedName });
 
       const idToken = await userCred.user.getIdToken();
+
+      // 1. Proactively provision user document in Firestore
+      // This ensures the record exists immediately, even before email verification.
+      await fetch('/api/v1/user/provision', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ email, fullName: trimmedName, role: loginRole }),
+      });
+
+      // 2. Send verification email
       await fetch('/api/v1/auth/send-verification', {
         method: 'POST',
         headers: {
@@ -497,46 +499,78 @@ function LoginPageContent() {
   if (isPendingReview) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-24">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
         <LandingNav />
         <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-          <Card className="w-full max-w-md bg-white border-slate-100 shadow-xl relative overflow-hidden text-center p-8 rounded-[2rem]">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-amber-500" />
-            <div className="mx-auto w-16 h-16 bg-amber-50 border border-amber-100 flex items-center justify-center rounded-full mb-6 relative">
-              <Clock className="w-8 h-8 text-amber-500 relative z-10" />
+          <Card className="w-full max-w-md bg-white/70 backdrop-blur-xl border-white/40 shadow-2xl relative overflow-hidden text-center p-10 rounded-[2.5rem]">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 to-amber-600" />
+
+            <div className="mx-auto w-20 h-20 bg-amber-50/50 border border-amber-100 flex items-center justify-center rounded-3xl mb-8 relative transform hover:rotate-6 transition-transform">
+              <Clock className="w-10 h-10 text-amber-500 relative z-10 drop-shadow-sm" />
+              <div className="absolute inset-0 bg-amber-200/20 blur-xl rounded-full" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Application Pending</h2>
-            <div className="space-y-4 text-left bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
-              <div className="flex gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Application Received</p>
-                  <p className="text-xs text-slate-500">Your details have reached our onboarding team.</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Under Review</p>
-                  <p className="text-xs text-slate-500">We are currently verifying your workshop capabilities.</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 mb-8 leading-relaxed">
-              Hello <strong className="text-slate-900">{isPendingReview.name}</strong>, your application for
-              <strong className="text-slate-900 ml-1">{isPendingReview.email}</strong> is being processed.
-              We'll email you as soon as your MechMaster account is active.
+
+            <h2 className="text-3xl font-black text-[#1E3A66] mb-3 tracking-tight">Review in Progress</h2>
+
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed px-2">
+              Our engineering team is currently verifying <strong className="text-[#2F5FA7]">{isPendingReview.name}&apos;s</strong> manufacturing capabilities. We maintain high standards to ensure quality across the network.
             </p>
+
+            <div className="space-y-4 text-left border-y border-slate-100 py-8 mb-8">
+              <div className="flex gap-4 group">
+                <div className="flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center relative z-10">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="w-0.5 h-10 bg-emerald-100 mt-1" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    Profile Received
+                    <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-black uppercase tracking-widest">Done</span>
+                  </p>
+                  <p className="text-xs text-slate-500 font-medium">Your application for {isPendingReview.email} is safe with us.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 border-2 border-amber-200 flex items-center justify-center relative z-10 animate-pulse">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    Engineering Audit
+                    <span className="text-[10px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full font-black uppercase tracking-widest animate-pulse">Live</span>
+                  </p>
+                  <p className="text-xs text-slate-500 font-medium">Verifying workshop precision and bandwidth.</p>
+                </div>
+              </div>
+            </div>
+
             <Button
               onClick={async () => {
                 await signOut(auth);
                 await fetch('/api/v1/auth/session', { method: 'DELETE' });
                 setIsPendingReview(null);
               }}
-              className="w-full h-12 font-bold variant-outline border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full transition-all"
+              variant="outline"
+              className="w-full h-12 font-black uppercase tracking-[0.15em] text-[11px] border-slate-200 hover:bg-slate-50 text-slate-500 rounded-full transition-all active:scale-[0.98]"
             >
-              Sign Out
+              Securely Logout & Exit
             </Button>
+
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <div className="flex -space-x-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 overflow-hidden">
+                    <div className="w-full h-full bg-slate-200" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Joined by 12 partners today</p>
+            </div>
           </Card>
         </div>
       </div>
@@ -570,14 +604,14 @@ function LoginPageContent() {
                 className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all relative z-10 ${loginRole === 'customer' ? 'text-[#2F5FA7] bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 <UserIcon className="w-3.5 h-3.5" />
-                Customer
+                Customers
               </button>
               <button
                 onClick={() => setLoginRole('vendor')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all relative z-10 ${loginRole === 'vendor' ? 'text-[#2F5FA7] bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 <Factory className="w-3.5 h-3.5" />
-                Vendor
+                Vendors
               </button>
             </div>
 
@@ -675,7 +709,7 @@ function LoginPageContent() {
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
                     <CardHeader>
                       <CardTitle className="text-2xl font-bold text-slate-900">
-                        {loginRole === 'vendor' ? 'Vendor Portal' : 'Customer Hub'}
+                        {loginRole === 'vendor' ? 'Vendor Portal' : 'Customer Portal'}
                       </CardTitle>
                       <CardDescription className="text-slate-500 font-medium leading-relaxed">
                         {loginRole === 'vendor'

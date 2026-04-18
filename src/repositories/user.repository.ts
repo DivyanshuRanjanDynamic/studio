@@ -17,20 +17,48 @@ export const UserRepository = {
   async getUserById(id: string): Promise<Result<User, AppError>> {
     try {
       const { adminFirestore } = getFirebaseAdmin();
-      
+
       if (adminFirestore) {
         const userDoc = await adminFirestore.collection(COLLECTION_NAME).doc(id).get();
         if (!userDoc.exists) return err(notFoundError('User', id));
         return ok({ id: userDoc.id, ...userDoc.data() } as User);
-      } else {
-        const { getDoc, doc } = await import('firebase/firestore');
-        const userSnap = await getDoc(doc(db, COLLECTION_NAME, id));
-        if (!userSnap.exists()) return err(notFoundError('User', id));
-        return ok({ id: userSnap.id, ...userSnap.data() } as User);
       }
+
+      // Client-side fallback (only used in browser environments if configured)
+      const { getDoc, doc } = await import('firebase/firestore');
+      const userSnap = await getDoc(doc(db, COLLECTION_NAME, id));
+      if (!userSnap.exists()) return err(notFoundError('User', id));
+      return ok({ id: userSnap.id, ...userSnap.data() } as User);
     } catch (e: any) {
       logger.error({ event: 'UserRepository: Failed to fetch user', error: e.message, id });
       return err(internalError('Database error while fetching user'));
+    }
+  },
+
+  /**
+   * Retrieves a user by their email address.
+   */
+  async getUserByEmail(email: string): Promise<Result<User, AppError>> {
+    try {
+      const { adminFirestore } = getFirebaseAdmin();
+
+      if (adminFirestore) {
+        const querySnapshot = await adminFirestore.collection(COLLECTION_NAME).where('email', '==', email).limit(1).get();
+        if (querySnapshot.empty) return err(notFoundError('User with email', email));
+        const userDoc = querySnapshot.docs[0];
+        return ok({ id: userDoc.id, ...userDoc.data() } as User);
+      }
+
+      const { query, collection, where, getDocs, limit } = await import('firebase/firestore');
+      const q = query(collection(db, COLLECTION_NAME), where('email', '==', email), limit(1));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) return err(notFoundError('User with email', email));
+      const userDoc = snapshot.docs[0];
+      return ok({ id: userDoc.id, ...userDoc.data() } as User);
+    } catch (e: any) {
+      logger.error({ event: 'UserRepository: Failed to fetch user by email', error: e.message, email });
+      return err(internalError('Database error while fetching user by email'));
     }
   },
 
@@ -49,11 +77,18 @@ export const UserRepository = {
       if (adminFirestore) {
         await adminFirestore.collection(COLLECTION_NAME).doc(user.id).set(userData, { merge: true });
         return ok(undefined);
-      } else {
-        const { setDoc, doc } = await import('firebase/firestore');
-        await setDoc(doc(db, COLLECTION_NAME, user.id), userData, { merge: true });
-        return ok(undefined);
       }
+
+      // If we are on the server but adminFirestore is null, this is a CRITICAL configuration error.
+      if (typeof window === 'undefined') {
+        logger.error({ event: 'UserRepository: Admin Firestore unavailable on server', id: user.id });
+        return err(internalError('Service configuration error (Admin Firestore)'));
+      }
+
+      // Browser fallback (standard client-side update)
+      const { setDoc, doc } = await import('firebase/firestore');
+      await setDoc(doc(db, COLLECTION_NAME, user.id), userData, { merge: true });
+      return ok(undefined);
     } catch (e: any) {
       logger.error({ event: 'UserRepository: Failed to save user', error: e.message, id: user.id });
       return err(internalError('Database error while saving user'));
@@ -66,7 +101,7 @@ export const UserRepository = {
   async getUsersByRole(role: UserRole): Promise<Result<User[], AppError>> {
     try {
       const { adminFirestore } = getFirebaseAdmin();
-      
+
       if (adminFirestore) {
         const querySnapshot = await adminFirestore.collection(COLLECTION_NAME).where('role', '==', role).get();
         const users: User[] = [];

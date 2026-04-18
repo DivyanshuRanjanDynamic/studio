@@ -43,13 +43,20 @@ export async function PATCH(
     reapplyUrl: `${APP_URL}/onboard`,
   });
 
-  // 2. Perform cleanup in Firestore and Auth
+  // 2. Perform cleanup and status update
   const batch = adminFirestore.batch();
 
-  // Delete the application
-  batch.delete(appRef);
+  const nowIso = new Date().toISOString();
 
-  // If a user was created, remove them entirely
+  // Archive the application as rejected (do not delete)
+  batch.update(appRef, {
+    status: 'rejected',
+    reviewedAt: nowIso,
+    reviewedBy: auth.uid,
+    updatedAt: nowIso,
+  });
+
+  // If a user was created, remove them entirely to clear credentials
   if (appData.userId) {
     const { adminAuth } = getFirebaseAdmin();
     // Delete from Firestore users collection
@@ -61,12 +68,11 @@ export async function PATCH(
         await adminAuth.deleteUser(appData.userId);
       } catch (authError: any) {
         console.error(`[Reject] Failed to delete Auth user ${appData.userId}:`, authError.message);
-        // We continue anyway to ensure the DB is cleaned up even if Auth deletion fails (e.g. already gone)
       }
     }
   }
 
   await batch.commit();
 
-  return NextResponse.json({ success: true, status: 'deleted' });
+  return NextResponse.json({ success: true, status: 'rejected' });
 }

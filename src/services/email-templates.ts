@@ -778,10 +778,10 @@ export function vendorApprovedEmail(vendorName: string, loginUrl: string): strin
   return baseLayout(
     `
     <h2 class="title">Welcome to MechHub — You're now a MechMaster!</h2>
-    <p class="paragraph">Hi ${vendorName}, congratulations and welcome aboard.</p>
-    <p class="paragraph">Your vendor onboarding has been approved. You can now access MechMaster privileges to list manufacturing capabilities and fulfill orders on MechHub.</p>
+    <p class="paragraph">Hi ${vendorName}, congratulations! Your vendor onboarding application has been verified and approved.</p>
+    <p class="paragraph">You are now a verified MechMaster partner. You can now login to your portal using your credentials to manage orders, submit quotes, and update your shop profile.</p>
     <div class="cta-wrap">
-      <a href="${loginUrl}" class="cta">Login to MechHub</a>
+      <a href="${loginUrl}" class="cta">Login with Credentials</a>
     </div>
     <p class="meta">Thank you for partnering with MechHub. We look forward to building with you.</p>
     `,
@@ -798,8 +798,8 @@ export function vendorRejectedEmail(vendorName: string, reapplyUrl: string): str
   return baseLayout(
     `
     <h2 class="title">Your MechHub vendor application update</h2>
-    <p class="paragraph">Hi ${vendorName}, thank you for applying to join MechHub.</p>
-    <p class="paragraph">At this time, your application was not approved. We encourage you to reapply after strengthening your profile and capability details.</p>
+    <p class="paragraph">Hi ${vendorName}, thank you for your interest in joining MechHub.</p>
+    <p class="paragraph">We have reviewed your application, and at this time, you are not onboarded to the MechMaster partner network. We encourage you to improve your workshop details and workshop profile for a future application.</p>
     <div class="cta-wrap">
       <a href="${reapplyUrl}" class="cta-outline">Reapply as Vendor</a>
     </div>

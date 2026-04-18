@@ -372,21 +372,31 @@ function UserDashboardContent() {
 
   useEffect(() => {
     // Only onboard customers. Admins/Vendors should skip this automated flow.
-    if (!isProfileLoading && user && profile && profile.role === 'customer') {
-      const hasEssentialDetails =
-        profile.fullName && profile.phone && profile.teamName && profile.designation;
+    // If the profile is loading, we wait. If it's loaded as null, it means the user 
+    // is definitely not an admin (caught by layout/claims) but missing a doc.
+    if (!isProfileLoading && user && !isAdminConfirmed) {
+      const isCustomer = !profile || profile.role === 'customer';
+      
+      if (isCustomer) {
+        const hasEssentialDetails =
+          Boolean(profile?.fullName?.trim()) && 
+          Boolean(profile?.phone?.trim()) && 
+          Boolean(profile?.teamName?.trim()) && 
+          Boolean(profile?.designation?.trim());
 
-      if (!profile.onboarded && !hasEssentialDetails) {
-        setIsOnboardingOpen(true);
-      } else if (!profile.onboarded && hasEssentialDetails && db) {
-        // If they have all details but just missing the flag, update it silently
-        updateDocumentNonBlocking(doc(db, 'users', user.uid), {
-          onboarded: true,
-          updatedAt: new Date().toISOString(),
-        });
+        // Show onboarding if doc is missing, explicitly not onboarded, or details are incomplete
+        if (!profile || !profile.onboarded || !hasEssentialDetails) {
+          setIsOnboardingOpen(true);
+        } else if (profile?.onboarded === false && hasEssentialDetails && db) {
+          // If they have all details but just missing the flag, update it silently
+          updateDocumentNonBlocking(doc(db, 'users', user.uid), {
+            onboarded: true,
+            updatedAt: new Date().toISOString(),
+          });
+        }
       }
     }
-  }, [isProfileLoading, profile, user, db]);
+  }, [isProfileLoading, profile, user, db, isAdminConfirmed]);
 
   const selectedOrder = sortedRfqs?.find((r) => r.id === selectedOrderId);
   const selectedOrderParts = allParts?.filter((p) => p.projectId === selectedOrderId) || [];
@@ -420,7 +430,7 @@ function UserDashboardContent() {
   const handleOnboardingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
-    
+
     setIsSubmittingProfile(true);
     const formData = new FormData(e.currentTarget);
     const profileData = {
@@ -447,11 +457,11 @@ function UserDashboardContent() {
       }
 
       setIsOnboardingOpen(false);
-      toast({ 
-        title: 'Profile Completed!', 
-        description: `Your manufacturing hub is ready, ${profileData.fullName}.` 
+      toast({
+        title: 'Profile Completed!',
+        description: `Your manufacturing hub is ready, ${profileData.fullName}.`
       });
-      
+
       // Force refresh to sync with updated server-side data
       router.refresh();
     } catch (err: any) {
@@ -1651,66 +1661,66 @@ function UserDashboardContent() {
                         })()}
                       </div>
                     )}
-                    
+
                     {/* ── ARTIFACTS / EVIDENCE ── */}
                     {selectedOrder.artifacts && selectedOrder.artifacts.length > 0 && (
-                        <div className="pt-6 mt-6 border-t border-slate-100">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
-                            Build Evidence & Artifacts
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {selectedOrder.artifacts.map((art: any) => (
-                              <div
-                                key={art.id}
-                                className="group flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all"
-                              >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
-                                    {art.type === 'qc_report' || art.type === 'shipping_doc' ? (
-                                      <FileText className="w-4 h-4 text-blue-500" />
-                                    ) : (
-                                      <Image className="w-4 h-4 text-emerald-500" />
-                                    )}
-                                  </div>
-                                  <div className="overflow-hidden">
-                                    <p className="text-[10px] font-bold text-slate-900 uppercase truncate">
-                                      {art.fileName}
-                                    </p>
-                                    <p className="text-[9px] text-slate-400 uppercase tracking-tighter">
-                                      {art.type.replace('_', ' ')} • {new Date(art.uploadedAt).toLocaleDateString()}
-                                    </p>
-                                  </div>
+                      <div className="pt-6 mt-6 border-t border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                          Build Evidence & Artifacts
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {selectedOrder.artifacts.map((art: any) => (
+                            <div
+                              key={art.id}
+                              className="group flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all"
+                            >
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                                  {art.type === 'qc_report' || art.type === 'shipping_doc' ? (
+                                    <FileText className="w-4 h-4 text-blue-500" />
+                                  ) : (
+                                    <Image className="w-4 h-4 text-emerald-500" />
+                                  )}
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-white rounded-full transition-all"
-                                  onClick={async () => {
-                                    try {
-                                      const token = await user?.getIdToken();
-                                      const url = `/api/v1/files/retrieve?fileKey=${encodeURIComponent(art.fileKey)}`;
-                                      const response = await fetch(url, {
-                                        headers: { Authorization: `Bearer ${token}` }
-                                      });
-                                      if (!response.ok) throw new Error('Retrieval failed');
-                                      const blob = await response.blob();
-                                      const link = document.createElement('a');
-                                      link.href = window.URL.createObjectURL(blob);
-                                      link.download = art.fileName;
-                                      link.click();
-                                    } catch (err) {
-                                      toast({ title: 'View Failed', variant: 'destructive' });
-                                    }
-                                  }}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
+                                <div className="overflow-hidden">
+                                  <p className="text-[10px] font-bold text-slate-900 uppercase truncate">
+                                    {art.fileName}
+                                  </p>
+                                  <p className="text-[9px] text-slate-400 uppercase tracking-tighter">
+                                    {art.type.replace('_', ' ')} • {new Date(art.uploadedAt).toLocaleDateString()}
+                                  </p>
+                                </div>
                               </div>
-                            ))}
-                          </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-white rounded-full transition-all"
+                                onClick={async () => {
+                                  try {
+                                    const token = await user?.getIdToken();
+                                    const url = `/api/v1/files/retrieve?fileKey=${encodeURIComponent(art.fileKey)}`;
+                                    const response = await fetch(url, {
+                                      headers: { Authorization: `Bearer ${token}` }
+                                    });
+                                    if (!response.ok) throw new Error('Retrieval failed');
+                                    const blob = await response.blob();
+                                    const link = document.createElement('a');
+                                    link.href = window.URL.createObjectURL(blob);
+                                    link.download = art.fileName;
+                                    link.click();
+                                  } catch (err) {
+                                    toast({ title: 'View Failed', variant: 'destructive' });
+                                  }
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                      )}
-                    </CardContent>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               </div>
             ) : (

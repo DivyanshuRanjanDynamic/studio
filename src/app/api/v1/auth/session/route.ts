@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     }
 
     const idTokenRaw = (payload as { idToken?: unknown })?.idToken;
+    const expectedRole = (payload as { expectedRole?: string })?.expectedRole || 'customer';
     const idToken = typeof idTokenRaw === 'string' ? idTokenRaw.trim() : '';
 
     if (!idToken || idToken.length > 4096) {
@@ -48,40 +49,31 @@ export async function POST(req: Request) {
         ? decodedToken.firebase.sign_in_provider
         : '';
 
-    // Block unverified password-based accounts from obtaining a long-lived session.
-    if (signInProvider === 'password' && !decodedToken.email_verified) {
-      return NextResponse.json(
-        { error: 'Email verification required before signing in.' },
-        { status: 403 }
-      );
-    }
-
-    // Set session expiration to 5 days.
-    const expiresIn = 60 * 60 * 24 * 5 * 1000;
-
-    // Create the session cookie. 
-    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+    // RULE: For Google logins, we do NOT allow auto-registration (allowCreation: false).
+    // Users must first register via email/password or onboarding.
+    const isSocialLogin = signInProvider === 'google.com';
+    const allowCreation = !isSocialLogin;
 
     // ── Profile Sync & Data Resolution ───────────────────────────────
-    // Ensure the user document exists in Firestore and retrieve the role/status.
-    try {
-      await UserService.syncUserFromAuth({
-        uid: decodedToken.uid,
-        email: decodedToken.email || '',
-        fullName: (decodedToken.name as string) || (decodedToken.email?.split('@')[0] as string),
-        emailVerified: decodedToken.email_verified || false,
-        allowCreation: true,
-      });
-    } catch (syncError: any) {
+    const syncResult = await UserService.syncUserFromAuth({
+      uid: decodedToken.uid,
+      email: decodedToken.email || '',
+      fullName: (decodedToken.name as string) || (decodedToken.email?.split('@')[0] as string),
+      emailVerified: decodedToken.email_verified || false,
+      allowCreation,
+      expectedRole: expectedRole as UserRole,
+    });
+
+    if (!syncResult.success) {
       logger.warn({
         event: 'session_profile_sync_failed',
         uid: decodedToken.uid,
-        error: syncError.message
+        error: syncResult.error.message
       });
 
       return NextResponse.json({
         status: 'error',
-        message: syncError.message || 'Profile synchronization failed'
+        message: syncResult.error.message || 'Profile synchronization failed'
       }, { status: 403 });
     }
 
@@ -95,10 +87,30 @@ export async function POST(req: Request) {
       userStatus = userResult.data.status;
     }
 
+    // ── Pre-Session Security Checks ──────────────────────────────────
+
+    // Block unverified password-based accounts from obtaining a long-lived session.
+    // EXCEPTION: Allow 'vendor_pending' users so they can see their "Under Review" status.
+    const isPendingVendor = userRole === 'vendor_pending';
+
+    if (signInProvider === 'password' && !decodedToken.email_verified && !isPendingVendor) {
+      return NextResponse.json(
+        { error: 'Email verification required before signing in.' },
+        { status: 403 }
+      );
+    }
+
+    // Set session expiration to 5 days.
+    const expiresIn = 60 * 60 * 24 * 5 * 1000;
+
+    // Create the session cookie. 
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+
     const response = NextResponse.json({
       status: 'success',
       role: userRole,
       accountStatus: userStatus,
+      onboarded: userResult.success ? (userResult.data.onboarded ?? false) : false,
       emailVerified: decodedToken.email_verified || false
     }, { status: 200 });
 
