@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  verification: {
+    google: 'YOUR_VERIFICATION_CODE_HERE', // TODO: User should replace this
+  },
   icons: {
     icon: '/mechhub.png',
     shortcut: '/mechhub.png',
@@ -39,6 +42,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Instrument+Serif:ital@0;1&family=Libre+Baskerville:ital,wght@0,400..700;1,400..700&family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
           rel="stylesheet"
         />
+        <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
       </head>
       <body
         className="font-body antialiased bg-background text-foreground"
@@ -89,6 +93,43 @@ export default function RootLayout({
                 target: 'https://www.mechhub.in/shop?q={search_term_string}',
                 'query-input': 'required name=search_term_string',
               },
+            }),
+          }}
+        />
+        <Script
+          id="json-ld-breadcrumb"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Home',
+                  item: 'https://www.mechhub.in',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Shop',
+                  item: 'https://www.mechhub.in/shop',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 3,
+                  name: 'Blog',
+                  item: 'https://www.mechhub.in/blog',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 4,
+                  name: 'Services',
+                  item: 'https://www.mechhub.in/services',
+                },
+              ],
             }),
           }}
         />
