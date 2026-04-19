@@ -204,15 +204,19 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* #FFFFFF */
-    --foreground: 222 47% 11%; /* #0F172A - Dark slate/blue */
+    --background: 0 0% 100%;
+    /* #FFFFFF */
+    --foreground: 222 47% 11%;
+    /* #0F172A - Dark slate/blue */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 216 56% 42%; /* #2F5FA7 MechHub Primary Blue */
+    --primary: 216 56% 42%;
+    /* #2F5FA7 MechHub Primary Blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 214 100% 95%; /* #E8F1FF Light Blue */
+    --secondary: 214 100% 95%;
+    /* #E8F1FF Light Blue */
     --secondary-foreground: 216 56% 42%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -332,10 +336,12 @@
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) rotate(0deg);
   }
+
   50% {
     transform: translateY(-20px) rotate(1deg);
   }
@@ -346,10 +352,12 @@
 }
 
 @keyframes pulse-soft {
+
   0%,
   100% {
     opacity: 0.1;
   }
+
   50% {
     opacity: 0.2;
   }
@@ -363,6 +371,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }

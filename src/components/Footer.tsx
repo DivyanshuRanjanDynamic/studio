@@ -114,7 +114,7 @@ export function Footer() {
               ))}
             </ul>
 
-            <h5 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200 mb-3">
+            <h5 className="pt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200 mb-3">
               Resources
             </h5>
             <ul className="space-y-3">

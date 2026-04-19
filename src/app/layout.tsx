@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.mechhub.in'),
-  title: 'MechHub – From CAD to Reality Faster',
+  title: 'MechHub',
   description: 'A Managed Marketplace for Custom Manufacturing Needs.',
   alternates: {
     canonical: '/',
@@ -128,6 +128,55 @@ export default function RootLayout({
                   position: 4,
                   name: 'Services',
                   item: 'https://www.mechhub.in/services',
+                },
+              ],
+            }),
+          }}
+        />
+        <Script
+          id="json-ld-navigation"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'ItemList',
+              itemListElement: [
+                {
+                  '@type': 'SiteNavigationElement',
+                  position: 1,
+                  name: 'Shop',
+                  url: 'https://www.mechhub.in/shop',
+                },
+                {
+                  '@type': 'SiteNavigationElement',
+                  position: 2,
+                  name: 'Blog',
+                  url: 'https://www.mechhub.in/blog',
+                },
+                {
+                  '@type': 'SiteNavigationElement',
+                  position: 3,
+                  name: 'Manufacturing Services',
+                  url: 'https://www.mechhub.in/services',
+                },
+                {
+                  '@type': 'SiteNavigationElement',
+                  position: 4,
+                  name: 'Material Catalog',
+                  url: 'https://www.mechhub.in/materials',
+                },
+                {
+                  '@type': 'SiteNavigationElement',
+                  position: 5,
+                  name: 'About Us',
+                  url: 'https://www.mechhub.in/about',
+                },
+                {
+                  '@type': 'SiteNavigationElement',
+                  position: 6,
+                  name: 'Contact',
+                  url: 'https://www.mechhub.in/contact',
                 },
               ],
             }),
