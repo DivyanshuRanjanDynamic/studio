@@ -176,28 +176,28 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left: Product Image & Gallery */}
           <div className="lg:col-span-7 space-y-4 md:space-y-6 lg:sticky lg:top-24">
-            <div className="aspect-square bg-white rounded-2xl md:rounded-[2rem] border border-slate-100 flex items-center justify-center relative overflow-hidden group shadow-xl">
+            <div className="aspect-square bg-slate-50 rounded-[2rem] border border-slate-200 flex items-center justify-center relative overflow-hidden group shadow-2xl">
               <Image
                 src={productImages[activeImage]}
                 alt={product.name}
                 fill
                 priority
-                className="object-contain p-6 md:p-12 group-hover:scale-105 transition-transform duration-700 ease-out"
+                className="object-cover transition-transform duration-700 hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#F8FAFC] via-transparent to-blue-500/5 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 to-transparent pointer-events-none" />
 
               {/* Tags */}
-              <div className="absolute top-4 left-4 md:top-6 md:left-6 flex flex-col gap-2">
-                <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 px-2.5 py-0.5 md:px-3 md:py-1 font-bold text-[8px] md:text-[9px] uppercase tracking-tighter shadow-sm">
-                  <CheckCircle2 className="w-3 h-3 mr-1.5" /> QC Tested
+              <div className="absolute top-6 left-6 flex flex-col gap-3">
+                <Badge className="bg-white/90 backdrop-blur-md text-emerald-600 border-emerald-100 px-3 py-1.5 font-black text-[10px] uppercase tracking-wider shadow-xl">
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> QC Verified
                 </Badge>
-                <Badge className="bg-blue-50 text-[#2F5FA7] border-blue-100 px-2.5 py-0.5 md:px-3 md:py-1 font-bold text-[8px] md:text-[9px] uppercase tracking-tighter shadow-sm">
-                  <Zap className="w-3 h-3 mr-1.5" /> Fast Dispatch
+                <Badge className="bg-white/90 backdrop-blur-md text-[#2F5FA7] border-blue-100 px-3 py-1.5 font-black text-[10px] uppercase tracking-wider shadow-xl">
+                  <Zap className="w-3.5 h-3.5 mr-2" /> Tier-1 Supply
                 </Badge>
               </div>
 
-              {/* Navigation Arrows (Only on hover, hidden on touch if needed) */}
+              {/* Navigation Arrows */}
               {productImages.length > 1 && (
                 <>
                   <button
@@ -207,34 +207,33 @@ export default function ProductDetailPage() {
                         (prev) => (prev - 1 + productImages.length) % productImages.length
                       );
                     }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/80 backdrop-blur-md border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[#2F5FA7] hover:border-blue-200 hover:bg-blue-50 transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg"
+                    className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[#2F5FA7] hover:border-blue-200 transition-all opacity-0 group-hover:opacity-100 z-10 shadow-2xl"
                   >
-                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                    <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       setActiveImage((prev) => (prev + 1) % productImages.length);
                     }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/80 backdrop-blur-md border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[#2F5FA7] hover:border-blue-200 hover:bg-blue-50 transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg"
+                    className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[#2F5FA7] hover:border-blue-200 transition-all opacity-0 group-hover:opacity-100 z-10 shadow-2xl"
                   >
-                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                    <ChevronRight className="w-6 h-6" />
                   </button>
                 </>
               )}
             </div>
 
-            {/* Thumbnail Row (Horizontal Scroll on Mobile) */}
-            <div className="flex gap-2.5 md:gap-4 overflow-x-auto pb-4 md:pb-2 scrollbar-none snap-x h-20 md:h-28">
+            {/* Thumbnail Row */}
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x h-24 md:h-28">
               {productImages.map((_: any, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImage(idx)}
-                  className={`relative w-16 h-16 md:w-24 md:h-24 rounded-xl md:rounded-2xl overflow-hidden border transition-all shrink-0 snap-start shadow-sm ${
-                    activeImage === idx
-                      ? 'border-[#2F5FA7] ring-4 ring-blue-50'
-                      : 'border-slate-200 hover:border-blue-200'
-                  }`}
+                  className={`relative w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] overflow-hidden border-2 transition-all shrink-0 snap-start shadow-sm ${activeImage === idx
+                    ? 'border-[#2F5FA7] shadow-[0_0_20px_rgba(47,95,167,0.2)] scale-95'
+                    : 'border-slate-200 hover:border-blue-200 grayscale-[0.5] hover:grayscale-0'
+                    }`}
                 >
                   <Image
                     src={thumbImages[idx]}
@@ -243,9 +242,6 @@ export default function ProductDetailPage() {
                     className="object-cover"
                     sizes="96px"
                   />
-                  {activeImage === idx && (
-                    <div className="absolute inset-0 bg-cyan-500/10 pointer-events-none" />
-                  )}
                 </button>
               ))}
             </div>

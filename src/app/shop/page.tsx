@@ -364,12 +364,12 @@ export default function ShopPage() {
                           </Link>
                         </div>
 
-                        <div className="relative mx-auto h-[180px] w-full max-w-[380px] overflow-hidden md:h-[230px]">
+                        <div className="relative mx-auto h-[180px] w-full max-w-[380px] overflow-hidden rounded-[2.5rem] bg-white/10 backdrop-blur-sm border border-white/20 md:h-[230px]">
                           <Image
                             src={getProductImage(product)}
                             alt={product.name}
                             fill
-                            className="object-contain p-2 md:p-4 drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)]"
+                            className="object-cover transition-transform duration-700 hover:scale-105 drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)]"
                             sizes="(max-width: 1024px) 80vw, 30vw"
                           />
                         </div>
@@ -777,12 +777,12 @@ export default function ShopPage() {
 
                     return (
                       <div key={product.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-center">
-                        <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-2xl bg-white shadow-sm">
+                        <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-[1.5rem] bg-white shadow-inner border border-slate-100">
                           <Image
                             src={image || '/images/placeholder-part.svg'}
                             alt={product.name}
                             fill
-                            className="object-contain p-2"
+                            className="object-cover"
                           />
                         </div>
                         <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-[#2F5FA7]">

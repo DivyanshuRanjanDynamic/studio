@@ -125,7 +125,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
 
           <Link
             href={`/shop/${product.id}`}
-            className="relative mt-8 block aspect-[4/3] overflow-hidden rounded-xl bg-white sm:mt-12 sm:rounded-2xl"
+            className="relative mt-6 block aspect-[4/3] overflow-hidden rounded-[2rem] bg-slate-100 border border-slate-200 transition-all duration-500 group-hover:border-[#2F5FA7]/30 sm:mt-10"
             onMouseEnter={() => {
               if (productImages.length > 1) setCurrentImgIdx(1);
             }}
@@ -135,7 +135,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
               src={productImages[currentImgIdx] || productImages[0]}
               alt={product.name}
               fill
-              className={`object-contain p-2.5 transition duration-500 group-hover:scale-105 sm:p-4 ${
+              className={`object-cover transition duration-700 group-hover:scale-110 ${
                 isOutOfStock ? 'opacity-55 grayscale' : ''
               }`}
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 25vw"

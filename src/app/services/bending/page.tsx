@@ -99,7 +99,7 @@ export default function BendingPage() {
                 title: 'Hydraulic Accuracy',
                 desc: 'Digital angle tracking ensuring ±0.5° precision across full-length bends.',
                 icon: ShieldCheck,
-                img:'https://images.unsplash.com/photo-1674471361523-195aa08e69b5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                img: 'https://images.unsplash.com/photo-1674471361523-195aa08e69b5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
                 color: 'bg-blue-600',
               },
               {
@@ -121,18 +121,13 @@ export default function BendingPage() {
                 key={index}
                 className="group relative bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-slate-100 hover:border-[#2F5FA7]/30 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2"
               >
-                <div className="relative aspect-[4/3] mb-8 rounded-2xl overflow-hidden shadow-lg bg-white/80 group-hover:shadow-2xl transition-all duration-500 border border-slate-100 flex items-center justify-center p-8">
+                <div className="relative aspect-[4/3] mb-8 rounded-2xl overflow-hidden shadow-lg bg-white/80 group-hover:shadow-2xl transition-all duration-500 border border-slate-100 ">
                   <img
                     src={item.img}
                     alt={item.title}
-                    className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
-                  <div
-                    className={`absolute top-4 left-4 w-10 h-10 rounded-xl ${item.color} flex items-center justify-center text-white shadow-xl z-20`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                  </div>
+
                 </div>
                 <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter">
                   {item.title}
@@ -144,7 +139,9 @@ export default function BendingPage() {
             ))}
           </div>
 
-          <ExpertCTA description="Need custom bend radii, air bending for sensitive surfaces, or complex offsetting? Our precision forming experts are ready to assist with your geometry." />
+          <div className="flex items-center justify-center pt-10">
+            <ExpertCTA description="Need custom bend radii, air bending for sensitive surfaces, or complex offsetting? Our precision forming experts are ready to assist with your geometry." />
+          </div>
         </div>
       </section>
 

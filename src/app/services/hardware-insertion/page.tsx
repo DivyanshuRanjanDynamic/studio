@@ -121,18 +121,13 @@ export default function HardwareInsertionPage() {
                 key={index}
                 className="group relative bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-slate-100 hover:border-[#2F5FA7]/30 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2"
               >
-                <div className="relative aspect-[4/3] mb-8 rounded-2xl overflow-hidden shadow-lg bg-white/80 group-hover:shadow-2xl transition-all duration-500 border border-slate-100 flex items-center justify-center p-8">
+                <div className="relative aspect-[4/3] mb-8 rounded-2xl overflow-hidden shadow-lg bg-white/80 group-hover:shadow-2xl transition-all duration-500 border border-slate-100 ">
                   <img
                     src={item.img}
                     alt={item.title}
-                    className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
-                  <div
-                    className={`absolute top-4 left-4 w-10 h-10 rounded-xl ${item.color} flex items-center justify-center text-white shadow-xl z-20`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                  </div>
+
                 </div>
                 <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter">
                   {item.title}
@@ -144,7 +139,9 @@ export default function HardwareInsertionPage() {
             ))}
           </div>
 
-          <ExpertCTA description="Looking for specific PEM fastener types, custom standoff heights, or high-density insertion patterns? Our assembly experts can help optimize your hardware BOM." />
+          <div className="flex items-center justify-center pt-14">
+            <ExpertCTA description="Looking for specific PEM fastener types, custom standoff heights, or high-density insertion patterns? Our assembly experts can help optimize your hardware BOM." />
+          </div>
         </div>
       </section>
 
