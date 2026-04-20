@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LandingNav } from '@/components/LandingNav';
-import { Loader2, UserPlus, LogIn, ShieldCheck, Factory, User as UserIcon, Clock, CheckCircle2 } from 'lucide-react';
+import { Loader2, UserPlus, LogIn, ShieldCheck, Factory, User as UserIcon, Clock, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   signInWithEmailAndPassword,
@@ -491,9 +492,21 @@ function LoginPageContent() {
 
   if (verificationState) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-24">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-12">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
-        <LandingNav />
+        
+        {/* Back Button */}
+        <div className="absolute top-8 left-8 z-50">
+          <Link 
+            href="/" 
+            className="flex items-center gap-2 text-slate-400 hover:text-[#2F5FA7] transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-full border border-slate-100 bg-white flex items-center justify-center shadow-sm group-hover:border-blue-100 group-hover:shadow-md transition-all">
+              <ArrowLeft className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest">Back to Hub</span>
+          </Link>
+        </div>
         <div className="flex-1 flex items-center justify-center p-4 relative z-10">
           <Card className="w-full max-w-md bg-white border-slate-100 shadow-xl relative overflow-hidden text-center p-8 rounded-[2rem]">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
@@ -535,9 +548,21 @@ function LoginPageContent() {
 
   if (isPendingReview) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-24">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-12">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-        <LandingNav />
+        
+        {/* Back Button */}
+        <div className="absolute top-8 left-8 z-50">
+          <Link 
+            href="/" 
+            className="flex items-center gap-2 text-slate-400 hover:text-[#2F5FA7] transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-full border border-slate-100 bg-white flex items-center justify-center shadow-sm group-hover:border-blue-100 group-hover:shadow-md transition-all">
+              <ArrowLeft className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest">Back to Hub</span>
+          </Link>
+        </div>
         <div className="flex-1 flex items-center justify-center p-4 relative z-10">
           <Card className="w-full max-w-md bg-white/70 backdrop-blur-xl border-white/40 shadow-2xl relative overflow-hidden text-center p-10 rounded-[2.5rem]">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 to-amber-600" />
@@ -615,8 +640,19 @@ function LoginPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 relative flex flex-col pt-16 lg:pt-0">
-      <LandingNav />
+    <div className="min-h-screen bg-slate-50 text-slate-900 relative flex flex-col">
+      {/* Back Button */}
+      <div className="absolute top-8 left-8 z-50">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 text-slate-400 hover:text-[#2F5FA7] transition-colors group"
+        >
+          <div className="w-10 h-10 rounded-full border border-slate-100 bg-white flex items-center justify-center shadow-sm group-hover:border-blue-100 group-hover:shadow-md transition-all">
+            <ArrowLeft className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest font-sans">Exit to Hub</span>
+        </Link>
+      </div>
 
       <div className="flex-1 flex flex-col lg:flex-row">
         <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
