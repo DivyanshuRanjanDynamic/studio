@@ -47,13 +47,13 @@ export const UserService = {
         const actualIsVendor = actualRole === 'vendor' || actualRole === 'mechmaster' || actualRole === 'vendor_pending';
         const actualIsCustomer = actualRole === 'customer';
 
-        if (isVendorFlow && !actualIsVendor) {
-          return err(internalError(`You are not registered as a Vendor.`));
-        }
-        if (isCustomerFlow && !actualIsCustomer) {
-          const actualLabel = actualRole === 'vendor_pending' ? 'Partner' : 'Vendor';
-          return err(internalError(`You are not registered as a Innovator.`));
-        }
+        // if (isVendorFlow && !actualIsVendor) {
+        //   return err(internalError(`You are not registered as a Vendor.`));
+        // }
+        // if (isCustomerFlow && !actualIsCustomer) {
+        //   const actualLabel = actualRole === 'vendor_pending' ? 'Partner' : 'Vendor';
+        //   return err(internalError(`You are not registered as a Innovator.`));
+        // }
       }
 
       // ── Layer 2: Sync Existing User ───────────────────────────────
@@ -92,7 +92,7 @@ export const UserService = {
     // ── Layer 3: Self-Registration Bypass Guard ───────────────────
     if (!isAdmin(email) && !allowCreation) {
       logger.warn({ event: 'UserService: Blocked unauthorized auto-registration', email, uid });
-      
+
       // EXTRA SAFETY: Before purging, check if any user exists with this email
       // (This handles cases where a user has a Password account but tries to log in via Google).
       const userWithEmail = await UserRepository.getUserByEmail(email);

@@ -127,9 +127,6 @@ export function verificationEmail(name: string, verificationUrl: string): string
     <div class="cta-wrap">
       <a href="${verificationUrl}" class="cta">Verify Email</a>
     </div>
-    <div class="cta-wrap" style="margin-top: -10px;">
-      <a href="${APP_URL}/login" class="cta-outline">Go to Login</a>
-    </div>
     <p class="meta">This secure link expires in 24 hours.</p>
     <p class="meta">If the button does not work, copy and paste this URL into your browser:</p>
     <div class="link-box" style="margin: 18px 0 0; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background-color: #f6f9ff; word-break: break-all; font-size: 12px; line-height: 1.6; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">${verificationUrl}</div>
