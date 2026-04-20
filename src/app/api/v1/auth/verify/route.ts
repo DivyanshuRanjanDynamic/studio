@@ -72,7 +72,14 @@ export async function GET(req: Request) {
       verifiedAt: new Date().toISOString(),
     });
 
-    return NextResponse.redirect(`${APP_URL}/login?redirect=/dashboard&verified=true`);
+    // 6. Generate a Custom Token so the login page can auto-sign-in
+    // We include the email_verified claim specifically to avoid propagation delays
+    // between the adminAuth.updateUser call and the client-side sign-in.
+    const customToken = await adminAuth.createCustomToken(uid, { email_verified: true });
+    const destination = encodeURIComponent('/dashboard?tab=projects');
+    return NextResponse.redirect(
+      `${APP_URL}/login?token=${customToken}&redirect=${destination}&verified=true`
+    );
 
   } catch (error: any) {
     logger.error({ event: 'API: Auth verification failed', error: error.message, token });

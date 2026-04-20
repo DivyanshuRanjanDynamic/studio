@@ -25,6 +25,7 @@ import {
   signOut,
   updateProfile,
   signInWithPopup,
+  signInWithCustomToken,
   GoogleAuthProvider,
   User,
 } from 'firebase/auth';
@@ -76,10 +77,42 @@ function LoginPageContent() {
     name: string;
   } | null>(null);
 
-  // Handle callback query params (verified=true or error=...)
+  // Handle callback query params (token=... for auto-login, verified=true, or error=...)
   useEffect(() => {
+    const customToken = searchParams.get('token');
     const verified = searchParams.get('verified');
     const error = searchParams.get('error');
+
+    // Auto-login via custom token from email verification flow
+    if (customToken) {
+      setLoading(true);
+      setVerificationState(null); // Clear the email-sent view
+      signInWithCustomToken(auth, customToken)
+        .then(() => {
+          toast({
+            title: 'Email Verified',
+            description: 'Your account is verified. Signing you in...',
+            variant: 'default',
+          });
+          // Clean the token from URL — the redirect param is preserved
+          // and will be used by syncUserAndRedirect via getSafeRedirectPath
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('token');
+          newUrl.searchParams.delete('verified');
+          window.history.replaceState({}, '', newUrl.toString());
+        })
+        .catch((err) => {
+          console.error('Auto login after verification failed:', err);
+          setLoading(false);
+          toast({
+            title: 'Sign-In Failed',
+            description: 'Automatic sign-in failed. Please sign in with your credentials.',
+            variant: 'destructive',
+          });
+          router.replace('/login?tab=login');
+        });
+      return; // Don't process other params
+    }
 
     if (verified === 'true') {
       toast({
@@ -87,7 +120,7 @@ function LoginPageContent() {
         description: 'Your account is now verified. You can sign in.',
         variant: 'default',
       });
-      router.replace('/login');
+      router.replace('/login?tab=login');
     } else if (error) {
       const errorMessages: Record<string, { title: string; description: string }> = {
         token_unavailable: {
@@ -114,7 +147,7 @@ function LoginPageContent() {
       toast({ variant: 'destructive', title: msg.title, description: msg.description });
       router.replace('/login');
     }
-  }, [searchParams, router, toast]);
+  }, [searchParams, router, toast, auth]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -151,6 +184,10 @@ function LoginPageContent() {
   useEffect(() => {
     async function syncUserAndRedirect() {
       if (user && db) {
+        // If we have a verified user, ensure we clear any pending verification UI
+        if (user.emailVerified && verificationState) {
+          setVerificationState(null);
+        }
         setLoading(true);
         try {
           // 2. Establish Server Session with expected role
