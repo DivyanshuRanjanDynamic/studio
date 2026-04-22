@@ -370,31 +370,71 @@ function UserDashboardContent() {
     if (sortedRfqs?.length && !selectedOrderId) setSelectedOrderId(sortedRfqs[0].id);
   }, [sortedRfqs, selectedOrderId]);
 
-  useEffect(() => {
-    // Only onboard customers. Admins/Vendors should skip this automated flow.
-    // If the profile is loading, we wait. If it's loaded as null, it means the user 
-    // is definitely not an admin (caught by layout/claims) but missing a doc.
-    if (!isProfileLoading && user && !isAdminConfirmed) {
-      const isCustomer = !profile || profile.role === 'customer';
-      
-      if (isCustomer) {
-        const hasEssentialDetails =
-          Boolean(profile?.fullName?.trim()) && 
-          Boolean(profile?.phone?.trim()) && 
-          Boolean(profile?.teamName?.trim()) && 
-          Boolean(profile?.designation?.trim());
+  // ── Onboarding Logic ──────────────────────────────────────────────────
+  // 
+  // ROOT CAUSE OF THE BUG (race condition):
+  // The useDoc hook initializes with isLoading=false when userProfileRef is null.
+  // When `user` resolves from auth, userProfileRef changes from null → valid ref.
+  // But on that same render, useDoc's internal state STILL has isLoading=false
+  // and data=null (the useEffect inside useDoc hasn't run yet to set isLoading=true).
+  // So the onboarding effect sees: isProfileLoading=false, profile=null, user=valid
+  // and incorrectly interprets this as "new user with no document" → opens modal.
+  //
+  // FIX: We track whether we've ever received REAL profile data from Firestore.
+  // We NEVER open the modal based on profile===null — that's indistinguishable
+  // from the race condition. The login flow (syncUserFromAuth) already creates
+  // the doc with onboarded:false, so we wait for a concrete profile object.
+  const hasCheckedOnboarding = useRef(false);
+  const hasReceivedProfile = useRef(false);
 
-        // Show onboarding if doc is missing, explicitly not onboarded, or details are incomplete
-        if (!profile || !profile.onboarded || !hasEssentialDetails) {
-          setIsOnboardingOpen(true);
-        } else if (profile?.onboarded === false && hasEssentialDetails && db) {
-          // If they have all details but just missing the flag, update it silently
-          updateDocumentNonBlocking(doc(db, 'users', user.uid), {
-            onboarded: true,
-            updatedAt: new Date().toISOString(),
-          });
-        }
-      }
+  // Reset when user changes (e.g. logout → login as different user)
+  useEffect(() => {
+    hasCheckedOnboarding.current = false;
+    hasReceivedProfile.current = false;
+  }, [user?.uid]);
+
+  // Track when we've actually received profile data from Firestore
+  useEffect(() => {
+    if (profile && !isProfileLoading) {
+      hasReceivedProfile.current = true;
+    }
+  }, [profile, isProfileLoading]);
+
+  useEffect(() => {
+    // Guards: wait for all data to be ready
+    if (isProfileLoading || !user || isAdminConfirmed || hasCheckedOnboarding.current) return;
+
+    // CRITICAL: If profile is null, do NOT open the modal.
+    // It's either the race condition (Firestore hasn't delivered the snapshot yet)
+    // or the user doc hasn't been created by syncUserFromAuth yet.
+    // In both cases, the real-time listener will deliver the data eventually,
+    // and this effect will re-run when profile becomes non-null.
+    if (!profile) return;
+
+    // At this point, profile is a real Firestore document.
+    hasCheckedOnboarding.current = true;
+
+    const isCustomer = profile.role === 'customer';
+    if (!isCustomer) return; // Vendors/Admins skip onboarding
+
+    // Only show modal if explicitly NOT onboarded
+    if (profile.onboarded === true) return;
+
+    // profile.onboarded is false or undefined → check details
+    const hasEssentialDetails =
+      Boolean(profile.fullName?.trim()) &&
+      Boolean(profile.phone?.trim()) &&
+      Boolean(profile.teamName?.trim()) &&
+      Boolean(profile.designation?.trim());
+
+    if (!hasEssentialDetails) {
+      setIsOnboardingOpen(true);
+    } else if (db) {
+      // Has all details but onboarded flag is false → fix it silently
+      updateDocumentNonBlocking(doc(db, 'users', user.uid), {
+        onboarded: true,
+        updatedAt: new Date().toISOString(),
+      });
     }
   }, [isProfileLoading, profile, user, db, isAdminConfirmed]);
 
