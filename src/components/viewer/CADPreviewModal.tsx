@@ -147,15 +147,6 @@ export function CADPreviewModal({
                                  >
                                     2D Profile
                                  </Button>
-                                 <div className="w-px h-5 bg-slate-200 mx-1" />
-                                 <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-4 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 flex items-center gap-2"
-                                 >
-                                    <Layers className="w-3.5 h-3.5" />
-                                    Tools
-                                 </Button>
                               </div>
                            </div>
                         )}

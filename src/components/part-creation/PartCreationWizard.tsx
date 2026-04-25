@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/utils';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +40,7 @@ import { isPartNameValid } from '@/lib/validation/part-name';
 import { STLViewer } from '@/components/viewer/STLViewer';
 import { FlatPatternViewer } from '@/components/viewer/FlatPatternViewer';
 import { convertStepFile, stlBase64ToBuffer } from '@/services/stepConverter.service';
+import { detectDesignPattern } from '@/utils/design-patterns';
 
 import {
   ChevronLeft,
@@ -103,6 +104,8 @@ export function PartCreationWizard({
   const [stlBuffer, setStlBuffer] = useState<ArrayBuffer | null>(null);
   const [conversionResult, setConversionResult] = useState<ConversionResult | null>(null);
   const [isConverting, setIsConverting] = useState(false);
+  const [viewMode, setViewMode] = useState<'2D' | '3D'>('3D');
+  const [supportsBoth, setSupportsBoth] = useState(false);
 
   const [selectedMaterial, setSelectedMaterial] = useState<{
     id: string;
@@ -124,6 +127,9 @@ export function PartCreationWizard({
   const [showTappingSidebar, setShowTappingSidebar] = useState(false);
 
   const [hoveredBendIndex, setHoveredBendIndex] = useState<number | undefined>(undefined);
+
+  // Memoized selections for viewer performance
+  const selectedIndices = useMemo(() => selectedTaps.map(t => t.holeIndex), [selectedTaps]);
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === currentStep);
 
@@ -172,6 +178,15 @@ export function PartCreationWizard({
       autoConvert();
     }
   }, [currentStep, conversionResult, isConverting, uploadedFile, user]);
+
+  // CAD Intelligence: Auto-detect design pattern on result load
+  useEffect(() => {
+    if (conversionResult?.boundingBox) {
+      const analysis = detectDesignPattern(conversionResult.boundingBox);
+      setViewMode(analysis.recommendedMode);
+      setSupportsBoth(analysis.supportsBoth);
+    }
+  }, [conversionResult]);
 
 
   const canProceed = () => {
@@ -592,27 +607,20 @@ export function PartCreationWizard({
           ) : stlBuffer ? (
             <div className="w-full h-full relative">
               {(() => {
-                // Logic to derive 3D viewer color and finish
-                let viewerColor = '#94a3b8'; // Default slate gray
+                const viewerColor = coatingColor ? COLOR_OPTIONS.find((c) => c.id === coatingColor)?.color || '#94a3b8' : '#94a3b8';
                 let finishType: 'anodizing' | 'powder_coating' | 'raw' = 'raw';
 
-                if (coatingColor) {
-                  const colorOption = COLOR_OPTIONS.find((c) => c.id === coatingColor);
-                  if (colorOption) {
-                    viewerColor = colorOption.color;
-                  }
-
-                  if (secondaryProcesses.includes('anodizing')) {
-                    finishType = 'anodizing';
-                  } else if (secondaryProcesses.includes('powder_coating')) {
-                    finishType = 'powder_coating';
-                  }
+                if (secondaryProcesses.includes('anodizing')) {
+                  finishType = 'anodizing';
+                } else if (secondaryProcesses.includes('powder_coating')) {
+                  finishType = 'powder_coating';
                 }
 
                 return (
                   <STLViewer
                     buffer={stlBuffer}
                     className="w-full h-full"
+                    initialMode={viewMode} // Sync viewMode prop
                     color={viewerColor}
                     finishType={finishType}
                     holes={conversionResult?.holes}
@@ -620,7 +628,7 @@ export function PartCreationWizard({
                     showHoles={secondaryProcesses.includes('tapping')}
                     showBends={secondaryProcesses.includes('bending')}
                     hoveredHoleIndex={hoveredHoleIndex}
-                    selectedHoleIndices={selectedTaps.map(t => t.holeIndex)}
+                    selectedHoleIndices={selectedIndices}
                     boundingBox={conversionResult?.boundingBox}
                     serviceMode={
                       secondaryProcesses.includes('tapping') ? 'tapping' :
@@ -630,6 +638,36 @@ export function PartCreationWizard({
                   />
                 );
               })()}
+
+              {/* Floating 2D/3D Toggle UI */}
+              {supportsBoth && (
+                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
+                  <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-xl rounded-full p-1.5 flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                        viewMode === '3D' ? "bg-[#2F5FA7] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                      )}
+                      onClick={() => setViewMode('3D')}
+                    >
+                      3D View
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                        viewMode === '2D' ? "bg-[#2F5FA7] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                      )}
+                      onClick={() => setViewMode('2D')}
+                    >
+                      2D Profile
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Floating Model Tags */}
               <div className="absolute top-14 left-6 flex flex-col gap-2">

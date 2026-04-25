@@ -21,6 +21,16 @@ import {
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { HoleFeature, BendFeature } from '@/types/viewer';
 
+// Persistent Static Vectors/Quaternions for Performance Optimization
+const VEC3_UP = new THREE.Vector3(0, 1, 0);
+const VEC3_ZERO = new THREE.Vector3(0, 0, 0);
+const VEC3_TEMP = new THREE.Vector3(0, 0, 0);
+const QUAT_TEMP = new THREE.Quaternion();
+const CAM_POS_PERSPECTIVE: [number, number, number] = [5, 5, 5];
+const CAM_POS_ORTHO: [number, number, number] = [0, 10, 0];
+const UP_ORTHO: [number, number, number] = [0, 1, 0];
+const UP_TOP: [number, number, number] = [0, 0, -1];
+
 /**
  * Handle type for imperatively controlling the viewer
  */
@@ -154,9 +164,10 @@ function HoleOverlays({ holes, hoveredIndex, isTechnical, maxDimension, selected
           const isSelected = selectedIndices.includes(idx);
           const isActive = isHovered || isSelected;
 
-          const cylinderDir = new THREE.Vector3(0, 1, 0);
-          const holeNormal = new THREE.Vector3(hole.normal.x, hole.normal.y, hole.normal.z);
-          const quaternion = new THREE.Quaternion().setFromUnitVectors(cylinderDir, holeNormal);
+          const cylinderDir = VEC3_UP;
+          VEC3_TEMP.set(hole.normal.x, hole.normal.y, hole.normal.z);
+          // Fixed: Create new objects for props to avoid shared-reference bugs during commit phase
+          const quaternion = new THREE.Quaternion().setFromUnitVectors(cylinderDir, VEC3_TEMP);
 
           return (
             <group key={idx} position={[hole.center.x, hole.center.y, hole.center.z]} renderOrder={10}>
@@ -218,8 +229,9 @@ function BendOverlays({ bends, hoveredIndex, onHoverChange }: { bends: BendFeatu
         const isDashed = bend.direction === 'DOWN';
 
         // Calculate rotation for the interaction cylinder and arrow
-        const direction = new THREE.Vector3().subVectors(end, start).normalize();
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+        VEC3_TEMP.subVectors(end, start).normalize();
+        // Fixed: Create new objects for props to avoid shared-reference bugs during commit phase
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(VEC3_UP, VEC3_TEMP);
 
         return (
           <group key={idx} renderOrder={25}>
@@ -227,7 +239,7 @@ function BendOverlays({ bends, hoveredIndex, onHoverChange }: { bends: BendFeatu
             <Line
               points={[start, end]}
               color={isHovered ? '#FACC15' : color} // Yellow-400 on hover
-              lineWidth={isHovered ? 4 : 2}
+              lineWidth={isHovered ? 5 : 2}
               dashed={isDashed}
               dashScale={1}
               gapSize={0.5}
@@ -258,22 +270,27 @@ function BendOverlays({ bends, hoveredIndex, onHoverChange }: { bends: BendFeatu
 
             {/* Directional Indicator (Arrow highlighting fold nature) */}
             <group position={midPoint} quaternion={quaternion} renderOrder={30}>
-              <mesh position={[0, bend.direction === 'UP' ? 2 : -2, 0]} rotation={[bend.direction === 'UP' ? 0 : Math.PI, 0, 0]}>
-                <coneGeometry args={[0.8, 1.5, 4]} />
-                <meshBasicMaterial color={color} depthTest={false} transparent opacity={0.8} />
+              <mesh position={[0, bend.direction === 'UP' ? 3 : -3, 0]} rotation={[bend.direction === 'UP' ? 0 : Math.PI, 0, 0]}>
+                <coneGeometry args={[1.2, 2.2, 4]} />
+                <meshBasicMaterial color={color} depthTest={false} transparent opacity={0.9} />
               </mesh>
             </group>
 
             {/* Technical Tooltip */}
             {isHovered && (
               <Html position={midPoint} center>
-                <div className="bg-slate-900/92 px-2 py-1 rounded border border-slate-700 shadow-lg whitespace-nowrap pointer-events-none -translate-y-5">
-                  <div className="flex items-center gap-2 text-[10px]">
-                    <span className="font-mono font-semibold text-white">{(bend.angle || 0).toFixed(1)}°</span>
-                    <span className={`${bend.direction === 'UP' ? 'text-blue-400' : 'text-orange-400'} font-medium`}>
-                      {bend.direction}
-                    </span>
-                    <span className="font-mono text-slate-400">R{(bend.radius || 0).toFixed(1)}</span>
+                <div className="bg-slate-900/95 backdrop-blur-md p-5 rounded-2xl border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.4)] whitespace-nowrap pointer-events-none -translate-y-20 min-w-[200px]">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-6">
+                      <span className="text-[24px] font-black text-white leading-none">{(bend.angle || 0).toFixed(1)}°</span>
+                      <span className={`px-2.5 py-1 rounded-lg text-[12px] font-black uppercase tracking-widest ${bend.direction === 'UP' ? 'bg-blue-500/30 text-blue-300' : 'bg-orange-500/30 text-orange-300'}`}>
+                        {bend.direction}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-white/20 pt-3 mt-1">
+                      <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Bend Radius </span>
+                      <span className="text-[14px] font-black text-slate-100"> - R{(bend.radius || 0).toFixed(2)} mm</span>
+                    </div>
                   </div>
                 </div>
               </Html>
@@ -299,8 +316,12 @@ function ViewHandler({
   viewMode: '2D' | '3D',
   serviceMode?: string
 }) {
-  const { camera, controls } = useThree();
+  const camera = useThree((state) => state.camera);
+  const controls = useThree((state) => state.controls);
   const bounds = useBounds();
+
+  // Track the last service mode to only trigger resets on transition
+  const lastServiceMode = useRef<string | undefined>(serviceMode);
 
   const resetView = useCallback(() => {
     bounds.refresh().clip().fit();
@@ -308,9 +329,6 @@ function ViewHandler({
 
   const setOrientation = useCallback((view: 'top' | 'front' | 'side' | 'iso') => {
     const distance = 5; // Default distance
-
-    // We'll reset first to ensure we have clear bounds
-    bounds.refresh().clip().fit();
 
     switch (view) {
       case 'top':
@@ -327,13 +345,16 @@ function ViewHandler({
         break;
     }
 
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(VEC3_ZERO);
     if (controls) {
       // @ts-ignore
-      controls.target.set(0, 0, 0);
+      controls.target.copy(VEC3_ZERO);
       // @ts-ignore
       controls.update();
     }
+
+    // Fit bounds AFTER the camera has been repositioned
+    bounds.refresh().clip().fit();
   }, [camera, controls, bounds]);
 
   const zoom = useCallback((delta: number) => {
@@ -355,14 +376,10 @@ function ViewHandler({
 
   // Handle technical mode transition
   useEffect(() => {
-    if (serviceMode && serviceMode !== 'none') {
-      setOrientation('iso');
-      // If camera is orthographic, adjust zoom
-      if (orthographic && camera instanceof THREE.OrthographicCamera) {
-        bounds.refresh().clip().fit();
-      }
-    }
-  }, [serviceMode, setOrientation, orthographic, camera, bounds]);
+    // We no longer force a view reset when toggling technical modes.
+    // This preserves the user's manual zoom and orientation.
+    lastServiceMode.current = serviceMode;
+  }, [serviceMode]);
 
   // Handle mode transitions
   useEffect(() => {
@@ -372,9 +389,17 @@ function ViewHandler({
     }
   }, [viewMode, setOrientation, camera]);
 
+  const handle = useMemo(() => ({
+    resetView,
+    setOrientation,
+    zoom,
+    setZoom,
+    setMode: () => { }
+  }), [resetView, setOrientation, zoom, setZoom]);
+
   useEffect(() => {
-    onMount({ resetView, setOrientation, zoom, setZoom, setMode: () => { } });
-  }, [onMount, resetView, setOrientation, zoom, setZoom]);
+    onMount(handle);
+  }, [onMount, handle]);
 
   return null;
 }
@@ -433,6 +458,13 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
       }
     }, [serviceMode, holes.length, bends.length]);
 
+    // Sync viewMode with prop when it changes from outside
+    useEffect(() => {
+      if (initialMode && initialMode !== viewMode) {
+        setViewMode(initialMode);
+      }
+    }, [initialMode]);
+
     useImperativeHandle(ref, () => ({
       resetView: () => viewHandle?.resetView(),
       setOrientation: (view) => viewHandle?.setOrientation(view),
@@ -458,16 +490,20 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
 
           <color attach="background" args={['#ffffff']} />
 
-          {(viewMode === '2D' || serviceMode !== 'none') ? (
-            <OrthographicCamera
-              makeDefault
-              position={[0, 10, 0]}
-              zoom={50}
-              up={viewMode === '2D' ? [0, 0, -1] : [0, 1, 0]}
-            />
-          ) : (
-            <PerspectiveCamera makeDefault position={[5, 5, 5]} fov={45} />
-          )}
+          {/* 
+              Persistent Cameras: We keep BOTH cameras mounted so they retain their 
+              position/zoom state when switching. Only the active one is makeDefault.
+          */}
+          <OrthographicCamera
+            makeDefault={viewMode === '2D'}
+            position={CAM_POS_ORTHO}
+            up={viewMode === '2D' ? UP_TOP : UP_ORTHO}
+          />
+          <PerspectiveCamera
+            makeDefault={viewMode === '3D'}
+            position={CAM_POS_PERSPECTIVE}
+            fov={45}
+          />
 
           <ambientLight intensity={serviceMode !== 'none' ? 0.4 : 0.7} />
           <directionalLight
@@ -481,7 +517,7 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
           {/* CRITICAL: Use Bounds for framing, but disable Stage centering to ensure 
               absolute coordinate consistency between part and technical overlays. */}
           <group>
-            <Bounds fit clip observe margin={1.2}>
+            <Bounds fit clip margin={2.8}>
               <STLModel
                 buffer={buffer}
                 viewMode={viewMode}
