@@ -316,7 +316,7 @@ function ViewHandler({
   viewMode: '2D' | '3D',
   serviceMode?: string
 }) {
-  const camera = useThree((state) => state.camera);
+  const { camera, scene } = useThree();
   const controls = useThree((state) => state.controls);
   const bounds = useBounds();
 
@@ -324,38 +324,52 @@ function ViewHandler({
   const lastServiceMode = useRef<string | undefined>(serviceMode);
 
   const resetView = useCallback(() => {
-    bounds.refresh().clip().fit();
+    bounds.refresh().fit();
   }, [bounds]);
 
   const setOrientation = useCallback((view: 'top' | 'front' | 'side' | 'iso') => {
-    const distance = 5; // Default distance
+    // 1. Calculate precise bounding box of the scene to handle off-center parts
+    const box = new THREE.Box3().setFromObject(scene);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    // If the scene is empty or invalid, fallback to origin
+    if (!isFinite(center.x)) {
+      center.set(0, 0, 0);
+    }
+
+    // 2. Position camera RELATIVE to the part's actual center
+    // We use a baseline offset to establish the directional vector.
+    // bounds.fit() will fine-tune the actual distance based on part size.
+    const offset = 100;
 
     switch (view) {
       case 'top':
-        camera.position.set(0, distance, 0);
+        camera.position.set(center.x, center.y + offset, center.z);
         break;
       case 'front':
-        camera.position.set(0, 0, distance);
+        camera.position.set(center.x, center.y, center.z + offset);
         break;
       case 'side':
-        camera.position.set(distance, 0, 0);
+        camera.position.set(center.x + offset, center.y, center.z);
         break;
       case 'iso':
-        camera.position.set(distance, distance, distance);
+        camera.position.set(center.x + offset, center.y + offset, center.z + offset);
         break;
     }
 
-    camera.lookAt(VEC3_ZERO);
+    // 3. Point camera at the part
+    camera.lookAt(center);
     if (controls) {
       // @ts-ignore
-      controls.target.copy(VEC3_ZERO);
+      controls.target.copy(center);
       // @ts-ignore
       controls.update();
     }
 
-    // Fit bounds AFTER the camera has been repositioned
-    bounds.refresh().clip().fit();
-  }, [camera, controls, bounds]);
+    // 4. Let Bounds calculate the perfect distance to fit the margin
+    bounds.refresh().fit();
+  }, [camera, controls, bounds, scene]);
 
   const zoom = useCallback((delta: number) => {
     const factor = delta > 0 ? 0.9 : 1.1;
@@ -385,9 +399,10 @@ function ViewHandler({
   useEffect(() => {
     if (viewMode === '2D') {
       setOrientation('top');
-      camera.lookAt(0, 0, 0);
+    } else if (viewMode === '3D') {
+      setOrientation('iso');
     }
-  }, [viewMode, setOrientation, camera]);
+  }, [viewMode, setOrientation]);
 
   const handle = useMemo(() => ({
     resetView,
@@ -497,6 +512,8 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
           <OrthographicCamera
             makeDefault={viewMode === '2D'}
             position={CAM_POS_ORTHO}
+            near={-2000}
+            far={2000}
             up={viewMode === '2D' ? UP_TOP : UP_ORTHO}
           />
           <PerspectiveCamera
@@ -517,7 +534,7 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
           {/* CRITICAL: Use Bounds for framing, but disable Stage centering to ensure 
               absolute coordinate consistency between part and technical overlays. */}
           <group>
-            <Bounds fit clip margin={2.8}>
+            <Bounds fit margin={1.2}>
               <STLModel
                 buffer={buffer}
                 viewMode={viewMode}
