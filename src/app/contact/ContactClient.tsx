@@ -300,13 +300,13 @@ export default function ContactClient() {
                           Phone
                         </p>
                         <a
-                          href="tel:+919311578488"
+                          href="tel:+919607043079"
                           className="text-sm font-bold text-[#1E3A66] hover:text-[#2F5FA7] transition-colors"
                         >
-                          +91 93115 78488
+                          +91 9607043079
                         </a>
                         <p className="text-[10px] text-slate-400 mt-1 font-medium">
-                          Mon–Sat, 10AM–6PM IST
+                          Mon–Sun, 10AM–8PM IST
                         </p>
                       </div>
                     </div>
