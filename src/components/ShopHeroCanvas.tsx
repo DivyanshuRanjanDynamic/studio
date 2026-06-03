@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { ScrollReveal } from '@/components/ScrollReveal';
 
 export function ShopHeroCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -154,5 +155,9 @@ export function ShopHeroCanvas() {
     };
   }, []);
 
-  return <canvas ref={ref} className="w-full h-full opacity-40" />;
+  return (
+    <ScrollReveal variant="fade-in" duration={1200} className="w-full h-full">
+      <canvas ref={ref} className="w-full h-full opacity-40" />
+    </ScrollReveal>
+  );
 }

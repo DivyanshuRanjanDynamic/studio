@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScrollReveal, TextReveal } from '@/components/ScrollReveal';
 
 interface ServiceHeroProps {
   title: string;
@@ -43,44 +44,54 @@ export function ServiceHero({
       <div className="container mx-auto px-4 md:px-10 lg:px-20 relative z-10 mt-16 md:mt-0">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Content Column */}
-          <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left-12 duration-1000">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[10px] md:text-xs font-bold tracking-widest uppercase mb-2">
-              <Icon className="w-4 h-4" />
-              {badge}
-            </div>
+          <div className="space-y-6 md:space-y-8">
+            <ScrollReveal variant="fade-down" delay={100}>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[10px] md:text-xs font-bold tracking-widest uppercase mb-2">
+                <Icon className="w-4 h-4" />
+                {badge}
+              </div>
+            </ScrollReveal>
 
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter uppercase">
-              {title} <br />
-              <span className="text-cyan-300">{subtitle}</span>
+              <TextReveal text={title} /> <br />
+              <ScrollReveal variant="fade-left" delay={300} as="span" className="inline-block text-cyan-300">
+                {subtitle}
+              </ScrollReveal>
             </h1>
 
-            <p className="text-sm md:text-lg text-white/80 max-w-xl leading-relaxed font-medium">
-              {description}
-            </p>
+            <ScrollReveal variant="fade-up" delay={200}>
+              <p className="text-sm md:text-lg text-white/80 max-w-xl leading-relaxed font-medium">
+                {description}
+              </p>
+            </ScrollReveal>
 
-            <div className="flex flex-wrap gap-6 pt-4 border-t border-white/10">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="flex items-center gap-2.5 text-white font-bold">
-                  <stat.icon className="w-5 h-5 text-cyan-300" />
-                  <span className="text-sm md:text-base">{stat.value}</span>
-                </div>
-              ))}
-            </div>
+            <ScrollReveal variant="fade-up" delay={300}>
+              <div className="flex flex-wrap gap-6 pt-4 border-t border-white/10">
+                {stats.map((stat, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5 text-white font-bold">
+                    <stat.icon className="w-5 h-5 text-cyan-300" />
+                    <span className="text-sm md:text-base">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-6">
-              <Link href="/login?redirect=/dashboard">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto px-8 h-14 bg-white hover:bg-slate-100 text-[#2F5FA7] rounded-full font-black text-base gap-2 shadow-2xl transition-all hover:scale-105 active:scale-95"
-                >
-                  Get a Quote <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
+            <ScrollReveal variant="fade-up" delay={400}>
+              <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                <Link href="/login?redirect=/dashboard">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto px-8 h-14 bg-white hover:bg-slate-100 text-[#2F5FA7] rounded-full font-black text-base gap-2 shadow-2xl transition-all hover:scale-105 active:scale-95"
+                  >
+                    Get a Quote <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            </ScrollReveal>
           </div>
 
           {/* Image Column */}
-          <div className="relative group animate-in fade-in zoom-in duration-1000">
+          <ScrollReveal variant="scale-in" delay={300} className="relative group">
             <div className="absolute -inset-4 bg-white/10 rounded-[3rem] blur-2xl group-hover:bg-cyan-500/10 transition-all duration-700 opacity-50" />
             <div className="relative rounded-[2rem] md:rounded-[3rem] overflow-hidden border-4 md:border-8 border-white/10 shadow-2xl aspect-[4/3] bg-slate-900/40 backdrop-blur-sm">
               <img
@@ -102,7 +113,7 @@ export function ServiceHero({
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>

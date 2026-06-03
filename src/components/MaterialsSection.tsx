@@ -6,6 +6,7 @@ import { Search, X, ArrowRight, ChevronRight, Info, ShieldCheck } from 'lucide-r
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase/provider';
+import { ScrollReveal, TextReveal } from '@/components/ScrollReveal';
 
 // --- DATA ---
 import { CATEGORIES, MATERIALS } from '@/lib/data/materials';
@@ -117,41 +118,47 @@ export function MaterialsSection() {
   return (
     <section
       id="materials"
-      className="py-16 md:py-24 bg-white relative overflow-hidden border-t border-slate-200"
+      className="py-16 md:py-24 bg-[#1E3A66] relative overflow-hidden border-t border-[#2F5FA7]"
     >
       {/* Layer 1: Subtle Background Visuals */}
-      <div className="absolute inset-0 blueprint-grid opacity-[0.03] pointer-events-none" />
-      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-white to-transparent opacity-80 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-white to-transparent opacity-100 pointer-events-none" />
+      <div className="absolute inset-0 blueprint-grid opacity-[0.05] pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-[#1E3A66] to-transparent opacity-80 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-[#1E3A66] to-transparent opacity-100 pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Layer 2: Hero Content */}
         <div className="text-center mb-10 md:mb-16">
-          <div className="inline-block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-[#2F5FA7] mb-4 bg-blue-50 px-4 py-1.5 rounded-full border border-blue-100/50">
-            INDUSTRIAL CATALOG
-          </div>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-4 md:mb-6 leading-tight">
-            <span className="text-[#2F5FA7]">{MATERIALS.length}+</span> materials in stock
+          <ScrollReveal variant="fade-down" delay={100}>
+            <div className="inline-block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-cyan-300 mb-4 bg-cyan-900/30 px-4 py-1.5 rounded-full border border-cyan-400/20">
+              INDUSTRIAL CATALOG
+            </div>
+          </ScrollReveal>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4 md:mb-6 leading-tight drop-shadow-md">
+            <span className="text-cyan-400">{MATERIALS.length}+</span> <TextReveal text="materials in stock" />
           </h2>
-          <p className="text-[#64748B] max-w-xl mx-auto text-sm md:text-base font-medium mb-8 text-balance">
-            Every material is stocked, cut to order, and shipped fast. No minimums. No surprises.
-          </p>
-          <div className="max-w-md mx-auto relative mb-12">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search specifications..."
-              className="w-full h-12 md:h-14 pl-12 pr-4 bg-white border border-slate-300/50 rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none text-slate-700 font-medium text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <ScrollReveal variant="fade-up" delay={200}>
+            <p className="text-blue-100/80 max-w-xl mx-auto text-sm md:text-base font-medium mb-8 text-balance">
+              Every material is stocked, cut to order, and shipped fast. No minimums. No surprises.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal variant="scale-in" delay={300}>
+            <div className="max-w-md mx-auto relative mb-12">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search specifications..."
+                className="w-full h-12 md:h-14 pl-12 pr-4 bg-white border border-slate-300/50 rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all outline-none text-slate-700 font-medium text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </ScrollReveal>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-2 mb-4 md:mb-8">
           {/* Subtle Masking gradients for overflow indication */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none md:hidden" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#1E3A66] to-transparent z-10 pointer-events-none md:hidden" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#1E3A66] to-transparent z-10 pointer-events-none" />
 
           <div className="flex overflow-x-auto pb-4 md:pb-6 gap-2 no-scrollbar-on-mobile custom-scrollbar-on-desktop">
             {CATEGORIES.map((cat) => {
@@ -159,18 +166,17 @@ export function MaterialsSection() {
                 cat === 'ALL'
                   ? MATERIALS.length
                   : MATERIALS.filter(
-                      (m) => m.category.toUpperCase() === cat.replace(' ', '_').toUpperCase()
-                    ).length;
+                    (m) => m.category.toUpperCase() === cat.replace(' ', '_').toUpperCase()
+                  ).length;
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveFilter(cat)}
                   className={`
-                    flex-shrink-0 px-5 md:px-6 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs font-bold tracking-wider uppercase transition-all duration-300 border
-                    ${
-                      activeFilter === cat
-                        ? 'bg-[#1e40af] text-white shadow-xl shadow-blue-200 border-[#1e40af]'
-                        : 'bg-white text-[#475569] border-slate-200 hover:border-blue-300 hover:text-[#1e40af] hover:shadow-md'
+                    flex-shrink-0 px-5 md:px-6 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs font-bold tracking-wider uppercase transition-all duration-300 border backdrop-blur-sm
+                    ${activeFilter === cat
+                      ? 'text-[#2F5FA7] border-[#2F5FA7] bg-white'
+                      : 'bg-white text-[#475569] border-slate-200 hover:border-blue-300 hover:text-[#1e40af] '
                     }
                   `}
                 >
@@ -184,44 +190,50 @@ export function MaterialsSection() {
         {/* Layer 3: Highlight Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6 max-w-7xl mx-auto">
           {filteredMaterials.map((mat, idx) => (
-            <div
+            <ScrollReveal
               key={mat.name}
-              onClick={() => {
-                // Check if 'slug' exists on the material object (casting to any for safety with dynamic materials)
-                const material = mat as any;
-                if (material.slug) {
-                  router.push(material.slug);
-                } else {
-                  setSelectedMaterial(mat);
-                }
-              }}
-              className="group bg-white border border-slate-100 rounded-xl md:rounded-2xl p-3 md:p-5 flex items-center gap-4 cursor-pointer transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 active:scale-95 animate-in fade-in zoom-in-95 duration-200 backdrop-blur-sm"
+              variant="fade-up"
+              staggerIndex={idx}
+              staggerDelay={60}
+              className="h-full"
             >
-              <div className="w-14 h-14 shrink-0">
-                <MaterialSwatch mat={mat} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs md:text-sm font-bold text-[#0F172A] mb-0.5 truncate uppercase tracking-tight group-hover:text-blue-600 transition-colors">
-                  {mat.name}
+              <div
+                onClick={() => {
+                  const material = mat as any;
+                  if (material.slug) {
+                    router.push(material.slug);
+                  } else {
+                    setSelectedMaterial(mat);
+                  }
+                }}
+                className="group bg-[#2F5FA7]/10 border border-white/5 rounded-xl md:rounded-2xl p-3 md:p-5 flex items-center gap-4 h-full cursor-pointer transition-all duration-300 hover:border-cyan-400/40 hover:bg-[#2F5FA7]/30 hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] hover:-translate-y-1 active:scale-95 backdrop-blur-sm"
+              >
+                <div className="w-14 h-14 shrink-0">
+                  <MaterialSwatch mat={mat} />
                 </div>
-                <div className="text-[10px] font-mono font-medium text-slate-500 mb-2 truncate opacity-80">
-                  {mat.thicknesses}
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs md:text-sm font-bold text-white mb-0.5 truncate uppercase tracking-tight group-hover:text-cyan-300 transition-colors">
+                    {mat.name}
+                  </div>
+                  <div className="text-[10px] font-mono font-medium text-blue-200/70 mb-2 truncate">
+                    {mat.thicknesses}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {mat.processes.slice(0, 2).map((p) => (
+                      <span
+                        key={p}
+                        className="text-[8px] md:text-[9px] px-2 py-0.5 bg-white/5 text-blue-100 rounded-md font-bold uppercase tracking-wide border border-white/10 group-hover:bg-cyan-500/20 group-hover:text-cyan-100 group-hover:border-cyan-500/30 transition-colors"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {mat.processes.slice(0, 2).map((p) => (
-                    <span
-                      key={p}
-                      className="text-[8px] md:text-[9px] px-2 py-0.5 bg-slate-50 text-slate-600 rounded-md font-bold uppercase tracking-wide border border-slate-100 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors"
-                    >
-                      {p}
-                    </span>
-                  ))}
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white" />
                 </div>
               </div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white" />
-              </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

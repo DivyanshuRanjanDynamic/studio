@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { LandingNav } from './LandingNav';
+import { ScrollReveal } from './ScrollReveal';
 
 interface BlogLayoutProps {
   children: ReactNode;
@@ -20,7 +21,11 @@ export function BlogLayout({ children }: BlogLayoutProps) {
         {/* Grid Pattern */}
         <div className="absolute inset-0 blueprint-grid opacity-[0.03] -z-10" />
 
-        <div className="container mx-auto px-4 relative">{children}</div>
+        <div className="container mx-auto px-4 relative">
+          <ScrollReveal variant="fade-in" duration={800}>
+            {children}
+          </ScrollReveal>
+        </div>
       </div>
     </>
   );
