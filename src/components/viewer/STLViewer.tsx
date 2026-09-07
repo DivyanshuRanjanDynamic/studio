@@ -288,7 +288,7 @@ function BendOverlays({ bends, hoveredIndex, onHoverChange }: { bends: BendFeatu
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-t border-white/20 pt-3 mt-1">
-                      <span className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Bend Radius </span>
+                      <span className="text-[12px] font-bold text-blue-100 uppercase tracking-widest">Bend Radius </span>
                       <span className="text-[14px] font-black text-slate-100"> - R{(bend.radius || 0).toFixed(2)} mm</span>
                     </div>
                   </div>
@@ -604,7 +604,7 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
 
         {serviceMode !== 'none' && (
           <div className="absolute top-4 left-4 z-10">
-            <div className="bg-[#2F5FA7] border px-3 py-1.5 rounded-lg border-[#2F5FA7] shadow-lg shadow-blue-500/20 translate-y-[-2px]">
+            <div className="bg-blue-600 border px-3 py-1.5 rounded-lg border-[#2F5FA7] shadow-lg shadow-blue-500/20 translate-y-[-2px]">
               <p className="text-[10px] font-mono font-black text-white uppercase tracking-widest flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 Service: {serviceMode}
@@ -615,8 +615,8 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
 
         {/* Focus Indicator */}
         <div className="absolute bottom-4 left-4 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] animate-pulse" />
-          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Live 3D Geometry</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+          <span className="text-[8px] font-black text-blue-100 uppercase tracking-widest">Live 3D Geometry</span>
         </div>
       </div>
     );

@@ -87,7 +87,7 @@ export function BendingStep({
           <CornerUpRight className="w-8 h-8 text-slate-300" />
         </div>
         <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2">Bending Not Applicable</h3>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest leading-relaxed">
           Bending is only available for Sheet Metal Cutting services.
         </p>
       </div>
@@ -100,7 +100,7 @@ export function BendingStep({
         <h3 className="text-xl font-semibold text-slate-900 mb-1">
           Bending Configuration
         </h3>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-blue-200">
           Define sheet metal forming and folding requirements
         </p>
       </div>
@@ -113,13 +113,13 @@ export function BendingStep({
       >
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${isBendingEnabled ? 'bg-[#2F5FA7] text-white shadow-md shadow-blue-500/20' : 'bg-slate-100 text-slate-400'
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${isBendingEnabled ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-slate-100 text-blue-100'
               }`}>
               <CornerUpRight className="w-5 h-5" />
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900">Enable Bending</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-blue-200">
                 {isBendingEnabled ? 'Forming service active' : 'Enable for folded sheet parts'}
               </p>
             </div>
@@ -135,7 +135,7 @@ export function BendingStep({
               checked={isBendingEnabled}
               onCheckedChange={onToggle}
               disabled={cannotBend}
-              className="data-[state=checked]:bg-[#2F5FA7]"
+              className="data-[state=checked]:bg-blue-600"
             />
           </div>
         </div>
@@ -146,14 +146,14 @@ export function BendingStep({
             {/* ── Stats Grid ── */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               <div className="bg-white p-4 rounded-xl border border-slate-200">
-                <p className="text-[11px] font-medium text-slate-500 mb-1">Bends</p>
+                <p className="text-[11px] font-medium text-blue-200 mb-1">Bends</p>
                 <div className="flex items-end gap-2">
                   <span className="text-2xl font-semibold text-slate-900 leading-none">{bendCount}</span>
-                  <span className="text-[11px] text-slate-500 pb-0.5">total</span>
+                  <span className="text-[11px] text-blue-200 pb-0.5">total</span>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200">
-                <p className="text-[11px] font-medium text-slate-500 mb-1">Direction</p>
+                <p className="text-[11px] font-medium text-blue-200 mb-1">Direction</p>
                 <div className="mt-2 space-y-1.5">
                   <div className="flex items-center justify-between px-2 py-1 rounded-md bg-blue-50">
                     <div className="flex items-center gap-1">
@@ -171,13 +171,13 @@ export function BendingStep({
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200">
-                <p className="text-[11px] font-medium text-slate-500 mb-1">
+                <p className="text-[11px] font-medium text-blue-200 mb-1">
                   {detectedThickness ? 'Thickness' : 'Analysis'}
                 </p>
                 {detectedThickness ? (
                   <div className="flex items-end gap-1">
                     <span className="text-xl font-semibold text-slate-900 leading-none">{detectedThickness}</span>
-                    <span className="text-[11px] text-slate-500 pb-0.5">mm</span>
+                    <span className="text-[11px] text-blue-200 pb-0.5">mm</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -207,16 +207,16 @@ export function BendingStep({
             {/* ── Bend Details Table ── */}
             {bendCount > 0 && (
               <div className="mb-5">
-                <p className="text-xs font-semibold text-slate-500 mb-3">
+                <p className="text-xs font-semibold text-blue-200 mb-3">
                   Bend Schedule
                 </p>
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                   {/* Table Header */}
                   <div className="grid grid-cols-[40px_1fr_1.2fr_1fr] gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                    <span className="text-[11px] font-medium text-slate-500">#</span>
-                    <span className="text-[11px] font-medium text-slate-500">Angle</span>
-                    <span className="text-[11px] font-medium text-slate-500">Direction</span>
-                    <span className="text-[11px] font-medium text-slate-500">Radius</span>
+                    <span className="text-[11px] font-medium text-blue-200">#</span>
+                    <span className="text-[11px] font-medium text-blue-200">Angle</span>
+                    <span className="text-[11px] font-medium text-blue-200">Direction</span>
+                    <span className="text-[11px] font-medium text-blue-200">Radius</span>
                   </div>
                   {/* Table Body */}
                   <div className="max-h-[180px] overflow-y-auto custom-scrollbar">
@@ -232,7 +232,7 @@ export function BendingStep({
                           onMouseEnter={() => onBendHover?.(idx)}
                           onMouseLeave={() => onBendHover?.(undefined)}
                         >
-                          <span className="text-xs font-medium text-slate-500">{idx + 1}</span>
+                          <span className="text-xs font-medium text-blue-200">{idx + 1}</span>
                           <span className="text-xs font-semibold text-slate-900 font-mono">{bend.angle.toFixed(1)}°</span>
                           <div className="flex items-center gap-1.5">
                             {bend.direction === 'UP' ? (
@@ -272,9 +272,9 @@ export function BendingStep({
 
       {!isBendingEnabled && !cannotBend && (
         <div className="p-4 bg-slate-50/50 border border-slate-100 rounded-xl flex items-start gap-4 transition-all hover:bg-slate-50">
-          <AlertCircle className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+          <AlertCircle className="w-4 h-4 text-blue-100 mt-0.5 shrink-0" />
           <div className="flex-1">
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-relaxed mb-2">
+            <p className="text-[9px] font-bold text-blue-100 uppercase tracking-wider leading-relaxed mb-2">
               Note: Bending is optional. If your part is flat, you can skip this step and proceed to quantity selection.
             </p>
             {bendCount === 0 && (
@@ -310,7 +310,7 @@ export function BendingStep({
           <Layers className="w-4 h-4 text-[#2F5FA7]" />
           <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Why specify bending?</p>
         </div>
-        <p className="text-[10px] font-medium text-slate-500 leading-relaxed px-2">
+        <p className="text-[10px] font-medium text-blue-200 leading-relaxed px-2">
           Bending adds significant structural value but increases production complexity. Specifying it here ensures your quote is generated with industrial precision.
         </p>
       </div>

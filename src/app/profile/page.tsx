@@ -186,14 +186,14 @@ export default function ProfilePage() {
             <Card className="bg-white border-slate-200 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-[#2F5FA7] text-white flex items-center justify-center text-2xl font-bold ring-4 ring-blue-50">
+                  <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold ring-4 ring-blue-50">
                     {initials}
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">
                       {form.fullName || 'Complete your profile'}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">{profile?.email || user.email}</p>
+                    <p className="text-xs text-blue-200 mt-1">{profile?.email || user.email}</p>
                   </div>
                   <Button
                     variant="outline"
@@ -209,7 +209,7 @@ export default function ProfilePage() {
 
             <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                <CardTitle className="text-xs uppercase tracking-[0.2em] text-blue-200">
                   Sections
                 </CardTitle>
               </CardHeader>
@@ -262,7 +262,7 @@ export default function ProfilePage() {
                 {activeSection === 'personal' && (
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200">
                         Full Name
                       </Label>
                       <Input
@@ -273,7 +273,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200">
                         Phone
                       </Label>
                       <Input
@@ -284,12 +284,12 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200">
                         Email Address
                       </Label>
                       <div className="flex flex-col sm:flex-row gap-3">
                         <div className="flex-1 h-11 bg-slate-100 border border-slate-200 rounded-md px-3 flex items-center text-sm text-slate-600">
-                          <Mail className="w-4 h-4 mr-2 text-slate-400" />
+                          <Mail className="w-4 h-4 mr-2 text-blue-100" />
                           {profile?.email || user.email}
                         </div>
                         <Link href="/contact" className="sm:w-auto">
@@ -309,7 +309,7 @@ export default function ProfilePage() {
                 {activeSection === 'organization' && (
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200">
                         Organization
                       </Label>
                       <Input
@@ -320,7 +320,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200">
                         Designation
                       </Label>
                       <Input
@@ -331,11 +331,11 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+                      <Label className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200">
                         Location
                       </Label>
                       <div className="relative">
-                        <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <MapPin className="w-4 h-4 text-blue-100 absolute left-3 top-1/2 -translate-y-1/2" />
                         <Input
                           value={form.location}
                           onChange={(e) => handleFieldChange('location', e.target.value)}
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Password</p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-blue-200 mt-1">
                           Keep your account protected with a strong password.
                         </p>
                       </div>
@@ -367,7 +367,7 @@ export default function ProfilePage() {
                         <p className="text-sm font-semibold text-slate-900">
                           Two-factor authentication
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-blue-200 mt-1">
                           Add an extra security layer for account sign-ins.
                         </p>
                       </div>
@@ -383,7 +383,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Order status updates</p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-blue-200 mt-1">
                           Receive alerts when RFQs and shop orders change status.
                         </p>
                       </div>
@@ -398,7 +398,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Platform updates</p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-blue-200 mt-1">
                           Product announcements and feature releases from MechHub.
                         </p>
                       </div>
@@ -413,7 +413,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Marketing emails</p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-blue-200 mt-1">
                           Promotions, offers, and educational campaign emails.
                         </p>
                       </div>
@@ -430,7 +430,7 @@ export default function ProfilePage() {
                 <Separator />
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-blue-200">
                     Last updated:{' '}
                     <span className="font-semibold text-slate-700">
                       {profile?.updatedAt ? new Date(profile.updatedAt).toLocaleString() : 'Not set'}
@@ -447,7 +447,7 @@ export default function ProfilePage() {
                     </Button>
                     <Button
                       type="button"
-                      className="flex-1 sm:flex-none bg-[#2F5FA7] hover:bg-[#1E3A66]"
+                      className="flex-1 sm:flex-none bg-blue-600 hover:bg-[#1E3A66]"
                       onClick={handleSave}
                       disabled={isSaving}
                     >

@@ -15,14 +15,14 @@ export function WizardSidebar({ steps, currentStepIndex }: WizardSidebarProps) {
       {/* ── HEADER ── */}
       <div className="p-8 border-b border-slate-100">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-[#2F5FA7] flex items-center justify-center shadow-lg shadow-blue-900/10">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/10">
             <span className="text-white font-black text-xs">M</span>
           </div>
           <h2 className="text-sm font-bold tracking-tight text-slate-900 uppercase">
             MechHub Studio
           </h2>
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest">
           Part Configuration Engine
         </p>
       </div>
@@ -63,7 +63,7 @@ export function WizardSidebar({ steps, currentStepIndex }: WizardSidebarProps) {
                         ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                         : isActive
                           ? 'bg-white border-[#2F5FA7] text-[#2F5FA7] shadow-xl shadow-blue-500/10 scale-110'
-                          : 'bg-slate-50 border-slate-100 text-slate-400'
+                          : 'bg-slate-50 border-slate-100 text-blue-100'
                     )}
                   >
                     {isCompleted ? (
@@ -78,7 +78,7 @@ export function WizardSidebar({ steps, currentStepIndex }: WizardSidebarProps) {
                     <p
                       className={cn(
                         'text-[10px] font-black uppercase tracking-[0.15em] mb-0.5 transition-colors',
-                        isActive ? 'text-[#2F5FA7]' : 'text-slate-400'
+                        isActive ? 'text-[#2F5FA7]' : 'text-blue-100'
                       )}
                     >
                       {step.label}
@@ -107,7 +107,7 @@ export function WizardSidebar({ steps, currentStepIndex }: WizardSidebarProps) {
       <div className="p-8 border-t border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-3 opacity-60">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+          <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest leading-relaxed">
             All data is autosaved to project cloud.
           </p>
         </div>

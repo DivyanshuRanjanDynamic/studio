@@ -51,7 +51,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Full Name */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
               Full Name
             </label>
             <div className="relative">
@@ -71,7 +71,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
 
           {/* Phone */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
               Phone Number
             </label>
             <div className="relative">
@@ -91,7 +91,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
 
           {/* Address Line 1 */}
           <div className="space-y-2 md:col-span-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
               Address Line 1
             </label>
             <div className="relative">
@@ -111,7 +111,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
 
           {/* City */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
               City
             </label>
             <input
@@ -128,7 +128,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
 
           {/* State */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
               State
             </label>
             <input
@@ -145,7 +145,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
 
           {/* Pincode */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
               Pincode
             </label>
             <input
@@ -179,7 +179,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
           <div className="space-y-4 pt-4 border-t border-slate-50 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                   GST Number
                 </label>
                 <div className="relative">
@@ -198,7 +198,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                <label className="text-[10px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                   Company Name
                 </label>
                 <div className="relative">
@@ -223,7 +223,7 @@ export function ShippingForm({ onSubmit, defaultValues, isLoading }: ShippingFor
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-[#2F5FA7] hover:bg-[#1E3A66] disabled:opacity-40 shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all transform active:scale-95"
+        className="w-full bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all transform active:scale-95"
       >
         Confirm Shipping Details
       </button>

@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Privacy Policy
           </h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-sm font-bold text-blue-100 uppercase tracking-widest">
             Effective Date: 4 March 2025
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
             </h3>
             <ul className="space-y-4">
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Account Registration:
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
                 </p>
               </li>
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     RFQ Submissions:
@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
                 </p>
               </li>
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Payment Information:
@@ -101,7 +101,7 @@ export default function PrivacyPolicyPage() {
             </h3>
             <ul className="space-y-4">
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Usage & Device Data:
@@ -111,7 +111,7 @@ export default function PrivacyPolicyPage() {
                 </p>
               </li>
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Cookies:
@@ -130,13 +130,13 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="space-y-4">
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   Identifying you as a unique user and creating your personalized MechHub workspace.
                 </p>
               </li>
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   Securely managing your CAD files, manufacturing orders, and communication with
                   MechMasters.
@@ -166,7 +166,7 @@ export default function PrivacyPolicyPage() {
                   key={usage}
                   className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm font-bold text-slate-700 flex items-center gap-3"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                   {usage}
                 </li>
               ))}
@@ -208,7 +208,7 @@ export default function PrivacyPolicyPage() {
                   Entity Oversight
                 </p>
                 <p className="text-slate-800 font-bold">Synchubb Innovations Pvt Ltd</p>
-                <p className="text-slate-500 text-xs">VIT Vellore, Tamil Nadu, India</p>
+                <p className="text-blue-200 text-xs">VIT Vellore, Tamil Nadu, India</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-black uppercase tracking-widest text-[#2F5FA7]">
@@ -220,7 +220,7 @@ export default function PrivacyPolicyPage() {
                 >
                   outreach@mechhub.in
                 </Link>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">
                   +91 9117203884
                 </p>
               </div>

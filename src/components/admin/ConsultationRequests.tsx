@@ -26,7 +26,7 @@ export const ConsultationRequests: React.FC<ConsultationRequestsProps> = ({
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
           Consultation Requests
         </h1>
-        <Badge variant="outline" className="px-3 py-1 border-slate-200 text-slate-500">
+        <Badge variant="outline" className="px-3 py-1 border-slate-200 text-blue-200">
           {consultations?.length || 0} Requests
         </Badge>
       </div>
@@ -35,10 +35,10 @@ export const ConsultationRequests: React.FC<ConsultationRequestsProps> = ({
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-slate-500 w-[180px]">Customer</TableHead>
-              <TableHead className="text-slate-500 w-[250px]">RFQ Details</TableHead>
-              <TableHead className="text-slate-500 min-w-[300px]">Project Brief</TableHead>
-              <TableHead className="text-slate-500 w-[140px] text-right">Date</TableHead>
+              <TableHead className="text-blue-200 w-[180px]">Customer</TableHead>
+              <TableHead className="text-blue-200 w-[250px]">RFQ Details</TableHead>
+              <TableHead className="text-blue-200 min-w-[300px]">Project Brief</TableHead>
+              <TableHead className="text-blue-200 w-[140px] text-right">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -53,8 +53,8 @@ export const ConsultationRequests: React.FC<ConsultationRequestsProps> = ({
                 <TableRow key={req.id} className="border-b border-slate-100 align-top">
                   <TableCell>
                     <div className="font-bold text-slate-900">{req.name}</div>
-                    <div className="text-sm text-slate-500">{req.email}</div>
-                    <div className="text-xs text-slate-400">{req.phone}</div>
+                    <div className="text-sm text-blue-200">{req.email}</div>
+                    <div className="text-xs text-blue-100">{req.phone}</div>
                   </TableCell>
                   <TableCell>
                     {req.quoteRef ? (
@@ -105,7 +105,7 @@ export const ConsultationRequests: React.FC<ConsultationRequestsProps> = ({
                         year: 'numeric',
                       })}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-blue-200">
                       {new Date(req.requestDate).toLocaleTimeString('en-IN', {
                         hour: '2-digit',
                         minute: '2-digit',

@@ -66,7 +66,7 @@ export default function Ar500Page() {
       <LandingNav />
 
       {/* 2. Cinematic Hero Section - Blue & White Theme */}
-      <section className="relative min-h-[600px] bg-[#2F5FA7] flex items-center overflow-hidden">
+      <section className="relative min-h-[600px] bg-blue-600 flex items-center overflow-hidden">
         {/* Abstract Background Elements */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -159,11 +159,11 @@ export default function Ar500Page() {
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }}
-                className={`py-6 text-[10px] font-bold tracking-[0.25em] transition-all relative ${activeTab === item.label ? 'text-[#2F5FA7]' : 'text-slate-400 hover:text-slate-900'}`}
+                className={`py-6 text-[10px] font-bold tracking-[0.25em] transition-all relative ${activeTab === item.label ? 'text-[#2F5FA7]' : 'text-blue-100 hover:text-slate-900'}`}
               >
                 {item.label}
                 {activeTab === item.label && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#2F5FA7] rounded-t-full" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-t-full" />
                 )}
               </button>
             ))}
@@ -181,7 +181,7 @@ export default function Ar500Page() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {/* Left Card: Cut Sizes */}
             <div className="bg-white border border-slate-200 rounded-[24px] p-8 lg:p-10 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-10">
+              <div className="text-[9px] font-black text-blue-100 uppercase tracking-[0.3em] mb-10">
                 Cut Sizes
               </div>
 
@@ -189,12 +189,12 @@ export default function Ar500Page() {
                 <div className="absolute inset-0 blueprint-grid opacity-[0.05]" />
                 <div className="flex items-end gap-6 relative z-10">
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-8 h-12 bg-slate-200 rounded-sm border border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                    <div className="w-8 h-12 bg-slate-200 rounded-sm border border-slate-300 flex items-center justify-center text-[10px] font-bold text-blue-200">
                       A
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-32 h-44 bg-slate-200/80 rounded-xl border border-slate-300 flex items-center justify-center text-lg font-black text-slate-400">
+                    <div className="w-32 h-44 bg-slate-200/80 rounded-xl border border-slate-300 flex items-center justify-center text-lg font-black text-blue-100">
                       B
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function Ar500Page() {
                       {item.label}
                     </span>
                     <button
-                      className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${item.dashed ? 'bg-white border-2 border-dashed border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-500' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${item.dashed ? 'bg-white border-2 border-dashed border-slate-200 text-blue-100 hover:border-slate-300 hover:text-blue-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
                       {item.cta}
                     </button>
@@ -231,10 +231,10 @@ export default function Ar500Page() {
 
             {/* Right Card: Thicknesses */}
             <div className="bg-white border border-slate-200 rounded-[24px] p-8 lg:p-10 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">
+              <div className="text-[9px] font-black text-blue-100 uppercase tracking-[0.3em] mb-6">
                 Thicknesses
               </div>
-              <p className="text-xs font-bold text-slate-500 mb-8">
+              <p className="text-xs font-bold text-blue-200 mb-8">
                 Laser cut, +/- .005" tolerance
               </p>
 
@@ -248,7 +248,7 @@ export default function Ar500Page() {
                       <span className="text-sm font-black text-slate-900 group-hover:text-[#2F5FA7] transition-colors">
                         {t.inch}
                       </span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                         {t.mm}
                       </span>
                     </div>
@@ -285,13 +285,13 @@ export default function Ar500Page() {
               <div className="flex gap-1 mb-4 p-1 bg-slate-100 rounded-xl">
                 <button
                   onClick={() => setUnit('inch')}
-                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${unit === 'inch' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${unit === 'inch' ? 'bg-white text-slate-900 shadow-sm' : 'text-blue-100 hover:text-slate-600'}`}
                 >
                   Inch
                 </button>
                 <button
                   onClick={() => setUnit('mm')}
-                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${unit === 'mm' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${unit === 'mm' ? 'bg-white text-slate-900 shadow-sm' : 'text-blue-100 hover:text-slate-600'}`}
                 >
                   MM
                 </button>
@@ -305,7 +305,7 @@ export default function Ar500Page() {
                     className={`w-full group px-4 py-4 rounded-xl flex items-center justify-between transition-all ${selectedThicknessIndex === idx ? 'bg-white shadow-md border border-slate-200' : 'bg-transparent border border-transparent hover:bg-slate-100'}`}
                   >
                     <span
-                      className={`text-xs font-black transition-colors ${selectedThicknessIndex === idx ? 'text-[#2F5FA7]' : 'text-slate-500 group-hover:text-slate-900'}`}
+                      className={`text-xs font-black transition-colors ${selectedThicknessIndex === idx ? 'text-[#2F5FA7]' : 'text-blue-200 group-hover:text-slate-900'}`}
                     >
                       {unit === 'inch' ? t.inch : t.mm}
                     </span>
@@ -329,7 +329,7 @@ export default function Ar500Page() {
                 <h3 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">
                   {unit === 'inch' ? currentThickness.inch : currentThickness.mm} AR500 Steel
                 </h3>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">
+                <div className="text-[10px] font-black text-blue-100 uppercase tracking-[0.2em] mt-2">
                   Material Details & Specifications
                 </div>
               </div>
@@ -486,7 +486,7 @@ export default function Ar500Page() {
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight text-left">
                       AR400
                     </h3>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 text-left">
+                    <p className="text-[9px] font-bold text-blue-100 uppercase tracking-widest mt-0.5 text-left">
                       1 thickness: .250"
                     </p>
                   </div>
@@ -529,7 +529,7 @@ export default function Ar500Page() {
                   className="p-8 md:p-10 flex items-center gap-6 cursor-pointer group"
                 >
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${expandedFaq === i ? 'bg-[#2F5FA7] text-white rotate-90' : 'bg-white border border-slate-100 text-slate-400 group-hover:text-[#2F5FA7]'}`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${expandedFaq === i ? 'bg-blue-600 text-white rotate-90' : 'bg-white border border-slate-100 text-blue-100 group-hover:text-[#2F5FA7]'}`}
                   >
                     {expandedFaq === i ? (
                       <Minus className="w-5 h-5" />
@@ -545,7 +545,7 @@ export default function Ar500Page() {
                 </div>
                 {expandedFaq === i && (
                   <div className="px-8 md:px-24 pb-12 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <p className="text-base text-slate-500 font-medium leading-relaxed whitespace-pre-line max-w-3xl">
+                    <p className="text-base text-blue-200 font-medium leading-relaxed whitespace-pre-line max-w-3xl">
                       {faq.a}
                     </p>
                   </div>

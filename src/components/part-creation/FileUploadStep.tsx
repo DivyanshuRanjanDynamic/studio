@@ -266,7 +266,7 @@ export function FileUploadStep({
         <h3 className="text-lg font-bold uppercase tracking-wide text-slate-900 mb-2">
           Upload 3D Design
         </h3>
-        <p className="text-xs uppercase tracking-widest font-bold text-slate-500">
+        <p className="text-xs uppercase tracking-widest font-bold text-blue-200">
           Upload your STEP OR STP file to get started
         </p>
       </div>
@@ -283,7 +283,7 @@ export function FileUploadStep({
             onChange={(e) => onPartNameChange(e.target.value)}
             className="h-12 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/20 uppercase text-xs tracking-wider font-bold"
           />
-          <p className="text-[8px] text-slate-400 uppercase tracking-widest font-bold italic pl-1">
+          <p className="text-[8px] text-blue-100 uppercase tracking-widest font-bold italic pl-1">
             Give your part a descriptive name for internal tracking
           </p>
         </div>
@@ -312,7 +312,7 @@ export function FileUploadStep({
                 <div className="p-8 text-center flex flex-col items-center gap-4">
                   <div
                     className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-sm ${dragActive
-                      ? 'bg-[#2F5FA7] text-white border-[#2F5FA7]'
+                      ? 'bg-blue-600 text-white border-[#2F5FA7]'
                       : 'bg-blue-50 text-[#2F5FA7] border-blue-100'
                       }`}
                   >
@@ -334,7 +334,7 @@ export function FileUploadStep({
                     <p className="font-bold text-slate-900 uppercase tracking-wide text-sm">
                       {isUploading ? 'Uploading Design...' : 'Drop your design file here'}
                     </p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">
+                    <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold mt-1">
                       {isUploading
                         ? `${Math.round(uploadProgress)}% completed`
                         : 'or click to browse from files'}
@@ -344,7 +344,7 @@ export function FileUploadStep({
                   {isUploading && (
                     <div className="w-full max-w-xs h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
                       <div
-                        className="h-full bg-[#2F5FA7] transition-all duration-300"
+                        className="h-full bg-blue-600 transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -380,7 +380,7 @@ export function FileUploadStep({
           ) : (
             <div className="space-y-4">
               <Card className="bg-blue-50 border-[#2F5FA7]/20 border relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-1 h-full bg-[#2F5FA7]" />
+                <div className="absolute top-0 left-0 w-1 h-full bg-blue-600" />
                 <div className="p-4 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-blue-100 text-[#2F5FA7] shadow-sm shrink-0">
                     <Box className="w-6 h-6" />
@@ -395,7 +395,7 @@ export function FileUploadStep({
                         Validated
                       </Badge>
                     </div>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                    <p className="text-[9px] text-blue-200 uppercase tracking-widest font-mono">
                       {formatFileSize(uploadedFile.fileSize)}
                     </p>
                   </div>
@@ -403,7 +403,7 @@ export function FileUploadStep({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 text-[9px] font-black uppercase tracking-widest border-[#2F5FA7]/30 text-[#2F5FA7] hover:bg-[#2F5FA7] hover:text-white transition-all gap-1.5"
+                      className="h-8 text-[9px] font-black uppercase tracking-widest border-[#2F5FA7]/30 text-[#2F5FA7] hover:bg-blue-600 hover:text-white transition-all gap-1.5"
                       disabled={isConverting}
                       onClick={async (e) => {
                         e.stopPropagation();
@@ -473,7 +473,7 @@ export function FileUploadStep({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 w-8 h-8"
+                      className="rounded-full hover:bg-red-50 text-blue-100 hover:text-red-500 w-8 h-8"
                       onClick={onClearFile}
                     >
                       <X className="w-4 h-4" />
@@ -497,7 +497,7 @@ export function FileUploadStep({
 
       <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-[#2F5FA7] mt-0.5" />
-        <p className="text-[9px] text-slate-500 uppercase tracking-wider font-bold leading-relaxed">
+        <p className="text-[9px] text-blue-200 uppercase tracking-wider font-bold leading-relaxed">
           Technical design files are handled securely. Our manufacturing experts will review your
           files to ensure production readiness.
         </p>

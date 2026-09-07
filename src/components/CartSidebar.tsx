@@ -77,7 +77,7 @@ export function CartSidebar() {
             </button>
           )}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#E8F1FF] border border-[#2F5FA7]/10">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
             <span className="text-[9px] font-bold text-[#64748B] uppercase">Live Registry</span>
           </div>
         </div>
@@ -95,7 +95,7 @@ export function CartSidebar() {
                 Your procurement list is currently empty. Browse our catalogue to get started.
               </p>
               <Button
-                className="mt-8 bg-[#2F5FA7] hover:bg-[#1E3A66] h-12 px-10 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/10"
+                className="mt-8 bg-blue-600 hover:bg-[#1E3A66] h-12 px-10 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/10"
                 onClick={() => router.push('/shop')}
               >
                 Browse Catalogue
@@ -147,7 +147,7 @@ export function CartSidebar() {
                             e.stopPropagation();
                             removeItem(item.id);
                           }}
-                          className="text-slate-400 hover:text-red-500 transition-all p-1 hover:bg-red-50 rounded-lg group/trash shrink-0"
+                          className="text-blue-100 hover:text-red-500 transition-all p-1 hover:bg-red-50 rounded-lg group/trash shrink-0"
                         >
                           <Trash2 className="w-3.5 h-3.5 group-hover/trash:scale-110 transition-transform" />
                         </button>
@@ -216,7 +216,7 @@ export function CartSidebar() {
                     <span className="text-xs font-bold text-[#64748B] uppercase tracking-widest leading-none">
                       Total Payable
                     </span>
-                    <span className="text-[9px] text-slate-400 mt-1.5 font-bold uppercase tracking-widest">
+                    <span className="text-[9px] text-blue-100 mt-1.5 font-bold uppercase tracking-widest">
                       (Inc. GST)
                     </span>
                   </div>
@@ -230,7 +230,7 @@ export function CartSidebar() {
 
               <div className="flex flex-col gap-3 pt-2">
                 <Link href="/checkout" className="w-full" onClick={() => setIsCartOpen(false)}>
-                  <Button className="w-full h-14 bg-[#2F5FA7] hover:bg-[#1E3A66] text-white font-bold gap-3 rounded-2xl shadow-lg shadow-blue-900/10 group transition-all duration-300 active:scale-[0.98]">
+                  <Button className="w-full h-14 bg-blue-600 hover:bg-[#1E3A66] text-white font-bold gap-3 rounded-2xl shadow-lg shadow-blue-900/10 group transition-all duration-300 active:scale-[0.98]">
                     Proceed to Checkout
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>

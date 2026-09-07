@@ -115,10 +115,10 @@ export function PaymentSection({
           </p>
         </div>
         <div className="text-right">
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+          <span className="text-[9px] font-bold text-blue-100 uppercase tracking-widest block">
             Including GST (18%)
           </span>
-          <span className="text-[11px] font-bold text-slate-500">
+          <span className="text-[11px] font-bold text-blue-200">
             ₹{order.gst.toLocaleString('en-IN')}
           </span>
         </div>
@@ -134,7 +134,7 @@ export function PaymentSection({
       <button
         onClick={handlePayment}
         disabled={isLoading}
-        className="w-full bg-[#2F5FA7] hover:bg-[#1E3A66] disabled:opacity-40 shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all transform active:scale-95 flex items-center justify-center gap-3"
+        className="w-full bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all transform active:scale-95 flex items-center justify-center gap-3"
       >
         {isLoading ? (
           <>
@@ -155,7 +155,7 @@ export function PaymentSection({
           className="h-4 grayscale invert"
         />
         <div className="h-4 w-px bg-slate-300" />
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+        <span className="text-[9px] font-bold text-blue-100 uppercase tracking-widest">
           PCI-DSS Secure
         </span>
       </div>

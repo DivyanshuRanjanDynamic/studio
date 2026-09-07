@@ -789,7 +789,7 @@ function UserDashboardContent() {
           <div className="max-w-md text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm animate-in zoom-in-95 duration-500">
             <Clock className="w-16 h-16 text-[#2F5FA7] mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Application Under Review</h2>
-            <p className="text-slate-500 mb-8 leading-relaxed">
+            <p className="text-blue-200 mb-8 leading-relaxed">
               Thank you for applying to be a MechMaster. Our team is currently reviewing your workshop capabilities. You will receive an email once your vendor profile is approved.
             </p>
             <Button
@@ -816,14 +816,14 @@ function UserDashboardContent() {
                 <p className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                   Admin Access Detected
                 </p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">
                   You are currently in the customer view.
                 </p>
               </div>
             </div>
             <Button
               onClick={() => router.push('/admin')}
-              className="w-full sm:w-auto bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-xl px-6 h-10 text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl px-6 h-10 text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
             >
               Go to Admin Panel
             </Button>
@@ -834,7 +834,7 @@ function UserDashboardContent() {
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
               Project Hub
             </h1>
-            <p className="text-slate-500 mt-2 text-sm tracking-[0.04em]">
+            <p className="text-blue-200 mt-2 text-sm tracking-[0.04em]">
               Manage your manufacturing pipeline
             </p>
           </div>
@@ -849,7 +849,7 @@ function UserDashboardContent() {
               <PhoneCall className="w-4 h-4 mr-2 text-[#2F5FA7]" /> Book Free Consultation
             </Button>
             <Button
-              className="h-11 px-6 text-sm font-semibold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-sm transition-all border-none rounded-xl"
+              className="h-11 px-6 text-sm font-semibold bg-blue-600 hover:bg-[#1E3A66] text-white shadow-sm transition-all border-none rounded-xl"
               onClick={() => setIsCreateProjectOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2" /> Start New Design
@@ -898,7 +898,7 @@ function UserDashboardContent() {
                 {!isRfqsLoading && (!sortedRfqs || sortedRfqs.length === 0) && (
                   <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 space-y-4">
                     <History className="w-12 h-12 mx-auto text-slate-300 opacity-20" />
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                    <p className="text-blue-200 font-bold uppercase tracking-widest text-xs">
                       You haven't started any projects yet.
                     </p>
                     <Button
@@ -949,7 +949,7 @@ function UserDashboardContent() {
                               <p className="font-bold text-slate-900 tracking-tight text-base group-hover:text-[#2F5FA7] transition-colors">
                                 {order.projectName || 'Untitled Design'}
                               </p>
-                              <div className="text-[11px] text-slate-500 flex items-center gap-3 mt-2">
+                              <div className="text-[11px] text-blue-200 flex items-center gap-3 mt-2">
                                 <span className="flex items-center gap-1.5">
                                   <Clock className="w-3 h-3 text-[#2F5FA7]/70" />{' '}
                                   <span className="font-consolas pt-0.5">
@@ -966,7 +966,7 @@ function UserDashboardContent() {
                             </div>
                           </div>
                           <div className="text-right hidden sm:block">
-                            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 leading-none mb-1.5">
+                            <p className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200 leading-none mb-1.5">
                               Status Summary
                             </p>
                             <p className="text-xs font-semibold text-slate-700">
@@ -986,7 +986,7 @@ function UserDashboardContent() {
                               Open
                             </Button>
                             <ChevronRight
-                              className={`w-4 h-4 transition-transform duration-200 ${selectedOrderId === order.id ? 'text-[#2F5FA7] translate-x-0.5' : 'text-slate-400 group-hover:text-[#2F5FA7]'}`}
+                              className={`w-4 h-4 transition-transform duration-200 ${selectedOrderId === order.id ? 'text-[#2F5FA7] translate-x-0.5' : 'text-blue-100 group-hover:text-[#2F5FA7]'}`}
                             />
                           </div>
                         </CardContent>
@@ -1005,7 +1005,7 @@ function UserDashboardContent() {
                 {!isPartsLoading && (!allParts || allParts.length === 0) && (
                   <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 space-y-4">
                     <Layers className="w-12 h-12 mx-auto text-slate-200 opacity-20" />
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                    <p className="text-blue-200 font-bold uppercase tracking-widest text-xs">
                       No design files added to any projects.
                     </p>
                     <Button
@@ -1049,7 +1049,7 @@ function UserDashboardContent() {
                                     >
                                       Preview 3D
                                     </Button>
-                                    <span className="text-[8px] text-slate-400 font-mono italic">
+                                    <span className="text-[8px] text-blue-100 font-mono italic">
                                       {part.cadFile?.fileName.slice(-12)}
                                     </span>
                                   </div>
@@ -1058,12 +1058,12 @@ function UserDashboardContent() {
                                   {SERVICE_DISPLAY_NAMES[part.service] || part.service}
                                 </p>
                                 <div className="space-y-2 mt-2">
-                                  <div className="flex items-center gap-3 text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                                  <div className="flex items-center gap-3 text-[9px] text-blue-100 font-bold uppercase tracking-widest">
                                     <span className="flex items-center gap-1 text-[#2F5FA7]">
                                       <Layers className="w-3 h-3" />
                                       {part.material.name}{' '}
                                       {part.material.grade && (
-                                        <span className="text-slate-400">
+                                        <span className="text-blue-100">
                                           ({part.material.grade})
                                         </span>
                                       )}
@@ -1085,7 +1085,7 @@ function UserDashboardContent() {
                                           <Badge
                                             key={proc}
                                             variant="outline"
-                                            className="text-[7px] px-1.5 py-0 h-4 border-slate-100 bg-slate-50 text-slate-500 font-bold uppercase tracking-tight"
+                                            className="text-[7px] px-1.5 py-0 h-4 border-slate-100 bg-slate-50 text-blue-200 font-bold uppercase tracking-tight"
                                           >
                                             {proc.replace(/_/g, ' ')}
                                           </Badge>
@@ -1101,7 +1101,7 @@ function UserDashboardContent() {
                                                     : part.coatingColor,
                                               }}
                                             />
-                                            <span className="text-[7px] font-bold text-slate-400 uppercase">
+                                            <span className="text-[7px] font-bold text-blue-100 uppercase">
                                               {part.coatingColor}
                                             </span>
                                           </div>
@@ -1131,10 +1131,10 @@ function UserDashboardContent() {
                   (!completedShopOrders || completedShopOrders.length === 0) && (
                     <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 space-y-4">
                       <History className="w-12 h-12 mx-auto text-slate-300 opacity-20" />
-                      <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                      <p className="text-blue-200 font-bold uppercase tracking-widest text-xs">
                         No completed orders yet.
                       </p>
-                      <p className="text-[10px] text-slate-400 max-w-[240px] mx-auto uppercase tracking-wider font-bold italic leading-relaxed">
+                      <p className="text-[10px] text-blue-100 max-w-[240px] mx-auto uppercase tracking-wider font-bold italic leading-relaxed">
                         Only orders that have been successfully delivered are shown in this history.
                       </p>
                     </div>
@@ -1168,7 +1168,7 @@ function UserDashboardContent() {
                                 : 'Components'}{' '}
                               Procured
                             </p>
-                            <div className="text-[11px] text-slate-500 flex items-center gap-3 mt-2">
+                            <div className="text-[11px] text-blue-200 flex items-center gap-3 mt-2">
                               <span className="flex items-center gap-1.5">
                                 <Clock className="w-3 h-3 text-[#2F5FA7]/70" />{' '}
                                 <span className="font-consolas">
@@ -1194,7 +1194,7 @@ function UserDashboardContent() {
                               ₹{(order.pricing?.total || 0).toLocaleString()}
                             </p>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#2F5FA7] transition-transform group-hover:translate-x-0.5" />
+                          <ChevronRight className="w-4 h-4 text-blue-100 group-hover:text-[#2F5FA7] transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </CardContent>
                     </Card>
@@ -1227,7 +1227,7 @@ function UserDashboardContent() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            className="h-8 w-8 text-blue-100 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                             onClick={() => setPendingDeleteProject(selectedOrder)}
                             title="Delete Project"
                           >
@@ -1239,7 +1239,7 @@ function UserDashboardContent() {
                     <CardTitle className="text-2xl text-slate-900 tracking-tight">
                       {selectedOrder.projectName}
                     </CardTitle>
-                    <CardDescription className="text-sm tracking-[0.04em] text-slate-500 mt-2 max-w-[80%] leading-relaxed border-l-2 border-[#2F5FA7]/30 pl-3">
+                    <CardDescription className="text-sm tracking-[0.04em] text-blue-200 mt-2 max-w-[80%] leading-relaxed border-l-2 border-[#2F5FA7]/30 pl-3">
                       <MapPin className="w-3.5 h-3.5 inline-block mr-1 text-[#2F5FA7]" />
                       {selectedOrder.deliveryLocation}
                     </CardDescription>
@@ -1247,7 +1247,7 @@ function UserDashboardContent() {
                   <CardContent className="p-6">
                     <div className="grid grid-cols-2 gap-4 text-xs mb-8">
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
+                        <p className="text-xs text-blue-200 font-bold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
                           <Layers className="w-3 h-3 text-[#2F5FA7]/70" /> Material
                         </p>
                         <p className="font-bold text-slate-900 text-sm font-consolas">
@@ -1257,7 +1257,7 @@ function UserDashboardContent() {
                         </p>
                       </div>
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
+                        <p className="text-xs text-blue-200 font-bold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
                           <Hash className="w-3 h-3 text-[#2F5FA7]/70" /> Quantity
                         </p>
                         <p className="font-bold text-slate-900 text-sm font-consolas">
@@ -1298,7 +1298,7 @@ function UserDashboardContent() {
                                           <p className="font-bold text-slate-900 tracking-tight uppercase">
                                             {quote.vendorName || 'MechMaster'}
                                           </p>
-                                          <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                          <div className="flex items-center gap-1 text-[10px] text-blue-200 font-bold uppercase tracking-widest mt-1">
                                             <TrendingUp className="w-3 h-3 text-[#2F5FA7]" />
                                             {quote.vendorRating || '4.5'} Rating
                                           </div>
@@ -1307,7 +1307,7 @@ function UserDashboardContent() {
                                           <p className="text-2xl font-bold font-consolas text-[#2F5FA7]">
                                             ₹{quote.quotedPrice.toLocaleString()}
                                           </p>
-                                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                          <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest mt-1">
                                             Lead Time:{' '}
                                             <span className="text-slate-900">
                                               {quote.leadTimeDays} Days
@@ -1330,7 +1330,7 @@ function UserDashboardContent() {
                                                     key={idx}
                                                     className={`p-3 rounded-lg text-xs border ${hist.party === 'admin' ? 'bg-blue-50 border-blue-100' : hist.party === 'vendor' ? 'bg-amber-50 border-amber-100' : 'bg-slate-100 border-slate-200'}`}
                                                   >
-                                                    <div className="flex justify-between font-bold mb-2 uppercase tracking-widest text-[10px] text-slate-400">
+                                                    <div className="flex justify-between font-bold mb-2 uppercase tracking-widest text-[10px] text-blue-100">
                                                       <span
                                                         className={
                                                           hist.party === 'admin'
@@ -1369,7 +1369,7 @@ function UserDashboardContent() {
 
                                       <div className="flex flex-col sm:flex-row gap-3 pt-2">
                                         <Button
-                                          className="flex-1 tracking-widest h-11 text-xs bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
+                                          className="flex-1 tracking-widest h-11 text-xs bg-blue-600 hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
                                           onClick={() => handleSelectVendor(quote)}
                                           disabled={isConfirming}
                                         >
@@ -1428,28 +1428,28 @@ function UserDashboardContent() {
                                       Advance Payment Required
                                     </p>
                                   </div>
-                                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                  <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">
                                     Pay 50% to lock in your MechMaster and start production.
                                   </p>
                                 </div>
                                 <div className="p-5 space-y-5">
                                   <div className="space-y-3 mb-2">
-                                    <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
+                                    <div className="flex justify-between text-[10px] uppercase font-bold text-blue-100">
                                       <span>Base Quote</span>
                                       <span>₹{finances.subtotal.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
+                                    <div className="flex justify-between text-[10px] uppercase font-bold text-blue-100">
                                       <span>GST (18%)</span>
                                       <span>₹{finances.gst.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between text-[10px] uppercase font-bold text-slate-400">
+                                    <div className="flex justify-between text-[10px] uppercase font-bold text-blue-100">
                                       <span>Logistic Logistics</span>
                                       <span>₹{finances.shipping.toLocaleString()}</span>
                                     </div>
                                   </div>
                                   <div className="flex items-center justify-between border-t border-slate-50 pt-4">
                                     <div>
-                                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">
+                                      <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest mb-1">
                                         Total Order Value
                                       </p>
                                       <p className="text-lg font-bold text-slate-900 font-consolas">
@@ -1465,7 +1465,7 @@ function UserDashboardContent() {
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex gap-3 text-[10px] text-slate-500 bg-slate-50 rounded-xl p-3.5 border border-slate-100 shadow-sm">
+                                  <div className="flex gap-3 text-[10px] text-blue-200 bg-slate-50 rounded-xl p-3.5 border border-slate-100 shadow-sm">
                                     <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
                                     <p className="leading-relaxed font-bold tracking-wide">
                                       Advance is held securely in escrow. Remaining 50% is due only
@@ -1473,7 +1473,7 @@ function UserDashboardContent() {
                                     </p>
                                   </div>
                                   <Button
-                                    className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-xl shadow-lg transition-all border-none"
+                                    className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl shadow-lg transition-all border-none"
                                     onClick={() => handlePayment('advance')}
                                     disabled={isPayingAdvance || finances.subtotal <= 0}
                                   >
@@ -1513,7 +1513,7 @@ function UserDashboardContent() {
                                   <p className="font-bold text-slate-900 text-sm uppercase tracking-widest">
                                     In Production
                                   </p>
-                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                  <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
                                     Your MechMaster is manufacturing your parts.
                                   </p>
                                 </div>
@@ -1523,12 +1523,12 @@ function UserDashboardContent() {
                                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                                   <div className="flex-1">
                                     <span className="text-emerald-700">Advance Paid</span>
-                                    <span className="text-slate-400 ml-2 font-consolas text-xs">
+                                    <span className="text-blue-100 ml-2 font-consolas text-xs">
                                       · ₹{finances.advance.toLocaleString()}
                                     </span>
                                   </div>
                                   {selectedOrder.paymentStatus.advance.paidAt && (
-                                    <span className="text-slate-400 font-consolas text-xs">
+                                    <span className="text-blue-100 font-consolas text-xs">
                                       {new Date(
                                         selectedOrder.paymentStatus.advance.paidAt
                                       ).toLocaleDateString()}
@@ -1536,7 +1536,7 @@ function UserDashboardContent() {
                                   )}
                                 </div>
                               )}
-                              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-[10px] font-bold uppercase tracking-wide text-slate-500 shadow-sm">
+                              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-[10px] font-bold uppercase tracking-wide text-blue-200 shadow-sm">
                                 <Clock className="w-4 h-4 shrink-0 text-[#2F5FA7] animate-pulse" />
                                 <span className="leading-relaxed">
                                   Remaining{' '}
@@ -1570,7 +1570,7 @@ function UserDashboardContent() {
                                       <p className="font-bold text-slate-900 text-sm uppercase tracking-widest">
                                         Parts Ready for Arrival
                                       </p>
-                                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                      <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
                                         Complete full payment to receive your order.
                                       </p>
                                     </div>
@@ -1594,13 +1594,13 @@ function UserDashboardContent() {
                                       <p className="text-sm font-bold text-slate-900 mb-1 uppercase tracking-widest">
                                         Pay Balance & Complete Order
                                       </p>
-                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                      <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">
                                         Once full payment is received, your MechMaster will ensure
                                         delivery of your parts.
                                       </p>
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                      <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">
+                                      <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
                                         Balance Due (50%)
                                       </p>
                                       <p className="text-2xl font-bold text-[#2F5FA7] font-consolas">
@@ -1608,7 +1608,7 @@ function UserDashboardContent() {
                                       </p>
                                     </div>
                                     <Button
-                                      className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-xl shadow-lg transition-all border-none"
+                                      className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl shadow-lg transition-all border-none"
                                       onClick={() => handlePayment('completion')}
                                       disabled={isPayingCompletion}
                                     >
@@ -1646,7 +1646,7 @@ function UserDashboardContent() {
                                 <p className="text-2xl font-bold uppercase tracking-widest text-slate-900">
                                   Order Complete!
                                 </p>
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500">
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-blue-200">
                                   All payments settled. Thanks for building with MechHub.
                                 </p>
                               </div>
@@ -1655,7 +1655,7 @@ function UserDashboardContent() {
                                   <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm text-xs">
                                     <div className="flex items-center gap-3">
                                       <Check className="w-4 h-4 text-emerald-500" />
-                                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                      <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
                                         Advance Paid
                                       </span>
                                     </div>
@@ -1664,7 +1664,7 @@ function UserDashboardContent() {
                                         ₹{finances.advance.toLocaleString()}
                                       </p>
                                       {selectedOrder.paymentStatus.advance.paidAt && (
-                                        <p className="font-consolas text-slate-400 text-[10px]">
+                                        <p className="font-consolas text-blue-100 text-[10px]">
                                           {new Date(
                                             selectedOrder.paymentStatus.advance.paidAt
                                           ).toLocaleDateString()}
@@ -1677,7 +1677,7 @@ function UserDashboardContent() {
                                   <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm text-xs">
                                     <div className="flex items-center gap-3">
                                       <Check className="w-4 h-4 text-emerald-500" />
-                                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                      <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
                                         Final Payment
                                       </span>
                                     </div>
@@ -1686,7 +1686,7 @@ function UserDashboardContent() {
                                         ₹{finances.balance.toLocaleString()}
                                       </p>
                                       {selectedOrder.paymentStatus.completion.paidAt && (
-                                        <p className="font-consolas text-slate-400 text-[10px]">
+                                        <p className="font-consolas text-blue-100 text-[10px]">
                                           {new Date(
                                             selectedOrder.paymentStatus.completion.paidAt
                                           ).toLocaleDateString()}
@@ -1705,7 +1705,7 @@ function UserDashboardContent() {
                     {/* ── ARTIFACTS / EVIDENCE ── */}
                     {selectedOrder.artifacts && selectedOrder.artifacts.length > 0 && (
                       <div className="pt-6 mt-6 border-t border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-4">
                           Build Evidence & Artifacts
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1726,7 +1726,7 @@ function UserDashboardContent() {
                                   <p className="text-[10px] font-bold text-slate-900 uppercase truncate">
                                     {art.fileName}
                                   </p>
-                                  <p className="text-[9px] text-slate-400 uppercase tracking-tighter">
+                                  <p className="text-[9px] text-blue-100 uppercase tracking-tighter">
                                     {art.type.replace('_', ' ')} • {new Date(art.uploadedAt).toLocaleDateString()}
                                   </p>
                                 </div>
@@ -1734,7 +1734,7 @@ function UserDashboardContent() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-white rounded-full transition-all"
+                                className="h-8 w-8 text-blue-100 hover:text-blue-600 hover:bg-white rounded-full transition-all"
                                 onClick={async () => {
                                   try {
                                     const token = await user?.getIdToken();
@@ -1764,7 +1764,7 @@ function UserDashboardContent() {
                 </Card>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-500 border border-slate-200 rounded-3xl p-12 text-center bg-white shadow-sm">
+              <div className="h-full flex flex-col items-center justify-center text-blue-200 border border-slate-200 rounded-3xl p-12 text-center bg-white shadow-sm">
                 <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
                   <Package className="w-8 h-8 text-slate-300" />
                 </div>
@@ -1796,7 +1796,7 @@ function UserDashboardContent() {
           hideCloseButton={!profile?.onboarded}
         >
           {/* Top accent glow */}
-          <div className="h-1.5 bg-[#2F5FA7]" />
+          <div className="h-1.5 bg-blue-600" />
 
           <div className="p-8">
             <DialogHeader className="pt-0">
@@ -1808,14 +1808,14 @@ function UserDashboardContent() {
                 <button
                   type="button"
                   onClick={handleOnboardingLogout}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-blue-200 transition-colors hover:bg-slate-50 hover:text-slate-700"
                   aria-label="Log out"
                   title="Log out"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>
-              <DialogDescription className="text-slate-500 text-[11px] uppercase tracking-widest pt-2 font-bold">
+              <DialogDescription className="text-blue-200 text-[11px] uppercase tracking-widest pt-2 font-bold">
                 Setup your account to start managing high-precision manufacturing projects.
               </DialogDescription>
             </DialogHeader>
@@ -1823,7 +1823,7 @@ function UserDashboardContent() {
             <form onSubmit={handleOnboardingSubmit} className="space-y-4 py-6">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-slate-400 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
+                  <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
                     Full Name
                   </Label>
                   <Input
@@ -1835,7 +1835,7 @@ function UserDashboardContent() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-slate-400 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
+                  <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
                     Phone Number
                   </Label>
                   <Input
@@ -1847,7 +1847,7 @@ function UserDashboardContent() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-slate-400 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
+                  <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
                     Organization / Institution
                   </Label>
                   <Input
@@ -1860,7 +1860,7 @@ function UserDashboardContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-slate-400 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
+                    <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
                       Your Role
                     </Label>
                     <Input
@@ -1871,7 +1871,7 @@ function UserDashboardContent() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-slate-400 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
+                    <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
                       City
                     </Label>
                     <Input
@@ -1886,7 +1886,7 @@ function UserDashboardContent() {
 
               <Button
                 type="submit"
-                className="w-full h-14 tracking-widest mt-6 bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-xl transition-all border-none rounded-xl text-sm font-bold uppercase"
+                className="w-full h-14 tracking-widest mt-6 bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl transition-all border-none rounded-xl text-sm font-bold uppercase"
                 disabled={isSubmittingProfile}
               >
                 {isSubmittingProfile ? (
@@ -1898,13 +1898,13 @@ function UserDashboardContent() {
                 )}
               </Button>
 
-              <p className="text-[9px] text-slate-400 text-center font-bold uppercase tracking-widest">
+              <p className="text-[9px] text-blue-100 text-center font-bold uppercase tracking-widest">
                 By continuing, you agree to our{' '}
                 <Link
                   href="/terms-of-service"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline hover:text-slate-500"
+                  className="underline hover:text-blue-200"
                 >
                   Terms of Service
                 </Link>{' '}
@@ -1913,7 +1913,7 @@ function UserDashboardContent() {
                   href="/privacy-policy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline hover:text-slate-500"
+                  className="underline hover:text-blue-200"
                 >
                   Privacy Policy
                 </Link>
@@ -1930,14 +1930,14 @@ function UserDashboardContent() {
             <DialogTitle className="text-2xl tracking-tight font-bold text-slate-900 uppercase">
               Negotiate Terms
             </DialogTitle>
-            <DialogDescription className="text-slate-500 text-xs uppercase tracking-widest font-bold pt-1">
+            <DialogDescription className="text-blue-200 text-xs uppercase tracking-widest font-bold pt-1">
               Propose your preferred price and timeline to the MechMaster.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-slate-400 uppercase tracking-widest text-[10px] font-bold pl-1">
+                <Label className="text-blue-100 uppercase tracking-widest text-[10px] font-bold pl-1">
                   Target Price (₹)
                 </Label>
                 <Input
@@ -1948,7 +1948,7 @@ function UserDashboardContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-400 uppercase tracking-widest text-[10px] font-bold pl-1">
+                <Label className="text-blue-100 uppercase tracking-widest text-[10px] font-bold pl-1">
                   Target Lead Time (Days)
                 </Label>
                 <Input
@@ -1960,7 +1960,7 @@ function UserDashboardContent() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-400 uppercase tracking-widest text-[10px] font-bold pl-1">
+              <Label className="text-blue-100 uppercase tracking-widest text-[10px] font-bold pl-1">
                 Message to Vendor
               </Label>
               <Textarea
@@ -1986,7 +1986,7 @@ function UserDashboardContent() {
                         className={`flex justify-between font-bold mb-3 uppercase tracking-widest text-[10px] ${item.party === 'user' || item.party === 'customer' ? 'text-amber-600' : item.party === 'admin' ? 'text-blue-600' : 'text-[#2F5FA7]'}`}
                       >
                         <span>{item.party} Update</span>
-                        <span className="font-consolas text-slate-400">
+                        <span className="font-consolas text-blue-100">
                           {new Date(item.createdAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -2010,13 +2010,13 @@ function UserDashboardContent() {
             <Button
               variant="outline"
               onClick={() => setIsNegotiating(false)}
-              className="border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 uppercase tracking-widest text-[10px] font-bold"
+              className="border-slate-200 text-blue-200 hover:text-slate-900 hover:bg-slate-50 uppercase tracking-widest text-[10px] font-bold"
             >
               Cancel
             </Button>
             <Button
               onClick={handleProposeNegotiation}
-              className="bg-[#2F5FA7] hover:bg-[#1E3A66] text-white tracking-widest shadow-lg transition-all border-none uppercase text-[10px] font-bold px-6 h-10"
+              className="bg-blue-600 hover:bg-[#1E3A66] text-white tracking-widest shadow-lg transition-all border-none uppercase text-[10px] font-bold px-6 h-10"
             >
               Send Counter-Proposal
             </Button>

@@ -211,7 +211,7 @@ export function MechHubLoader({
         <div className="space-y-2 text-center">
           <p className={cn(
             "text-[12px] font-black uppercase tracking-[0.8em] animate-pulse transition-colors duration-500",
-            isDark ? "text-slate-400" : "text-slate-900"
+            isDark ? "text-blue-100" : "text-slate-900"
           )}>
             {text}
           </p>

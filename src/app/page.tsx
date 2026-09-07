@@ -1,33 +1,41 @@
+/*
+ * MECHHUB HOMEPAGE — OUTSTANDING TODOs
+ * ─────────────────────────────────────
+ * [ ] TractionBar: Replace stat numbers with real MechHub metrics
+ * [ ] HowItWorks:  S3 video URL uses a signed URL — replace with a permanent embed
+ * [ ] Testimonials: Replace placeholder quotes with real customer quotes
+ * [ ] Testimonials: Replace placeholder logos with real university/company logos
+ * [ ] Testimonials: Update "500+ builders" count with real number
+ * [ ] MechMasterSection: Replace mock partner card with real MechMaster profiles
+ * [ ] FinalCTA: Confirm /login redirect URL is correct
+ */
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { LandingNav } from '@/components/LandingNav';
-import { RotatingGears } from '@/components/Gears';
-import { ServicesSection } from '@/components/ServicesSection';
 import { MaterialsSection } from '@/components/MaterialsSection';
-import { WhatAreYouBuilding } from '@/components/WhatAreYouBuilding';
-import { HowItWorks } from '@/components/HowItWorks';
 import { TransparencySection } from '@/components/TransparencySection';
 import { ScrollReveal, TextReveal } from '@/components/ScrollReveal';
 import { Footer } from '@/components/Footer';
-import { LaserArrow } from '@/components/LaserArrow';
+
+// MECHHUB: traction bar
+import { TractionBar } from '@/components/home/TractionBar';
+// MECHHUB: audience segmentation
+import { SegmentSection } from '@/components/home/SegmentSection';
+// MECHHUB: services grid
+import { ServicesSection } from '@/components/home/ServicesSection';
+// MECHHUB: how it works + video
+import { HowItWorks } from '@/components/home/HowItWorks';
+// MECHHUB: differentiation / why mechhub
+import { WhyMechHub } from '@/components/home/WhyMechHub';
+// MECHHUB: testimonials
+import { Testimonials } from '@/components/home/Testimonials';
+// MECHHUB: mechmaster ecosystem
+import { MechMasterSection } from '@/components/home/MechMasterSection';
+// MECHHUB: final conversion CTA
+import { FinalCTA } from '@/components/home/FinalCTA';
 import { Button } from '@/components/ui/button';
-import {
-  Settings,
-  Zap,
-  ArrowRight,
-  Upload,
-  CheckCircle2,
-  ShieldCheck,
-  CircleDollarSign,
-  ClipboardCheck,
-  MessageSquare,
-  Rocket,
-  HardHat,
-  Palette,
-  Users,
-  Package,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -259,157 +267,35 @@ export default function Home() {
         `}</style>
       </section>
 
-      <WhatAreYouBuilding />
+      {/* MECHHUB: Section A — Traction Bar */}
+      <TractionBar />
 
+      {/* MECHHUB: Section B — Who Is This For */}
+      <SegmentSection />
+
+      {/* MECHHUB: Section C — Services Grid */}
       <ServicesSection />
+
+      {/* MECHHUB: Section D — How It Works */}
       <HowItWorks />
+
+      {/* Existing: Materials section */}
       <MaterialsSection />
 
+      {/* Existing: Transparency section */}
       <TransparencySection />
 
-      {/* Designed For Section */}
-      <section className="py-24 bg-[#2F5FA7] relative overflow-hidden">
-        {/* Subtle background texture */}
-        <div className="absolute inset-0 blueprint-grid opacity-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1E3A66]/30 to-transparent pointer-events-none" />
+      {/* MECHHUB: Section E — Why MechHub */}
+      <WhyMechHub />
 
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16">
-            <ScrollReveal variant="fade-down" delay={100}>
-              <h2 className="text-xs md:text-sm font-bold uppercase tracking-[0.4em] text-white mb-4">
-                Designed For
-              </h2>
-              <div className="h-[2px] w-12 bg-white/40 mx-auto" />
-            </ScrollReveal>
-          </div>
+      {/* MECHHUB: Section F — Testimonials */}
+      <Testimonials />
 
-          <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {[
-              { icon: Rocket, label: 'Startups', desc: 'RAPID PROTOTYPING' },
-              { icon: HardHat, label: 'Manufacturers', desc: 'FULL-SCALE PRODUCTION' },
-              { icon: Palette, label: 'Designers', desc: 'CUSTOM CREATIONS' },
-              { icon: Users, label: 'Student Teams', desc: 'INNOVATION PROJECTS' },
-            ].map((item, i) => (
-              <ScrollReveal
-                key={item.label}
-                variant="fade-up"
-                staggerIndex={i}
-                staggerDelay={100}
-                className="group flex flex-col items-center text-center p-8 md:p-10 rounded-[2.5rem] bg-white border border-white/20 shadow-xl shadow-[#2F5FA7]/40 hover:shadow-2xl hover:shadow-[#2F5FA7]/40 hover:-translate-y-1 transition-all duration-500"
-              >
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] bg-yellow-500/20 flex items-center justify-center mb-6 md:mb-8 group-hover:scale-110 transition-transform duration-500">
-                  <item.icon className="w-7 h-7 md:w-8 md:h-8 text-[#2F5FA7] stroke-[1.5]" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold text-[#0F172A] mb-2">
-                  {item.label}
-                </h3>
-                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  {item.desc}
-                </p>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* MECHHUB: Section G — MechMaster Ecosystem */}
+      <MechMasterSection />
 
-      {/* Expert Support Section */}
-      <section className="py-20 lg:py-24 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-6xl mx-auto rounded-[32px] md:rounded-[40px] border border-blue-50 bg-[#E8F1FF]/30 p-6 md:p-16 relative overflow-hidden shadow-sm">
-            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#2F5FA7] rounded-full blur-3xl -z-10" />
-            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              <div className="order-1 lg:order-1 text-center lg:text-left">
-                <ScrollReveal variant="fade-in" duration={500}>
-                  <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.4em] text-[#2F5FA7] mb-6">
-                    EXPERT SUPPORT
-                  </p>
-                </ScrollReveal>
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-[#0F172A] mb-6 lg:mb-8 leading-tight lg:leading-[1.15]">
-                  <TextReveal text="Need Expert" delay={100} />
-                  <br className="hidden md:block" />
-                  {' '}<TextReveal text="Manufacturing Guidance?" delay={250} />
-                </h2>
-                <ScrollReveal variant="blur-in" delay={400}>
-                  <p className="text-[#64748B] text-sm md:text-lg leading-relaxed mb-8 md:mb-10 font-medium max-w-lg mx-auto lg:mx-0">
-                    Get your design reviewed, value-engineered, or fully optimised by our in-house
-                    experts, before a single chip is cut.
-                  </p>
-                </ScrollReveal>
-
-                <div className="lg:hidden w-full mb-10 order-2">
-                  <div className="relative h-64 rounded-2xl overflow-hidden shadow-xl border-2 border-white">
-                    <Image
-                      src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800"
-                      alt="Engineering Consultation"
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/40 via-transparent to-transparent" />
-                    <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-lg">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] animate-pulse" />
-                      <span className="text-[10px] font-bold text-[#1E3A66] uppercase tracking-wide">
-                        Expert Available
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 md:gap-6 mb-10 md:mb-12 order-3 lg:order-2">
-                  {[
-                    { icon: Settings, label: 'Design Optimization' },
-                    { icon: CircleDollarSign, label: 'Cost Reduction' },
-                    { icon: ClipboardCheck, label: 'DFM Analysis' },
-                    { icon: MessageSquare, label: 'Full Design Support' },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex flex-col md:flex-row items-center md:items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-white border border-slate-100 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md cursor-default"
-                    >
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                        <item.icon className="w-4 h-4 md:w-5 md:h-5 text-[#2F5FA7]" />
-                      </div>
-                      <p className="text-[10px] md:text-sm font-bold text-[#1E3A66] text-center md:text-left">
-                        {item.label}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="order-4 lg:order-3">
-                  <Button
-                    size="lg"
-                    onClick={() =>
-                      router.push('/login?redirect=/consultation')
-                    }
-                    className="w-full md:w-auto h-14 md:h-16 px-8 md:px-12 text-sm md:text-base font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-full shadow-xl transition-all"
-                  >
-                    Book a Free Consultation <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                  <p className="text-[10px] md:text-xs text-gray-500 mt-3 md:mt-4 font-medium">
-                    No commitment. 30-min free session with our lead engineers.
-                  </p>
-                </div>
-              </div>
-
-              <div className="hidden lg:block relative h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white lg:order-2">
-                <Image
-                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800"
-                  alt="Engineering Consultation"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/60 via-transparent to-transparent" />
-                <div className="absolute bottom-8 left-8 flex items-center gap-3 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#2F5FA7] animate-pulse" />
-                  <span className="text-xs font-bold text-[#1E3A66] uppercase tracking-wide">
-                    Expert Sessions Available
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* MECHHUB: Section H — Final CTA */}
+      <FinalCTA />
 
       <Footer />
     </div>

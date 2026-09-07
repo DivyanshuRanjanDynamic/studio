@@ -26,7 +26,7 @@ export default function NdaPolicyPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
             NDA Policy
           </h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-sm font-bold text-blue-100 uppercase tracking-widest">
             Effective Date: 4 March 2025
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function NdaPolicyPage() {
                   key={item}
                   className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm font-bold text-slate-700 flex items-center gap-3"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                   {item}
                 </li>
               ))}
@@ -110,7 +110,7 @@ export default function NdaPolicyPage() {
                   Corporate Entity
                 </p>
                 <p className="text-slate-800 font-bold">Synchubb Innovations Pvt Ltd</p>
-                <p className="text-slate-500 text-xs">VIT Vellore, Tamil Nadu, India</p>
+                <p className="text-blue-200 text-xs">VIT Vellore, Tamil Nadu, India</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-black uppercase tracking-widest text-[#2F5FA7]">
@@ -122,7 +122,7 @@ export default function NdaPolicyPage() {
                 >
                   outreach@mechhub.in
                 </Link>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">
                   +91 9117203884
                 </p>
               </div>

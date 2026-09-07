@@ -1139,7 +1139,7 @@ export default function AdminPanel() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-slate-500 hover:text-[#1E3A66]"
+            className="h-9 w-9 text-blue-200 hover:text-[#1E3A66]"
             onClick={() => setSidebarOpen((v) => !v)}
           >
             {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -1334,13 +1334,13 @@ export default function AdminPanel() {
                     <h2 className="text-lg sm:text-2xl font-headline font-bold text-[#1E3A66] truncate">
                       {selectedRfq.projectName}
                     </h2>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-slate-500 flex-wrap">
+                    <div className="flex items-center gap-2 mt-1 text-sm text-blue-200 flex-wrap">
                       <span className="font-mono text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
                         {selectedRfq.id.slice(0, 14)}
                       </span>
                       <span className="opacity-40">|</span>
                       <span className="flex items-center gap-1.5">
-                        <UserIcon className="w-3.5 h-3.5 text-slate-400" /> {selectedRfq.userName}
+                        <UserIcon className="w-3.5 h-3.5 text-blue-100" /> {selectedRfq.userName}
                       </span>
                       <span className="opacity-40">|</span>
                       <span className="flex items-center gap-1.5 font-mono text-xs text-[#2F5FA7]">
@@ -1360,7 +1360,7 @@ export default function AdminPanel() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                      className="h-8 w-8 text-blue-100 hover:text-slate-600"
                       onClick={() => setShowDetailsModal(false)}
                     >
                       <X className="w-4 h-4" />
@@ -1390,7 +1390,7 @@ export default function AdminPanel() {
                             return (
                               <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 overflow-hidden text-sm shadow-sm">
                                 <div className="p-4 border-b border-emerald-100 bg-white space-y-2">
-                                  <div className="flex justify-between items-center text-xs text-slate-500">
+                                  <div className="flex justify-between items-center text-xs text-blue-200">
                                     <span className="flex items-center gap-1.5">
                                       <Box className="w-3.5 h-3.5 opacity-50" /> Quotation Subtotal
                                     </span>
@@ -1398,7 +1398,7 @@ export default function AdminPanel() {
                                       INR {finances.subtotal.toLocaleString('en-IN')}
                                     </span>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs text-slate-500">
+                                  <div className="flex justify-between items-center text-xs text-blue-200">
                                     <span className="flex items-center gap-1.5">
                                       <Gavel className="w-3.5 h-3.5 opacity-50" /> GST (18%)
                                     </span>
@@ -1406,7 +1406,7 @@ export default function AdminPanel() {
                                       INR {finances.gst.toLocaleString('en-IN')}
                                     </span>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs text-slate-500">
+                                  <div className="flex justify-between items-center text-xs text-blue-200">
                                     <span className="flex items-center gap-1.5">
                                       <ShoppingCart className="w-3.5 h-3.5 opacity-50" /> Shipping
                                       (Ground)
@@ -1416,7 +1416,7 @@ export default function AdminPanel() {
                                     </span>
                                   </div>
                                   <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                    <span className="text-blue-200 font-bold uppercase text-[10px] tracking-wider">
                                       Total Order Value
                                     </span>
                                     <span className="font-bold text-slate-900 text-lg">
@@ -1448,7 +1448,7 @@ export default function AdminPanel() {
                                       </p>
                                     </div>
                                     {selectedRfq.paymentStatus?.advance?.paid && (
-                                      <div className="text-[10px] text-slate-500 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
+                                      <div className="text-[10px] text-blue-200 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
                                         <p>
                                           On:{' '}
                                           {new Date(
@@ -1484,7 +1484,7 @@ export default function AdminPanel() {
                                       </p>
                                     </div>
                                     {selectedRfq.paymentStatus?.completion?.paid && (
-                                      <div className="text-[10px] text-slate-500 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
+                                      <div className="text-[10px] text-blue-200 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
                                         <p>
                                           On:{' '}
                                           {new Date(
@@ -1523,16 +1523,16 @@ export default function AdminPanel() {
                           <table className="w-full text-left text-[11px] border-collapse">
                             <thead>
                               <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">
+                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider">
                                   Part Details
                                 </th>
-                                <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">
+                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider text-center">
                                   Qty
                                 </th>
-                                <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">
+                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider">
                                   Unit Cost (₹)
                                 </th>
-                                <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-right">
+                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider text-right">
                                   Total (₹)
                                 </th>
                               </tr>
@@ -1548,7 +1548,7 @@ export default function AdminPanel() {
                                       <p className="font-bold text-slate-900 leading-tight">
                                         {part.partName}
                                       </p>
-                                      <p className="text-[9px] text-slate-400 uppercase font-medium">
+                                      <p className="text-[9px] text-blue-100 uppercase font-medium">
                                         {part.material?.name || 'Custom Material'}
                                       </p>
                                     </td>
@@ -1597,7 +1597,7 @@ export default function AdminPanel() {
                               <tr className="border-t border-slate-200">
                                 <td
                                   colSpan={3}
-                                  className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500"
+                                  className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-blue-200"
                                 >
                                   Calculated Subtotal
                                 </td>
@@ -1643,7 +1643,7 @@ export default function AdminPanel() {
                               <div className="p-4 space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1">
-                                    <Label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                                    <Label className="text-[8px] font-bold text-blue-100 uppercase tracking-widest">
                                       Process & Service
                                     </Label>
                                     <p className="text-[11px] font-bold text-slate-800 uppercase leading-none">
@@ -1651,13 +1651,13 @@ export default function AdminPanel() {
                                     </p>
                                   </div>
                                   <div className="space-y-1">
-                                    <Label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                                    <Label className="text-[8px] font-bold text-blue-100 uppercase tracking-widest">
                                       Base Material
                                     </Label>
                                     <p className="text-[11px] font-bold text-slate-800 uppercase leading-none">
                                       {part.material?.name || 'Custom'}
                                       {part.material?.grade && (
-                                        <span className="text-[9px] text-slate-400 font-medium ml-1">
+                                        <span className="text-[9px] text-blue-100 font-medium ml-1">
                                           ({part.material.grade})
                                         </span>
                                       )}
@@ -1667,7 +1667,7 @@ export default function AdminPanel() {
 
                                 <div className="bg-slate-50/80 rounded-lg p-3 grid grid-cols-3 gap-2">
                                   <div className="text-center border-r border-slate-200">
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                                    <p className="text-[7px] font-bold text-blue-100 uppercase tracking-widest mb-0.5">
                                       Thickness
                                     </p>
                                     <p className="text-[10px] font-bold text-slate-900 font-mono">
@@ -1675,7 +1675,7 @@ export default function AdminPanel() {
                                     </p>
                                   </div>
                                   <div className="text-center border-r border-slate-200">
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                                    <p className="text-[7px] font-bold text-blue-100 uppercase tracking-widest mb-0.5">
                                       Finish
                                     </p>
                                     <div className="flex items-center justify-center gap-1.5">
@@ -1691,7 +1691,7 @@ export default function AdminPanel() {
                                     </div>
                                   </div>
                                   <div className="text-center">
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                                    <p className="text-[7px] font-bold text-blue-100 uppercase tracking-widest mb-0.5">
                                       Quantity
                                     </p>
                                     <p className="text-[10px] font-bold text-slate-900 font-mono">
@@ -1740,7 +1740,7 @@ export default function AdminPanel() {
                                             <div className="flex flex-col">
                                               <span className="font-bold text-slate-700">Hole #{tap.holeIndex + 1}</span>
                                               {hole && (
-                                                <span className="text-[8px] text-slate-500 font-mono italic">
+                                                <span className="text-[8px] text-blue-200 font-mono italic">
                                                   Design: Ø {(hole.radius * 2).toFixed(2)}mm × {hole.depth.toFixed(1)}mm
                                                 </span>
                                               )}
@@ -1765,7 +1765,7 @@ export default function AdminPanel() {
                                       {part.analysis.bends.map((bend: any, bIdx: number) => (
                                         <div key={bIdx} className="text-[9px] bg-white/50 p-1.5 rounded border border-blue-100/50 flex flex-col gap-0.5">
                                           <span className="font-bold text-slate-700 uppercase tracking-tighter">Bend #{bIdx + 1}</span>
-                                          <span className="text-[8px] text-slate-500 font-mono">Radius: {bend.radius.toFixed(1)}mm</span>
+                                          <span className="text-[8px] text-blue-200 font-mono">Radius: {bend.radius.toFixed(1)}mm</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1839,7 +1839,7 @@ export default function AdminPanel() {
                                     </div>
                                   )}
                                 </div>
-                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 px-1">
+                                <span className="text-[8px] font-bold text-blue-100 uppercase tracking-widest mt-1 px-1">
                                   {msg.role === 'admin' ? 'Global Admin' : 'Customer'} •{' '}
                                   {new Date(msg.timestamp).toLocaleTimeString([], {
                                     hour: '2-digit',
@@ -1849,7 +1849,7 @@ export default function AdminPanel() {
                               </div>
                             ))
                           ) : (
-                            <div className="py-10 text-center text-slate-400">
+                            <div className="py-10 text-center text-blue-100">
                               <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
                               <p className="text-[10px] uppercase font-bold tracking-widest">
                                 No negotiation history yet
@@ -1869,7 +1869,7 @@ export default function AdminPanel() {
                             />
                             <div className="flex gap-3">
                               <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-blue-100 uppercase">
                                   INR
                                 </span>
                                 <Input
@@ -1893,7 +1893,7 @@ export default function AdminPanel() {
                                 )}
                               </Button>
                             </div>
-                            <p className="text-[9px] text-slate-400 leading-tight">
+                            <p className="text-[9px] text-blue-100 leading-tight">
                               Sending a response will automatically visibility status to "Quotation
                               Received" for the customer.
                             </p>
@@ -1933,7 +1933,7 @@ export default function AdminPanel() {
                                       <p className="font-bold text-slate-900 text-xs truncate">{vendor.teamName || vendor.fullName}</p>
                                       {vendor.isVerified && <Badge className="bg-blue-500 h-3 w-3 p-0 rounded-full flex items-center justify-center border-none"><Check className="w-2 h-2 text-white" /></Badge>}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 uppercase font-medium">{vendor.location} • {vendor.rating || 'N/A'} ⭐</p>
+                                    <p className="text-[10px] text-blue-200 uppercase font-medium">{vendor.location} • {vendor.rating || 'N/A'} ⭐</p>
                                   </div>
                                   <Button
                                     size="sm"
@@ -1947,7 +1947,7 @@ export default function AdminPanel() {
                               );
                             })}
                             {(!vendors || vendors.length === 0) && (
-                              <div className="text-center py-6 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                              <div className="text-center py-6 text-blue-100 text-[10px] font-bold uppercase tracking-widest">
                                 No active MechMasters found in registry
                               </div>
                             )}
@@ -1976,7 +1976,7 @@ export default function AdminPanel() {
                                 </p>
                                 <Badge
                                   variant="outline"
-                                  className={`text-[9px] uppercase mt-1 ${quote.status === 'pending' ? 'border-yellow-500/25 text-yellow-400' : quote.status === 'accepted' ? 'border-green-500/25 text-green-400' : 'border-slate-200 text-slate-500'}`}
+                                  className={`text-[9px] uppercase mt-1 ${quote.status === 'pending' ? 'border-yellow-500/25 text-yellow-400' : quote.status === 'accepted' ? 'border-green-500/25 text-green-400' : 'border-slate-200 text-blue-200'}`}
                                 >
                                   {quote.status}
                                 </Badge>
@@ -1985,7 +1985,7 @@ export default function AdminPanel() {
                                 <p className="text-xl font-bold text-primary">
                                   INR {Number(quote.quotedPrice).toLocaleString('en-IN')}
                                 </p>
-                                <p className="text-xs text-slate-500">{quote.leadTimeDays} days</p>
+                                <p className="text-xs text-blue-200">{quote.leadTimeDays} days</p>
                               </div>
                             </div>
                             <div className="flex gap-2">
@@ -2022,8 +2022,8 @@ export default function AdminPanel() {
                       {(!selectedRfqQuotes || selectedRfqQuotes.length === 0) && (
                         <div className="p-8 sm:p-14 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
                           <Clock className="w-10 h-10 mx-auto text-muted-foreground/15 mb-3" />
-                          <p className="text-sm text-slate-500">No active bids yet</p>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-sm text-blue-200">No active bids yet</p>
+                          <p className="text-xs text-blue-100 mt-1">
                             Send a quotation to start receiving bids.
                           </p>
                         </div>
@@ -2133,7 +2133,7 @@ export default function AdminPanel() {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                  <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
                     New Price (INR)
                   </Label>
                   <Input
@@ -2144,7 +2144,7 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                  <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
                     New Lead Time (Days)
                   </Label>
                   <Input
@@ -2156,7 +2156,7 @@ export default function AdminPanel() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
                   Revision Reason / Message
                 </Label>
                 <Textarea
@@ -2207,7 +2207,7 @@ export default function AdminPanel() {
                 <h2 className="text-xl font-headline font-bold text-[#1E3A66]">
                   MechMaster Wizard
                 </h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                <p className="text-xs text-blue-200 font-bold uppercase tracking-widest mt-0.5">
                   Step {vendorStep} of {totalVendorSteps}
                 </p>
               </div>
@@ -2236,7 +2236,7 @@ export default function AdminPanel() {
                       )}
                     </div>
                     <div className="space-y-2 flex-1">
-                      <Label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+                      <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-widest">
                         Brand Mark
                       </Label>
                       <Button
@@ -2259,7 +2259,7 @@ export default function AdminPanel() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Official Company Name
                       </Label>
                       <Input
@@ -2270,7 +2270,7 @@ export default function AdminPanel() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Primary Identity
                       </Label>
                       <Input
@@ -2281,7 +2281,7 @@ export default function AdminPanel() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Contact Email
                       </Label>
                       <Input
@@ -2293,7 +2293,7 @@ export default function AdminPanel() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Direct Comms
                       </Label>
                       <Input
@@ -2304,7 +2304,7 @@ export default function AdminPanel() {
                       />
                     </div>
                     <div className="space-y-2 col-span-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Operation Center
                       </Label>
                       <Input
@@ -2354,7 +2354,7 @@ export default function AdminPanel() {
                 >
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Workshop Intelligence (Bio/Description)
                       </Label>
                       <Textarea
@@ -2366,7 +2366,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                           Exp. Years
                         </Label>
                         <Input
@@ -2377,7 +2377,7 @@ export default function AdminPanel() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                           Initial Tier Rating
                         </Label>
                         <Input
@@ -2405,7 +2405,7 @@ export default function AdminPanel() {
                           <Label htmlFor="v_isActive" className="text-slate-900 font-bold text-sm">
                             Active in Marketplace
                           </Label>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
+                          <p className="text-[10px] text-blue-200 uppercase font-bold tracking-widest">
                             Visibility status in listings
                           </p>
                         </div>
@@ -2425,7 +2425,7 @@ export default function AdminPanel() {
                           <Label htmlFor="v_isVerified" className="text-blue-700 font-bold text-sm">
                             Verified Hub Partner
                           </Label>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
+                          <p className="text-[10px] text-blue-200 uppercase font-bold tracking-widest">
                             Grant official verification badge
                           </p>
                         </div>
@@ -2453,7 +2453,7 @@ export default function AdminPanel() {
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-slate-500 hover:text-slate-900"
+                  className="text-blue-200 hover:text-slate-900"
                   onClick={() =>
                     vendorStep > 1 ? setVendorStep((v) => v - 1) : setShowVendorModal(false)
                   }
@@ -2501,7 +2501,7 @@ export default function AdminPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                    className="h-8 w-8 text-blue-100 hover:text-slate-600"
                     onClick={() => setShowProductModal(false)}
                     type="button"
                   >
@@ -2512,7 +2512,7 @@ export default function AdminPanel() {
               <CardContent className="space-y-4 pt-0 overflow-y-auto max-h-[70vh]">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                       Product Name
                     </Label>
                     <Input
@@ -2524,7 +2524,7 @@ export default function AdminPanel() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                       SKU / Model
                     </Label>
                     <Input
@@ -2539,7 +2539,7 @@ export default function AdminPanel() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                       Category
                     </Label>
                     <Select
@@ -2560,7 +2560,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="space-y-2 text-right flex flex-col justify-end pb-2">
                     <div className="flex items-center justify-end gap-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                         Live on Store
                       </Label>
                       <Checkbox
@@ -2574,7 +2574,7 @@ export default function AdminPanel() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                       Base Cost (INR)
                     </Label>
                     <Input
@@ -2586,7 +2586,7 @@ export default function AdminPanel() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                       Retail Listing (INR)
                     </Label>
                     <Input
@@ -2598,7 +2598,7 @@ export default function AdminPanel() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                       Inventory
                     </Label>
                     <Input
@@ -2612,7 +2612,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                     Technical Specifications
                   </Label>
                   <Input
@@ -2625,7 +2625,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
                     Marketing Description
                   </Label>
                   <Textarea
@@ -2717,7 +2717,7 @@ export default function AdminPanel() {
                         (!selectedProduct.images || selectedProduct.images.length === 0) && (
                           <div className="col-span-4 py-8 text-center">
                             <ImageIcon className="w-6 h-6 mx-auto text-slate-300 mb-2" />
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest px-4 font-bold">
+                            <p className="text-[10px] text-blue-100 uppercase tracking-widest px-4 font-bold">
                               Drag assets here
                             </p>
                           </div>
@@ -2731,7 +2731,7 @@ export default function AdminPanel() {
                   variant="ghost"
                   onClick={() => setShowProductModal(false)}
                   type="button"
-                  className="text-slate-500 hover:text-slate-900"
+                  className="text-blue-200 hover:text-slate-900"
                 >
                   Cancel
                 </Button>

@@ -115,7 +115,7 @@ export default function ContactClient() {
                       email for confirmation.
                     </p>
                     <Link href="/">
-                      <Button className="mt-8 bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-blue-900/10 group">
+                      <Button className="mt-8 bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-blue-900/10 group">
                         Back to Home{' '}
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
@@ -140,7 +140,7 @@ export default function ContactClient() {
                             name="firstName"
                             required
                             placeholder="John"
-                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
+                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
                           />
                         </div>
                         <div className="space-y-2">
@@ -155,7 +155,7 @@ export default function ContactClient() {
                             name="lastName"
                             required
                             placeholder="Doe"
-                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
+                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
                           />
                         </div>
                       </div>
@@ -173,7 +173,7 @@ export default function ContactClient() {
                           type="email"
                           required
                           placeholder="john@company.com"
-                          className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
+                          className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
                         />
                       </div>
 
@@ -184,7 +184,7 @@ export default function ContactClient() {
                             className="text-[11px] font-bold text-[#2F5FA7] uppercase tracking-widest ml-1"
                           >
                             Phone{' '}
-                            <span className="text-slate-400 normal-case tracking-normal">
+                            <span className="text-blue-100 normal-case tracking-normal">
                               (optional)
                             </span>
                           </label>
@@ -193,7 +193,7 @@ export default function ContactClient() {
                             name="phone"
                             type="tel"
                             placeholder="+91 98765 43210"
-                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
+                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
                           />
                         </div>
                         <div className="space-y-2">
@@ -202,7 +202,7 @@ export default function ContactClient() {
                             className="text-[11px] font-bold text-[#2F5FA7] uppercase tracking-widest ml-1"
                           >
                             Company{' '}
-                            <span className="text-slate-400 normal-case tracking-normal">
+                            <span className="text-blue-100 normal-case tracking-normal">
                               (optional)
                             </span>
                           </label>
@@ -210,7 +210,7 @@ export default function ContactClient() {
                             id="company"
                             name="company"
                             placeholder="Acme Inc."
-                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
+                            className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 h-12 text-sm rounded-xl transition-all font-medium"
                           />
                         </div>
                       </div>
@@ -228,11 +228,11 @@ export default function ContactClient() {
                           required
                           minLength={10}
                           placeholder="Tell us about your project, requirements, or any questions you have..."
-                          className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 min-h-[140px] text-sm rounded-xl resize-none transition-all font-medium"
+                          className="bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20 min-h-[140px] text-sm rounded-xl resize-none transition-all font-medium"
                         />
                       </div>
 
-                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                      <p className="text-[11px] text-blue-100 font-medium leading-relaxed">
                         By submitting this form, you agree to our{' '}
                         <Link
                           href="/privacy-policy"
@@ -245,7 +245,7 @@ export default function ContactClient() {
 
                       <Button
                         type="submit"
-                        className="w-full h-14 font-bold text-base bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all active:scale-[0.98] group"
+                        className="w-full h-14 font-bold text-base bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all active:scale-[0.98] group"
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -279,7 +279,7 @@ export default function ContactClient() {
                         <Mail className="w-4.5 h-4.5 text-[#2F5FA7]" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1">
                           Email
                         </p>
                         <a
@@ -296,7 +296,7 @@ export default function ContactClient() {
                         <Phone className="w-4.5 h-4.5 text-[#2F5FA7]" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1">
                           Phone
                         </p>
                         <a
@@ -305,7 +305,7 @@ export default function ContactClient() {
                         >
                           +91 9607043079
                         </a>
-                        <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                        <p className="text-[10px] text-blue-100 mt-1 font-medium">
                           Mon–Sun, 10AM–8PM IST
                         </p>
                       </div>
@@ -316,7 +316,7 @@ export default function ContactClient() {
                         <MapPin className="w-4.5 h-4.5 text-[#2F5FA7]" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1">
                           Office
                         </p>
                         <p className="text-sm font-bold text-[#1E3A66] leading-relaxed">
@@ -355,7 +355,7 @@ export default function ContactClient() {
                       'How do I track my order?',
                     ].map((q) => (
                       <div key={q} className="flex items-center gap-3 group">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7]/30 group-hover:bg-[#2F5FA7] transition-colors shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7]/30 group-hover:bg-blue-600 transition-colors shrink-0" />
                         <p className="text-sm text-[#64748B] font-medium group-hover:text-[#1E3A66] transition-colors">
                           {q}
                         </p>

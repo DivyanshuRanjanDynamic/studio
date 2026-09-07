@@ -286,7 +286,7 @@ export default function VendorOnboardingPage() {
 
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 transition-colors hover:text-[#1a5fad]"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-blue-200 transition-colors hover:text-[#1a5fad]"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to dashboard
@@ -303,7 +303,7 @@ export default function VendorOnboardingPage() {
                 </div>
                 <div className="text-right flex items-baseline gap-1">
                   <span className="text-xl font-black text-[#1a5fad]">{progressPercent}%</span>
-                  <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Complete</span>
+                  <span className="text-[9px] uppercase font-bold text-blue-100 tracking-wider">Complete</span>
                 </div>
               </div>
 
@@ -327,7 +327,7 @@ export default function VendorOnboardingPage() {
                             relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300
                             ${isComplete
                             ? 'bg-[#1a5fad] border-[#1a5fad] text-white'
-                            : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#1a5fad]/30'
+                            : 'bg-white border-slate-200 text-blue-100 group-hover:border-[#1a5fad]/30'
                           }
                           `}>
                           {isComplete ? (
@@ -338,7 +338,7 @@ export default function VendorOnboardingPage() {
                         </div>
                         <span className={`
                             mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors duration-300
-                            ${isComplete ? 'text-[#1a3766]' : 'text-slate-400'}
+                            ${isComplete ? 'text-[#1a3766]' : 'text-blue-100'}
                           `}>
                           {step.label}
                         </span>
@@ -377,7 +377,7 @@ export default function VendorOnboardingPage() {
                     </CardHeader>
                     <CardContent className="grid gap-2 sm:grid-cols-2 px-4 pb-3">
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="companyName">Company Name</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="companyName">Company Name</Label>
                         <Input
                           className="h-9 text-sm"
                           id="companyName"
@@ -389,7 +389,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="ownerName">Owner Name</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="ownerName">Owner Name</Label>
                         <Input
                           className="h-9 text-sm"
                           id="ownerName"
@@ -401,7 +401,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="contactNumber">Contact Number</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="contactNumber">Contact Number</Label>
                         <Input
                           className="h-9 text-sm"
                           id="contactNumber"
@@ -418,7 +418,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="email">Email</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="email">Email</Label>
                         <Input
                           className="h-9 text-sm"
                           id="email"
@@ -431,7 +431,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1 md:col-span-2">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="location">Exact Location</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="location">Exact Location</Label>
                         <Input
                           className="h-9 text-sm"
                           id="location"
@@ -445,7 +445,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="city">City</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="city">City</Label>
                         <Input
                           className="h-9 text-sm"
                           id="city"
@@ -457,7 +457,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="pincode">Pincode</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="pincode">Pincode</Label>
                         <Input
                           className="h-9 text-sm"
                           id="pincode"
@@ -471,7 +471,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1 md:col-span-2">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="gstNumber">GST Number (if any)</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="gstNumber">GST Number (if any)</Label>
                         <Input
                           className="h-9 text-sm"
                           id="gstNumber"
@@ -496,7 +496,7 @@ export default function VendorOnboardingPage() {
                             {form.capabilities.length > 0
                               ? `${form.capabilities.length} capabilities selected`
                               : (
-                                <span className="text-slate-500">Select capabilities</span>
+                                <span className="text-blue-200">Select capabilities</span>
                               )}
                           </Button>
                         </DropdownMenuTrigger>
@@ -521,7 +521,7 @@ export default function VendorOnboardingPage() {
 
                       {form.capabilities.includes('Other') && (
                         <div className="space-y-1">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="otherCapability">Please specify</Label>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="otherCapability">Please specify</Label>
                           <Input
                             className="h-9 text-sm"
                             id="otherCapability"
@@ -568,7 +568,7 @@ export default function VendorOnboardingPage() {
                     </CardHeader>
                     <CardContent className="grid gap-3 md:grid-cols-2 p-4">
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="password">Set Password</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="password">Set Password</Label>
                         <div className="relative">
                           <Input
                             className="h-9 text-sm pr-9"
@@ -581,7 +581,7 @@ export default function VendorOnboardingPage() {
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-100 hover:text-slate-600 transition-colors"
                           >
                             {showPassword ? (
                               <EyeOff className="h-4 w-4" />
@@ -594,7 +594,7 @@ export default function VendorOnboardingPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="confirmPassword">Confirm Password</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wide text-blue-200" htmlFor="confirmPassword">Confirm Password</Label>
                         <div className="relative">
                           <Input
                             className="h-9 text-sm pr-9"
@@ -607,7 +607,7 @@ export default function VendorOnboardingPage() {
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-100 hover:text-slate-600 transition-colors"
                           >
                             {showConfirmPassword ? (
                               <EyeOff className="h-4 w-4" />
@@ -662,7 +662,7 @@ export default function VendorOnboardingPage() {
                         'Continue'
                       )}
                     </Button>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-blue-200">
                       Submit is enabled only after required fields, capabilities, and NDA consent are valid.
                     </p>
                   </div>

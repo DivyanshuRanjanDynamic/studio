@@ -64,11 +64,11 @@ export default function BlogPage() {
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4 items-center sticky top-24 z-20 bg-white/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-100 shadow-xl">
           <div className="relative w-full sm:flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-100" />
             <Input
               type="text"
               placeholder="Search articles, technical guides..."
-              className="pl-10 h-11 bg-slate-50 border-slate-200 text-[#1E3A66] rounded-xl placeholder:text-slate-400 focus:ring-[#2F5FA7]/20"
+              className="pl-10 h-11 bg-slate-50 border-slate-200 text-[#1E3A66] rounded-xl placeholder:text-blue-100 focus:ring-[#2F5FA7]/20"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -91,7 +91,7 @@ export default function BlogPage() {
             </select>
             <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
               <svg
-                className="w-4 h-4 text-slate-400"
+                className="w-4 h-4 text-blue-100"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -121,7 +121,7 @@ export default function BlogPage() {
             </p>
             <Button
               variant="outline"
-              className="mt-4 border-slate-200 text-slate-500 hover:text-[#2F5FA7] rounded-full"
+              className="mt-4 border-slate-200 text-blue-200 hover:text-[#2F5FA7] rounded-full"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedTag(null);

@@ -239,7 +239,7 @@ export function SecondaryProcessSelection({
         <h3 className="text-lg font-black uppercase tracking-wide text-slate-900 mb-1">
           Secondary Processes
         </h3>
-        <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-blue-100">
           Optional treatments for your {selectedService.replace(/_/g, ' ')} part
         </p>
       </div>
@@ -262,10 +262,10 @@ export function SecondaryProcessSelection({
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => onProcessToggle(process.id)}
-                    className="mt-1 data-[state=checked]:bg-[#2F5FA7] data-[state=checked]:border-[#2F5FA7]"
+                    className="mt-1 data-[state=checked]:bg-blue-600 data-[state=checked]:border-[#2F5FA7]"
                   />
                   <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#2F5FA7] text-white' : 'bg-slate-100 text-slate-500'
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-blue-200'
                       }`}
                   >
                     {process.icon}
@@ -289,7 +289,7 @@ export function SecondaryProcessSelection({
                           </Button>
                         )}
                       </div>
-                      <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">
+                      <p className="text-[10px] text-blue-200 leading-relaxed mt-0.5">
                         {process.description}
                       </p>
 
@@ -330,7 +330,7 @@ export function SecondaryProcessSelection({
       {needsColor && (
         <div className="space-y-4 pt-4 border-t border-slate-100">
           <div className="flex items-center gap-2">
-            <Badge className="bg-[#2F5FA7] text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 border-none">
+            <Badge className="bg-blue-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 border-none">
               <Paintbrush className="w-3 h-3 mr-1" />
               Finish Color Required
             </Badge>
@@ -407,9 +407,9 @@ export function SecondaryProcessSelection({
               value={tappingNotes}
               onChange={(e) => onTappingNotesChange?.(e.target.value)}
               placeholder="E.g., '4x M6 holes along the top flange, 2x M8 holes on the mounting bracket...'"
-              className="w-full min-h-[100px] p-3 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl resize-y focus:border-[#2F5FA7] focus:ring-1 focus:ring-[#2F5FA7]/20 focus:outline-none transition-all placeholder:text-slate-400 placeholder:text-[10px] placeholder:italic"
+              className="w-full min-h-[100px] p-3 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-xl resize-y focus:border-[#2F5FA7] focus:ring-1 focus:ring-[#2F5FA7]/20 focus:outline-none transition-all placeholder:text-blue-100 placeholder:text-[10px] placeholder:italic"
             />
-            <p className="text-[8px] text-slate-400 uppercase tracking-widest font-bold italic pl-1">
+            <p className="text-[8px] text-blue-100 uppercase tracking-widest font-bold italic pl-1">
               Include hole positions, quantities, and desired thread sizes
             </p>
           </div>
@@ -429,7 +429,7 @@ export function SecondaryProcessSelection({
                   {METRIC_TAPS.map(tap => (
                     <div key={tap.id} className="px-3 py-1.5 flex justify-between items-center hover:bg-blue-50/50 transition-colors">
                       <span className="text-[10px] font-bold text-slate-700">{tap.name}</span>
-                      <span className="text-[9px] font-mono text-slate-400">{tap.drillSize}mm</span>
+                      <span className="text-[9px] font-mono text-blue-100">{tap.drillSize}mm</span>
                     </div>
                   ))}
                 </div>
@@ -443,7 +443,7 @@ export function SecondaryProcessSelection({
                   {IMPERIAL_TAPS.map(tap => (
                     <div key={tap.id} className="px-3 py-1.5 flex justify-between items-center hover:bg-blue-50/50 transition-colors">
                       <span className="text-[10px] font-bold text-slate-700">{tap.name}</span>
-                      <span className="text-[9px] font-mono text-slate-400">{tap.drillSize}mm</span>
+                      <span className="text-[9px] font-mono text-blue-100">{tap.drillSize}mm</span>
                     </div>
                   ))}
                 </div>
@@ -456,20 +456,20 @@ export function SecondaryProcessSelection({
       {selectedProcesses.includes('tapping') && !hideTappingPanel && conversionResult?.holes && conversionResult.holes.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center justify-between">
-            <Badge className="bg-[#2F5FA7] text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 border-none">
+            <Badge className="bg-blue-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 border-none">
               <TableProperties className="w-3 h-3 mr-1" />
               Thread Configuration
             </Badge>
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+            <span className="text-[9px] font-black text-blue-100 uppercase tracking-widest">
               {conversionResult.holes.length} Holes Detected
             </span>
           </div>
 
           <div className="rounded-xl border border-slate-100 overflow-hidden bg-slate-50/50">
             <div className="grid grid-cols-4 px-4 py-2 bg-slate-100/50 border-b border-slate-100">
-              <span className="text-[8px] font-black text-slate-400 uppercase">Diameter (Ø)</span>
-              <span className="text-[8px] font-black text-slate-400 uppercase">Depth</span>
-              <span className="text-[8px] font-black text-slate-500 uppercase col-span-2">Feature / Thread Selection</span>
+              <span className="text-[8px] font-black text-blue-100 uppercase">Diameter (Ø)</span>
+              <span className="text-[8px] font-black text-blue-100 uppercase">Depth</span>
+              <span className="text-[8px] font-black text-blue-200 uppercase col-span-2">Feature / Thread Selection</span>
             </div>
 
             <div className="divide-y divide-slate-100">
@@ -496,11 +496,11 @@ export function SecondaryProcessSelection({
                   >
                     <div className="flex flex-col">
                       <span className="text-[11px] font-black text-slate-900 tracking-tight">{diamInch.toFixed(4)}"</span>
-                      <span className="text-[8px] font-bold text-slate-400 tabular-nums">{diamMm.toFixed(2)}mm</span>
+                      <span className="text-[8px] font-bold text-blue-100 tabular-nums">{diamMm.toFixed(2)}mm</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[11px] font-black text-slate-900 tracking-tight">{depthInch.toFixed(3)}"</span>
-                      <span className="text-[8px] font-bold text-slate-400 tabular-nums">{hole.depth.toFixed(1)}mm</span>
+                      <span className="text-[8px] font-bold text-blue-100 tabular-nums">{hole.depth.toFixed(1)}mm</span>
                     </div>
 
                     <div className="col-span-2 flex justify-end">
@@ -514,12 +514,12 @@ export function SecondaryProcessSelection({
                             className={cn(
                               "h-9 px-4 text-[10px] font-black uppercase tracking-widest gap-2 rounded-lg border-2 transition-all duration-300",
                               selection
-                                ? "bg-[#2F5FA7] hover:bg-[#1E3E6F] text-white border-transparent shadow-lg shadow-blue-900/20"
+                                ? "bg-blue-600 hover:bg-[#1E3E6F] text-white border-transparent shadow-lg shadow-blue-900/20"
                                 : "bg-white border-slate-200 hover:border-[#2F5FA7] hover:text-[#2F5FA7] text-slate-600"
                             )}
                           >
                             {selection ? selection.tapType : "Select Tap"}
-                            <ChevronDown className={cn("w-3 h-3 transition-transform duration-300", selection ? "text-white/70" : "text-slate-400")} />
+                            <ChevronDown className={cn("w-3 h-3 transition-transform duration-300", selection ? "text-white/70" : "text-blue-100")} />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-64 p-2 bg-white/95 backdrop-blur-xl border-slate-200 shadow-2xl rounded-xl z-[9000]" align="end">
@@ -548,11 +548,11 @@ export function SecondaryProcessSelection({
                                 </button>
                               ))
                             ) : (
-                              <p className="px-3 py-4 text-[10px] text-slate-400 italic text-center">No auto-match for {diamMm.toFixed(2)}mm</p>
+                              <p className="px-3 py-4 text-[10px] text-blue-100 italic text-center">No auto-match for {diamMm.toFixed(2)}mm</p>
                             )}
 
                             <div className="px-2 py-1.5 border-t border-slate-100 mt-1">
-                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">All Industrial Taps</p>
+                              <p className="text-[9px] font-black uppercase tracking-widest text-blue-100">All Industrial Taps</p>
                             </div>
                             <div className="max-h-[160px] overflow-y-auto custom-scrollbar overflow-x-hidden py-1">
                               {ALL_TAPS.filter(t => !recommendedTaps.find(r => r.id === t.id)).map(tap => (
@@ -562,7 +562,7 @@ export function SecondaryProcessSelection({
                                     onTapSelect(idx, tap.id);
                                     setOpenPopoverIndex(null);
                                   }}
-                                  className="w-full text-left px-3 py-1.5 text-[9px] font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-all uppercase"
+                                  className="w-full text-left px-3 py-1.5 text-[9px] font-bold text-blue-200 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-all uppercase"
                                 >
                                   {tap.name}
                                 </button>
@@ -602,7 +602,7 @@ export function SecondaryProcessSelection({
 
       {filteredProcesses.length === 0 && (
         <div className="text-center py-6">
-          <p className="text-xs text-slate-500 italic uppercase tracking-wider">
+          <p className="text-xs text-blue-200 italic uppercase tracking-wider">
             No secondary processes available for this service.
           </p>
         </div>

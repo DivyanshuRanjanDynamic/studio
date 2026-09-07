@@ -29,7 +29,7 @@ export function ExpertCTA({
           <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-[#2F5FA7]">
             {title}
           </h4>
-          <p className="text-[11px] text-slate-500 font-bold leading-relaxed uppercase tracking-tight">
+          <p className="text-[11px] text-blue-200 font-bold leading-relaxed uppercase tracking-tight">
             {description}
           </p>
         </div>

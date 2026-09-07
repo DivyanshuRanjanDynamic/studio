@@ -26,7 +26,7 @@ export default function RefundPolicyPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Refund Policy
           </h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-sm font-bold text-blue-100 uppercase tracking-widest">
             Effective Date: 4 March 2025
           </p>
         </div>
@@ -59,7 +59,7 @@ export default function RefundPolicyPage() {
             </h2>
             <ul className="space-y-4 p-0 list-none">
               <li className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex gap-4 items-start">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-1.5 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                 <div>
                   <p className="font-bold text-slate-900">Pre-Material Procurement (100% Refund)</p>
                   <p className="text-sm">
@@ -68,7 +68,7 @@ export default function RefundPolicyPage() {
                 </div>
               </li>
               <li className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex gap-4 items-start">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-1.5 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                 <div>
                   <p className="font-bold text-slate-900">Post-Procurement / Pre-Milling/Turning</p>
                   <p className="text-sm">
@@ -125,15 +125,15 @@ export default function RefundPolicyPage() {
                 </h3>
                 <ul className="space-y-3 p-0 list-none text-sm">
                   <li className="flex gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-1.5 shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                     <span>Re-manufacture at no cost</span>
                   </li>
                   <li className="flex gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-1.5 shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                     <span>Partial refund for minor deviations</span>
                   </li>
                   <li className="flex gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-1.5 shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                     <span>Full refund for unusable parts</span>
                   </li>
                 </ul>
@@ -151,7 +151,7 @@ export default function RefundPolicyPage() {
                   Corporate Oversight
                 </p>
                 <p className="text-slate-800 font-bold">Synchubb Innovations Pvt Ltd</p>
-                <p className="text-slate-500 text-xs">VIT Vellore, Tamil Nadu, India</p>
+                <p className="text-blue-200 text-xs">VIT Vellore, Tamil Nadu, India</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-black uppercase tracking-widest text-[#2F5FA7]">
@@ -163,7 +163,7 @@ export default function RefundPolicyPage() {
                 >
                   outreach@mechhub.in
                 </Link>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">
                   +91 9117203884
                 </p>
               </div>

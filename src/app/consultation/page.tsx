@@ -158,7 +158,7 @@ function ConsultationPageContent() {
         ) : isUserLoading || !user ? (
           <div className="py-24 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin mb-4" />
-            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">
+            <p className="text-blue-200 text-sm font-bold uppercase tracking-widest">
               Verifying Session...
             </p>
           </div>
@@ -179,7 +179,7 @@ function ConsultationPageContent() {
                     defaultValue={user?.displayName || ''}
                     required
                     readOnly
-                    className="bg-slate-100 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 h-12 text-sm rounded-xl transition-all font-medium cursor-not-allowed opacity-90"
+                    className="bg-slate-100 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 h-12 text-sm rounded-xl transition-all font-medium cursor-not-allowed opacity-90"
                   />
                 </div>
                 <div className="space-y-2">
@@ -203,7 +203,7 @@ function ConsultationPageContent() {
                       const nextError = validatePhone(e.target.value);
                       setFieldErrors((prev) => ({ ...prev, phone: nextError || undefined }));
                     }}
-                    className={`bg-slate-50 text-[#1E3A66] placeholder:text-slate-400 h-12 text-sm rounded-xl transition-all font-medium ${
+                    className={`bg-slate-50 text-[#1E3A66] placeholder:text-blue-100 h-12 text-sm rounded-xl transition-all font-medium ${
                       fieldErrors.phone
                         ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
                         : 'border-slate-200 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20'
@@ -230,7 +230,7 @@ function ConsultationPageContent() {
                   defaultValue={user?.email || ''}
                   required
                   readOnly
-                  className="bg-slate-100 border-slate-200 text-[#1E3A66] placeholder:text-slate-400 h-12 text-sm rounded-xl transition-all font-medium cursor-not-allowed opacity-90"
+                  className="bg-slate-100 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 h-12 text-sm rounded-xl transition-all font-medium cursor-not-allowed opacity-90"
                 />
               </div>
 
@@ -272,7 +272,7 @@ function ConsultationPageContent() {
                     setFieldErrors((prev) => ({ ...prev, message: nextError || undefined }));
                   }}
                   placeholder="Describe your design, material, quantity, and any technical questions..."
-                  className={`bg-slate-50 text-[#1E3A66] placeholder:text-slate-400 min-h-[140px] text-sm rounded-xl resize-none transition-all font-medium ${
+                  className={`bg-slate-50 text-[#1E3A66] placeholder:text-blue-100 min-h-[140px] text-sm rounded-xl resize-none transition-all font-medium ${
                     fieldErrors.message
                       ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
                       : 'border-slate-200 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20'
@@ -287,7 +287,7 @@ function ConsultationPageContent() {
 
               <Button
                 type="submit"
-                className="w-full h-14 font-bold text-base bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-xl mt-4 shadow-lg shadow-blue-900/10 transition-all active:scale-[0.98]"
+                className="w-full h-14 font-bold text-base bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl mt-4 shadow-lg shadow-blue-900/10 transition-all active:scale-[0.98]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

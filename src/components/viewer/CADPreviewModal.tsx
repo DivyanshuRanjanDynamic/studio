@@ -72,7 +72,7 @@ export function CADPreviewModal({
                      <DialogTitle className="text-xs font-black uppercase tracking-widest text-slate-900 leading-none mb-1">
                         Design Preview
                      </DialogTitle>
-                     <DialogDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate max-w-[300px]">
+                     <DialogDescription className="text-[10px] font-bold text-blue-100 uppercase tracking-tighter truncate max-w-[300px]">
                         {fileName || 'CAD Geometry'}
                      </DialogDescription>
                   </div>
@@ -81,7 +81,7 @@ export function CADPreviewModal({
                <div className="flex items-center gap-2">
                   <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-100 rounded-full mr-4">
                      <div className={`w-1.5 h-1.5 rounded-full ${result?.boundingBox ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                     <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+                     <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest">
                         {result?.boundingBox ? 'Geometric Analysis Active' : 'Analyzing geometry...'}
                      </span>
                   </div>
@@ -89,7 +89,7 @@ export function CADPreviewModal({
                   <Button
                      variant="ghost"
                      size="icon"
-                     className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500"
+                     className="h-8 w-8 rounded-lg hover:bg-red-50 text-blue-100 hover:text-red-500"
                      onClick={onClose}
                   >
                      <X className="w-4 h-4" />
@@ -113,7 +113,7 @@ export function CADPreviewModal({
                            <p className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] mb-1">
                               {isConverting ? 'Processing Geometry' : 'Initializing Viewer'}
                            </p>
-                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                           <p className="text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                               Preparing industrial-grade 3D model...
                            </p>
                         </div>
@@ -134,7 +134,7 @@ export function CADPreviewModal({
                                  <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === '3D' ? 'bg-[#2F5FA7] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === '3D' ? 'bg-blue-600 text-white shadow-lg' : 'text-blue-100 hover:text-slate-600'}`}
                                     onClick={() => setViewMode('3D')}
                                  >
                                     3D View
@@ -142,7 +142,7 @@ export function CADPreviewModal({
                                  <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === '2D' ? 'bg-[#2F5FA7] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === '2D' ? 'bg-blue-600 text-white shadow-lg' : 'text-blue-100 hover:text-slate-600'}`}
                                     onClick={() => setViewMode('2D')}
                                  >
                                     2D Profile
@@ -154,7 +154,7 @@ export function CADPreviewModal({
                         {/* Dynamic View Indicator (ViewCube Placeholder) */}
                         <div className="absolute top-6 right-6 w-20 h-20 bg-white/40 border border-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm">
                            <div className="w-12 h-12 border-2 border-dashed border-slate-400/40 rounded-lg rotate-12 flex items-center justify-center">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                              <span className="text-[10px] font-black text-blue-100 uppercase tracking-tighter">
                                  {viewMode === '2D' ? 'Profile' : 'Perspective'}
                               </span>
                            </div>
@@ -164,13 +164,13 @@ export function CADPreviewModal({
                         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-3xl p-3 px-6 min-w-[550px] z-20">
                            <div className="flex items-center gap-4 pr-6 border-r border-slate-100">
                               <div className="flex flex-col">
-                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Dimensions</span>
+                                 <span className="text-[8px] font-black text-blue-100 uppercase tracking-widest">Dimensions</span>
                                  <span className="text-[10px] font-black text-slate-900 uppercase whitespace-nowrap">
                                     {result?.boundingBox?.x ?? 0} × {result?.boundingBox?.y ?? 0} × {result?.boundingBox?.z ?? 0} mm
                                  </span>
                               </div>
                               <div className="flex flex-col">
-                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Mesh</span>
+                                 <span className="text-[8px] font-black text-blue-100 uppercase tracking-widest">Mesh</span>
                                  <span className="text-[10px] font-black text-slate-900 uppercase whitespace-nowrap">
                                     {result?.triangleCount ?? 0} Facets
                                  </span>
@@ -199,7 +199,7 @@ export function CADPreviewModal({
                            </div>
 
                            <div className="flex-1 flex items-center gap-4 min-w-[150px]">
-                              <ZoomOut className="w-4 h-4 text-slate-400" />
+                              <ZoomOut className="w-4 h-4 text-blue-100" />
                               <Slider
                                  defaultValue={[0.5]}
                                  max={1}
@@ -207,7 +207,7 @@ export function CADPreviewModal({
                                  onValueChange={(vals) => viewerRef.current?.setZoom(vals[0])}
                                  className="flex-1"
                               />
-                              <ZoomIn className="w-4 h-4 text-slate-400" />
+                              <ZoomIn className="w-4 h-4 text-blue-100" />
                            </div>
                         </div>
                      </>
@@ -218,7 +218,7 @@ export function CADPreviewModal({
             {/* ── Footer ────────────────────────────────────────────────────────── */}
             <div className="absolute bottom-0 left-0 right-0 h-14 items-center justify-end px-8 bg-slate-50/80 backdrop-blur-md border-t border-slate-100 hidden sm:flex">
                <Button
-                  className="h-9 px-8 tracking-[0.2em] uppercase text-[10px] font-black bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 border-none rounded-xl"
+                  className="h-9 px-8 tracking-[0.2em] uppercase text-[10px] font-black bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 border-none rounded-xl"
                   onClick={onClose}
                >
                   Close Viewer

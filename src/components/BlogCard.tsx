@@ -41,7 +41,7 @@ export function BlogCard({ post, index }: BlogCardProps) {
 
         {/* Content */}
         <div className="p-5 space-y-3">
-          <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+          <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-widest text-blue-200">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3 h-3 text-[#2F5FA7]" />
               {format(parseISO(post.date), 'MMM d, yyyy')}

@@ -117,8 +117,8 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
               }}
               className={`absolute right-2.5 top-2.5 z-20 hidden h-7 w-7 items-center justify-center rounded-full border transition sm:right-4 sm:top-4 sm:flex sm:h-10 sm:w-10 ${
                 isComparing
-                  ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white'
-                  : 'border-slate-200 bg-white text-slate-500 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
+                  ? 'border-[#2F5FA7] bg-blue-600 text-white'
+                  : 'border-slate-200 bg-white text-blue-200 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
               }`}
               aria-label="Compare component"
             >
@@ -157,16 +157,16 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
 
           <div className="flex min-w-0 flex-1 flex-col p-2.5 sm:p-4">
             <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3 sm:gap-3">
-              <p className="max-w-[65%] truncate rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500 sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
+              <p className="max-w-[65%] truncate rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-blue-200 sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
                 {product.sku}
               </p>
               {avgRating === null ? (
-                <p className="hidden text-[11px] font-bold text-slate-500 sm:block">No reviews yet</p>
+                <p className="hidden text-[11px] font-bold text-blue-200 sm:block">No reviews yet</p>
               ) : (
                 <div className="hidden items-center gap-1 text-[11px] font-bold text-slate-600 sm:flex">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   <span>{avgRating}</span>
-                  <span className="text-slate-400">({reviewCount})</span>
+                  <span className="text-blue-100">({reviewCount})</span>
                 </div>
               )}
             </div>
@@ -187,7 +187,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
                     ₹{product.salePrice?.toLocaleString('en-IN')}
                   </span>
                   {basePrice > product.salePrice && (
-                    <span className="text-xs font-semibold text-slate-400 line-through sm:text-sm">
+                    <span className="text-xs font-semibold text-blue-100 line-through sm:text-sm">
                       ₹{basePrice.toLocaleString('en-IN')}
                     </span>
                   )}
@@ -197,7 +197,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
                 </p>
               </div>
               <div className="hidden text-right sm:block">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">
                   Stock
                 </p>
                 <p
@@ -243,7 +243,7 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
 
               {isOutOfStock ? (
                 <Button
-                  className="h-9 min-w-0 w-full rounded-xl bg-[#2F5FA7] px-2 text-[10px] font-black uppercase tracking-[0.1em] text-white hover:bg-[#254b86] sm:h-11 sm:flex-1 sm:rounded-2xl sm:px-3 sm:text-[11px] sm:tracking-[0.14em]"
+                  className="h-9 min-w-0 w-full rounded-xl bg-blue-600 px-2 text-[10px] font-black uppercase tracking-[0.1em] text-white hover:bg-[#254b86] sm:h-11 sm:flex-1 sm:rounded-2xl sm:px-3 sm:text-[11px] sm:tracking-[0.14em]"
                   onClick={handleRestockRequest}
                   disabled={isRequesting || hasRequested}
                 >

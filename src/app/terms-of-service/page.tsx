@@ -25,7 +25,7 @@ export default function TermsPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
             Terms of Service
           </h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-sm font-bold text-blue-100 uppercase tracking-widest">
             Effective Date: 4 March 2025
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function TermsPage() {
             </h2>
             <ul className="space-y-4 list-none p-0">
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Governance:
@@ -72,7 +72,7 @@ export default function TermsPage() {
                 </p>
               </li>
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Responsibility:
@@ -82,7 +82,7 @@ export default function TermsPage() {
                 </p>
               </li>
               <li className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <p>
                   <strong className="text-slate-900 underline decoration-blue-100 decoration-4 underline-offset-4">
                     Security:
@@ -112,7 +112,7 @@ export default function TermsPage() {
                   key={term}
                   className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm font-bold text-slate-700 flex items-center gap-3"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                   {term}
                 </li>
               ))}
@@ -129,7 +129,7 @@ export default function TermsPage() {
                   Corporate Entity
                 </p>
                 <p className="text-slate-800 font-bold">Synchubb Innovations Pvt Ltd</p>
-                <p className="text-slate-500 text-xs">VIT Vellore, Tamil Nadu, India</p>
+                <p className="text-blue-200 text-xs">VIT Vellore, Tamil Nadu, India</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-black uppercase tracking-widest text-[#2F5FA7]">
@@ -141,7 +141,7 @@ export default function TermsPage() {
                 >
                   outreach@mechhub.in
                 </Link>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">
                   +91 9117203884
                 </p>
               </div>

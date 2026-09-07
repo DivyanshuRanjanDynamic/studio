@@ -204,6 +204,56 @@
 
 @layer base {
   :root {
+    /* Brand blues */
+    --mh-navy-900: #101d33;
+    /* darkest navy — dark section backgrounds */
+    --mh-navy-800: #16283e;
+    /* dark section background base */
+    --mh-navy-700: #1b3357;
+    /* dark card background on navy sections */
+    --mh-navy-600: #22406e;
+    /* hero gradient start */
+    --mh-blue-500: #2e5596;
+    /* primary buttons, links, primary brand blue */
+    --mh-blue-400: #3d6fb4;
+    /* hero gradient end / lighter blue accents */
+    --mh-blue-300: #6f95c9;
+    /* muted blue text on dark backgrounds */
+
+    /* Accent */
+    --mh-cyan-400: #4fd8e8;
+    /* eyebrow highlights, stat numbers, call-outs */
+    --mh-cyan-300: #8fe9f1;
+    /* hover/lighter cyan variant */
+
+    /* Neutrals */
+    --mh-white: #ffffff;
+    --mh-bg-light: #f7f9fc;
+    /* default page background, light section bg */
+    --mh-bg-muted: #eef1f6;
+    /* secondary light surface, input fills */
+    --mh-border: #e4e8f0;
+    /* card borders on light sections */
+    --mh-border-dark: #2a3a56;
+    /* card borders on dark/navy sections */
+
+    /* Text */
+    --mh-text-heading: #14213d;
+    /* near-black navy, serif headings */
+    --mh-text-body: #64748b;
+    /* slate gray body copy on light bg */
+    --mh-text-body-dark: #aab6c9;
+    /* body copy on navy/dark bg */
+    --mh-text-on-dark: #ffffff;
+
+    /* Functional */
+    --mh-success: #16a34a;
+    --mh-success-bg: #e9f7ee;
+    --mh-warning-accent: #f59e0b;
+    --mh-warning-bg: #fdf3d9;
+    --mh-info-bg: #e9effb;
+    /* pale blue icon chip background */
+
     --background: 0 0% 100%;
     /* #FFFFFF */
     --foreground: 222 47% 11%;
@@ -411,4 +461,205 @@
 .force-no-horizontal-scroll {
   overflow-x: hidden !important;
   max-width: 100vw;
+}
+
+/* ═══════════════════════════════════════════════════
+   MECHHUB DESIGN SYSTEM — dark theme utilities
+   ═══════════════════════════════════════════════════ */
+
+/* Typography scale — industrial-editorial serif headlines */
+.mh-h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.mh-h2 {
+  font-family: 'Lora', 'Cormorant Garamond', 'Georgia', serif;
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.mh-h3 {
+  font-family: 'Lora', 'Cormorant Garamond', 'Georgia', serif;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.mh-body {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--mh-text-body);
+}
+
+.mh-mono {
+  font-family: 'Geist Mono', 'Consolas', monospace;
+  font-size: 0.875rem;
+}
+
+/* Card variants */
+.mh-card,
+.mh-card-light {
+  background: var(--mh-white);
+  border: 1px solid var(--mh-border);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(20, 33, 61, 0.06);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
+}
+
+.mh-card:hover,
+.mh-card-light:hover {
+  border-color: var(--mh-blue-500);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(20, 33, 61, 0.12);
+}
+
+.mh-card-dark {
+  background: var(--mh-navy-700);
+  border: 1px solid var(--mh-border-dark);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms ease;
+}
+
+.mh-card-dark:hover {
+  border-color: var(--mh-cyan-400);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Glow */
+.mh-glow {
+  box-shadow:
+    0 10px 40px rgba(46, 85, 150, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Section divider */
+.mh-divider {
+  border-top: 1px solid var(--mh-border);
+}
+
+/* Tag pill / Eyebrow */
+.mh-pill,
+.mh-pill-light {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  background: var(--mh-info-bg);
+  color: var(--mh-blue-500);
+  border: 1px solid rgba(46, 85, 150, 0.18);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mh-pill-dark {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  background: rgba(79, 216, 232, 0.1);
+  color: var(--mh-cyan-400);
+  border: 1px solid rgba(79, 216, 232, 0.25);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Primary button */
+.mh-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 26px;
+  background: var(--mh-blue-500);
+  color: #FFFFFF;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(46, 85, 150, 0.25);
+}
+
+.mh-btn-primary:hover {
+  background: var(--mh-navy-600);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(46, 85, 150, 0.35);
+}
+
+/* Secondary button on dark sections */
+.mh-btn-secondary-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 26px;
+  background: #FFFFFF;
+  color: var(--mh-blue-500);
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.mh-btn-secondary-dark:hover {
+  background: var(--mh-bg-light);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Ghost button */
+.mh-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 26px;
+  background: #FFFFFF;
+  color: var(--mh-blue-500);
+  border: 1px solid var(--mh-border);
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  text-decoration: none;
+}
+
+.mh-btn-ghost:hover {
+  border-color: var(--mh-blue-500);
+  background: var(--mh-info-bg);
+  color: var(--mh-navy-800);
+}
+
+/* Scroll-reveal animation support */
+.mh-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.mh-reveal.mh-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mh-reveal-fade {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.mh-reveal-fade.mh-visible {
+  opacity: 1;
 }

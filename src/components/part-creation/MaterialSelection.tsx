@@ -68,7 +68,7 @@ export function MaterialSelection({
   if (!serviceData) {
     return (
       <div className="text-center py-12">
-        <p className="text-slate-500 text-sm">No materials available for this service.</p>
+        <p className="text-blue-200 text-sm">No materials available for this service.</p>
       </div>
     );
   }
@@ -79,7 +79,7 @@ export function MaterialSelection({
         <h3 className="text-lg font-black uppercase tracking-wide text-slate-900 mb-1">
           Select Material
         </h3>
-        <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-blue-100">
           Choose stock for {selectedService.replace(/_/g, ' ')}
         </p>
       </div>
@@ -117,7 +117,7 @@ export function MaterialSelection({
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm shrink-0 transition-colors ${
                               isSelected
-                                ? 'bg-[#2F5FA7] text-white border-[#2F5FA7]'
+                                ? 'bg-blue-600 text-white border-[#2F5FA7]'
                                 : 'bg-slate-50 text-[#2F5FA7] border-slate-100 group-hover:bg-white'
                             }`}
                           >
@@ -130,13 +130,13 @@ export function MaterialSelection({
                                 <p className="font-bold text-slate-900 uppercase tracking-wide text-xs">
                                   {material.name}
                                 </p>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">
+                                <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold mt-0.5">
                                   Grade: {material.grade}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 {isSelected && !material.thicknesses && (
-                                  <Badge className="bg-[#2F5FA7] text-white text-[8px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 border-none">
+                                  <Badge className="bg-blue-600 text-white text-[8px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 border-none">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     Selected
                                   </Badge>
@@ -147,7 +147,7 @@ export function MaterialSelection({
                                   className={`h-7 w-7 rounded-md border flex items-center justify-center transition-colors ${
                                     isInfoOpen
                                       ? 'bg-blue-50 border-blue-200 text-[#2F5FA7]'
-                                      : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-[#2F5FA7]'
+                                      : 'bg-white border-slate-200 text-blue-200 hover:border-blue-200 hover:text-[#2F5FA7]'
                                   }`}
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -196,7 +196,7 @@ export function MaterialSelection({
                             {material.canPowderCoat === false && (
                               <Badge
                                 variant="outline"
-                                className="text-[8px] uppercase font-bold tracking-tighter px-1.5 py-0 border-slate-200 text-slate-500 bg-slate-50"
+                                className="text-[8px] uppercase font-bold tracking-tighter px-1.5 py-0 border-slate-200 text-blue-200 bg-slate-50"
                               >
                                 No Powder Coating
                               </Badge>
@@ -218,8 +218,8 @@ export function MaterialSelection({
                               }
                               className={`h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-bold border transition-all ${
                                 selectedMaterial.thickness === thickness
-                                  ? 'bg-[#2F5FA7] text-white border-[#2F5FA7] shadow-md shadow-blue-500/20'
-                                  : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-[#2F5FA7]'
+                                  ? 'bg-blue-600 text-white border-[#2F5FA7] shadow-md shadow-blue-500/20'
+                                  : 'bg-white border-slate-200 text-blue-200 hover:border-blue-200 hover:text-[#2F5FA7]'
                               }`}
                             >
                               <span>{thickness}</span>

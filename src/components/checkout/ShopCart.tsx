@@ -34,7 +34,7 @@ export function ShopCart({ items, onRemove, onUpdateQuantity, isLoading }: ShopC
             key={item.id}
             className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
           >
-            <div className="absolute top-0 left-0 w-1 h-full bg-[#2F5FA7] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div className="flex items-start gap-5">
               {/* Product Image */}
@@ -69,7 +69,7 @@ export function ShopCart({ items, onRemove, onUpdateQuantity, isLoading }: ShopC
 
                 <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
                   <div>
-                    <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                       SKU
                     </span>
                     <span className="text-[11px] font-bold text-slate-700 font-mono tracking-widest">
@@ -80,7 +80,7 @@ export function ShopCart({ items, onRemove, onUpdateQuantity, isLoading }: ShopC
                   <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                     <button
                       onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                      className="text-slate-400 hover:text-[#2F5FA7] transition-colors"
+                      className="text-blue-100 hover:text-[#2F5FA7] transition-colors"
                     >
                       <Minus size={12} strokeWidth={3} />
                     </button>
@@ -89,14 +89,14 @@ export function ShopCart({ items, onRemove, onUpdateQuantity, isLoading }: ShopC
                     </span>
                     <button
                       onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      className="text-slate-400 hover:text-[#2F5FA7] transition-colors"
+                      className="text-blue-100 hover:text-[#2F5FA7] transition-colors"
                     >
                       <Plus size={12} strokeWidth={3} />
                     </button>
                   </div>
 
                   <div className="text-right ml-auto">
-                    <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                       Price
                     </span>
                     <span className="text-[13px] font-bold text-[#2F5FA7]">

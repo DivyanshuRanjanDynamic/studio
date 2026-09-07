@@ -522,7 +522,7 @@ export function PartCreationWizard({
       <div className="h-20 px-8 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md z-20">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#2F5FA7] flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Box className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -553,8 +553,8 @@ export function PartCreationWizard({
                     idx === currentStepIndex
                       ? 'bg-white border-[#2F5FA7] text-[#2F5FA7] ring-4 ring-blue-50'
                       : idx < currentStepIndex
-                        ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white'
-                        : 'bg-slate-50 border-slate-200 text-slate-400'
+                        ? 'bg-blue-600 border-[#2F5FA7] text-white'
+                        : 'bg-slate-50 border-slate-200 text-blue-100'
                   )}
                 >
                   {idx < currentStepIndex ? <CheckCircle className="w-3.5 h-3.5" /> : idx + 1}
@@ -562,7 +562,7 @@ export function PartCreationWizard({
                 <span
                   className={cn(
                     'hidden lg:block text-[10px] font-black uppercase tracking-widest transition-colors',
-                    idx === currentStepIndex ? 'text-slate-900' : 'text-slate-400'
+                    idx === currentStepIndex ? 'text-slate-900' : 'text-blue-100'
                   )}
                 >
                   {step.label}
@@ -585,7 +585,7 @@ export function PartCreationWizard({
           size="icon"
           onClick={handleClose}
           disabled={isSubmitting}
-          className="ml-10 h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors"
+          className="ml-10 h-8 w-8 rounded-lg text-blue-100 hover:bg-slate-50 transition-colors"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -648,7 +648,7 @@ export function PartCreationWizard({
                       size="sm"
                       className={cn(
                         "h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                        viewMode === '3D' ? "bg-[#2F5FA7] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                        viewMode === '3D' ? "bg-blue-600 text-white shadow-lg" : "text-blue-100 hover:text-slate-600"
                       )}
                       onClick={() => setViewMode('3D')}
                     >
@@ -659,7 +659,7 @@ export function PartCreationWizard({
                       size="sm"
                       className={cn(
                         "h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                        viewMode === '2D' ? "bg-[#2F5FA7] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                        viewMode === '2D' ? "bg-blue-600 text-white shadow-lg" : "text-blue-100 hover:text-slate-600"
                       )}
                       onClick={() => setViewMode('2D')}
                     >
@@ -672,7 +672,7 @@ export function PartCreationWizard({
               {/* Floating Model Tags */}
               <div className="absolute top-14 left-6 flex flex-col gap-2">
                 <div className="px-3 py-1.5 bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg shadow-sm">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                  <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest mb-0.5">
                     Part Name
                   </p>
                   <p className="text-[10px] font-black text-slate-900 uppercase truncate max-w-[200px]">
@@ -681,7 +681,7 @@ export function PartCreationWizard({
                 </div>
                 {conversionResult && (
                   <div className="px-3 py-3bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg shadow-sm animate-in fade-in slide-in-from-left-2 duration-500">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                    <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest mb-0.5">
                       Dimensions
                     </p>
                     <p className="text-[10px] font-black text-slate-900 uppercase">
@@ -697,7 +697,7 @@ export function PartCreationWizard({
           ) : isConverting ? (
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest">
                 Processing Geometry...
               </p>
             </div>
@@ -710,7 +710,7 @@ export function PartCreationWizard({
                 <p className="text-xs font-black text-slate-900 uppercase tracking-widest mb-2">
                   Model Workspace
                 </p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest leading-relaxed">
                   Your design will appear here once the CAD file is analyzed.
                 </p>
               </div>
@@ -741,7 +741,7 @@ export function PartCreationWizard({
               <Button
                 onClick={handleNext}
                 disabled={!canProceed() || isSubmitting}
-                className="h-12 flex-1 tracking-widest uppercase text-[10px] font-black bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl flex items-center justify-center gap-2 group"
+                className="h-12 flex-1 tracking-widest uppercase text-[10px] font-black bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl flex items-center justify-center gap-2 group"
               >
                 Next Step
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

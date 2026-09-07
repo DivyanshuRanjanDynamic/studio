@@ -180,7 +180,7 @@ export function BlogComments({ slug }: BlogCommentsProps) {
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Share your thoughts on this topic..."
-                className="w-full min-h-[120px] bg-white border border-slate-200 rounded-xl p-4 text-[#1E3A66] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2F5FA7]/50 resize-y"
+                className="w-full min-h-[120px] bg-white border border-slate-200 rounded-xl p-4 text-[#1E3A66] placeholder:text-blue-100 focus:outline-none focus:ring-2 focus:ring-[#2F5FA7]/50 resize-y"
                 required
               />
               <div className="mt-2 flex justify-end">
@@ -201,7 +201,7 @@ export function BlogComments({ slug }: BlogCommentsProps) {
           </form>
         ) : (
           <div className="bg-[#2F5FA7]/5 border border-[#2F5FA7]/20 rounded-xl p-6 text-center space-y-4">
-            <p className="text-slate-500">
+            <p className="text-blue-200">
               Join the discussion by logging in to your MechHub account.
             </p>
             <Button
@@ -230,7 +230,7 @@ export function BlogComments({ slug }: BlogCommentsProps) {
             ))}
           </div>
         ) : comments.length === 0 ? (
-          <p className="text-slate-500 text-center italic py-8 border border-dashed border-slate-200 rounded-xl">
+          <p className="text-blue-200 text-center italic py-8 border border-dashed border-slate-200 rounded-xl">
             No comments yet. Be the first to start the discussion!
           </p>
         ) : (
@@ -246,7 +246,7 @@ export function BlogComments({ slug }: BlogCommentsProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-[#1E3A66] text-sm">{comment.userName}</span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-blue-100">
                       {comment.createdAt
                         ? formatDistanceToNow(comment.createdAt, { addSuffix: true })
                         : 'Just now'}
@@ -257,7 +257,7 @@ export function BlogComments({ slug }: BlogCommentsProps) {
                   {user && user.uid === comment.userId && (
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"
+                      className="text-blue-100 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"
                       title="Delete comment"
                     >
                       <Trash2 className="w-4 h-4" />

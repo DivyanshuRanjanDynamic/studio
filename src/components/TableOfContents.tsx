@@ -87,7 +87,7 @@ export function TableOfContents() {
                                         ${
                                           isActive
                                             ? 'text-[#1E3A66] font-semibold border-[#2F5FA7] pl-3 bg-slate-50 rounded-r-lg'
-                                            : 'text-slate-500 hover:text-[#1E3A66] border-transparent hover:border-slate-300 pl-3'
+                                            : 'text-blue-200 hover:text-[#1E3A66] border-transparent hover:border-slate-300 pl-3'
                                         }
                                     `}
                 >

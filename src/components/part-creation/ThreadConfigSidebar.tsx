@@ -68,7 +68,7 @@ export function ThreadConfigSidebar({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-50"
+          className="h-8 w-8 rounded-lg text-blue-100 hover:bg-slate-50"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -90,7 +90,7 @@ export function ThreadConfigSidebar({
             </div>
 
             <div className="space-y-3">
-              <Label className="text-[9px] uppercase font-black tracking-widest text-slate-400 flex items-center gap-2 px-1">
+              <Label className="text-[9px] uppercase font-black tracking-widest text-blue-100 flex items-center gap-2 px-1">
                 <MousePointer2 className="w-3 h-3" />
                 Requirements
               </Label>
@@ -104,7 +104,7 @@ export function ThreadConfigSidebar({
 
             <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-sm">
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Reference Thread Chart</p>
+                <p className="text-[9px] font-black text-blue-100 uppercase tracking-widest text-center">Reference Thread Chart</p>
               </div>
               <div className="grid grid-cols-2 divide-x divide-slate-100">
                 <div className="p-3 space-y-2">
@@ -131,10 +131,10 @@ export function ThreadConfigSidebar({
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-blue-100 uppercase tracking-widest">
                 Analyzed Geometry
               </span>
-              <Badge variant="outline" className="text-[8px] font-black border-slate-200 text-slate-400 px-2 py-0 h-5">
+              <Badge variant="outline" className="text-[8px] font-black border-slate-200 text-blue-100 px-2 py-0 h-5">
                 {conversionResult?.holes?.length ?? 0} FEATURES
               </Badge>
             </div>
@@ -166,18 +166,18 @@ export function ThreadConfigSidebar({
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                           <p className="text-[11px] font-black text-slate-900 leading-tight tabular-nums">{diamInch.toFixed(4)}"</p>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter tabular-nums">{diamMm.toFixed(2)}mm DIA</p>
+                          <p className="text-[8px] font-bold text-blue-100 uppercase tracking-tighter tabular-nums">{diamMm.toFixed(2)}mm DIA</p>
                         </div>
                         <div className="h-6 w-px bg-slate-100" />
                         <div className="flex flex-col">
                           <p className="text-[11px] font-black text-slate-900 leading-tight tabular-nums">{depthInch.toFixed(3)}"</p>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter tabular-nums">{hole.depth.toFixed(1)}mm DEP</p>
+                          <p className="text-[8px] font-bold text-blue-100 uppercase tracking-tighter tabular-nums">{hole.depth.toFixed(1)}mm DEP</p>
                         </div>
                       </div>
 
                       <div className={cn(
                         "w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-500",
-                        selection ? "bg-[#2F5FA7] border-[#2F5FA7] text-white" : "border-slate-200 text-transparent"
+                        selection ? "bg-blue-600 border-[#2F5FA7] text-white" : "border-slate-200 text-transparent"
                       )}>
                         <Target className="w-2.5 h-2.5" />
                       </div>
@@ -193,7 +193,7 @@ export function ThreadConfigSidebar({
                           className={cn(
                             "w-full h-10 text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl border-2 transition-all duration-300",
                             selection
-                              ? "bg-[#2F5FA7] text-white border-transparent"
+                              ? "bg-blue-600 text-white border-transparent"
                               : "bg-white border-slate-200 hover:border-[#2F5FA7] hover:text-[#2F5FA7]"
                           )}
                         >
@@ -224,16 +224,16 @@ export function ThreadConfigSidebar({
                                   )}
                                 >
                                   <span className="text-[10px] font-black text-slate-900 uppercase">{tap.name}</span>
-                                  <span className="text-[8px] font-bold text-slate-400 uppercase">Drill: {tap.drillSize}mm</span>
+                                  <span className="text-[8px] font-bold text-blue-100 uppercase">Drill: {tap.drillSize}mm</span>
                                 </button>
                               ))
                             ) : (
-                              <p className="col-span-2 px-3 py-4 text-[9px] text-slate-400 italic text-center font-bold">No automatic matches</p>
+                              <p className="col-span-2 px-3 py-4 text-[9px] text-blue-100 italic text-center font-bold">No automatic matches</p>
                             )}
                           </div>
 
                           <div className="px-3 py-2 border-t border-slate-100 mt-2 mb-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">All Industrial Taps</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-100">All Industrial Taps</p>
                           </div>
                           <div className="max-h-[200px] overflow-y-auto custom-scrollbar px-2 grid grid-cols-2 gap-1 py-1">
                             {ALL_TAPS.map(tap => (
@@ -247,7 +247,7 @@ export function ThreadConfigSidebar({
                                   "px-3 py-2 text-[9px] font-bold rounded-lg transition-all text-left uppercase border",
                                   selection?.tapType === tap.id
                                     ? "bg-blue-50 border-blue-100 text-[#2F5FA7]"
-                                    : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                    : "border-transparent text-blue-200 hover:bg-slate-50 hover:text-slate-900"
                                 )}
                               >
                                 {tap.name}
@@ -280,11 +280,11 @@ export function ThreadConfigSidebar({
                 <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
                   Missing holes?
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-blue-100" />
               </div>
 
               <div className="space-y-3">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+                <p className="text-[9px] font-bold text-blue-100 uppercase tracking-widest leading-relaxed">
                   Please describe how your part should be tapped. <span className="text-[#2F5FA7] underline cursor-pointer hover:text-blue-700 transition-colors">Full tapping catalog</span>
                 </p>
                 <textarea
@@ -304,13 +304,13 @@ export function ThreadConfigSidebar({
         <Button
           variant="ghost"
           onClick={onResetAll}
-          className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 px-4 h-11 rounded-xl"
+          className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 hover:text-slate-600 hover:bg-slate-50 px-4 h-11 rounded-xl"
         >
           Reset All
         </Button>
         <Button
           onClick={onClose}
-          className="flex-1 bg-[#2F5FA7] hover:bg-[#1E3A66] text-white text-[10px] font-black uppercase tracking-[0.2em] h-11 rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98]"
+          className="flex-1 bg-blue-600 hover:bg-[#1E3A66] text-white text-[10px] font-black uppercase tracking-[0.2em] h-11 rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98]"
         >
           Done
         </Button>

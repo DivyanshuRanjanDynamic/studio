@@ -346,14 +346,14 @@ export default function QuoteEngine() {
           <h1 className="text-3xl md:text-5xl uppercase tracking-tight font-bold text-slate-900 mb-4">
             Budget Estimator
           </h1>
-          <p className="text-slate-500 text-lg mb-8 font-medium">
+          <p className="text-blue-200 text-lg mb-8 font-medium">
             Get a rough cost range to plan your project — before speaking to a MechMaster.
           </p>
 
           <div className="flex items-center justify-between relative max-w-2xl mx-auto">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 z-0 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#2F5FA7] transition-all duration-700 ease-in-out"
+                className="h-full bg-blue-600 transition-all duration-700 ease-in-out"
                 style={{
                   width: step === 1 ? '0%' : step === 2 || step === 'loading' ? '50%' : '100%',
                 }}
@@ -372,16 +372,16 @@ export default function QuoteEngine() {
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 border-2 ${
                       isActive
-                        ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white shadow-xl scale-110'
+                        ? 'bg-blue-600 border-[#2F5FA7] text-white shadow-xl scale-110'
                         : isPast
-                          ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white'
-                          : 'bg-white border-slate-200 text-slate-400'
+                          ? 'bg-blue-600 border-[#2F5FA7] text-white'
+                          : 'bg-white border-slate-200 text-blue-100'
                     }`}
                   >
                     {isPast ? <CheckCircle size={20} /> : <span className="">{s}</span>}
                   </div>
                   <span
-                    className={`mt-3 text-[10px] font-bold uppercase tracking-[0.2em] ${isActive || isPast ? 'text-[#2F5FA7]' : 'text-slate-400'}`}
+                    className={`mt-3 text-[10px] font-bold uppercase tracking-[0.2em] ${isActive || isPast ? 'text-[#2F5FA7]' : 'text-blue-100'}`}
                   >
                     {s === 1 ? 'Part Type' : s === 2 ? 'Specs' : 'Results'}
                   </span>
@@ -424,13 +424,13 @@ export default function QuoteEngine() {
                   }
                 }}
               />
-              <div className="w-24 h-24 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-105 group-hover:bg-[#2F5FA7] transition-all shadow-lg relative z-10">
+              <div className="w-24 h-24 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-105 group-hover:bg-blue-600 transition-all shadow-lg relative z-10">
                 <UploadCloud className="w-12 h-12 text-[#2F5FA7] group-hover:text-white transition-colors" />
               </div>
               <h3 className="text-2xl uppercase tracking-tight font-bold mb-3 text-slate-900 relative z-10">
                 Analyze Part Geometry
               </h3>
-              <p className="text-slate-400 font-bold uppercase tracking-widest mb-8 text-[11px] relative z-10">
+              <p className="text-blue-100 font-bold uppercase tracking-widest mb-8 text-[11px] relative z-10">
                 Drag and drop or click to upload your CAD file
               </p>
               <div className="flex flex-wrap justify-center gap-3 text-[10px] text-[#2F5FA7] font-bold tracking-widest uppercase relative z-10">
@@ -452,7 +452,7 @@ export default function QuoteEngine() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-[11px] font-bold tracking-widest uppercase text-slate-400">
+            <div className="flex items-center justify-center gap-8 text-[11px] font-bold tracking-widest uppercase text-blue-100">
               <span className="flex items-center gap-2.5">
                 <CheckCircle size={16} className="text-emerald-500" /> SECURE NDA PROTECTION
               </span>
@@ -462,7 +462,7 @@ export default function QuoteEngine() {
             </div>
 
             <div className="pt-10 border-t border-slate-200">
-              <p className="text-[10px] font-bold text-slate-400 mb-6 uppercase tracking-[0.2em] text-center">
+              <p className="text-[10px] font-bold text-blue-100 mb-6 uppercase tracking-[0.2em] text-center">
                 Or try building from a reference
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -493,7 +493,7 @@ export default function QuoteEngine() {
                 </div>
                 <div>
                   <span className="font-bold text-slate-900 block">{fileName}</span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                  <span className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">
                     Selected CAD Assembly
                   </span>
                 </div>
@@ -508,13 +508,13 @@ export default function QuoteEngine() {
 
             <div className="bg-white border border-slate-100 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
               {/* Top line accent */}
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-4">
                 {/* Left Col */}
                 <div className="space-y-8">
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Material
                     </label>
                     <select
@@ -530,7 +530,7 @@ export default function QuoteEngine() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Manufacturing Process
                     </label>
                     <select
@@ -546,7 +546,7 @@ export default function QuoteEngine() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Surface Finish
                     </label>
                     <select
@@ -562,7 +562,7 @@ export default function QuoteEngine() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Tolerance Requirements
                     </label>
                     <select
@@ -582,7 +582,7 @@ export default function QuoteEngine() {
                 {/* Right Col */}
                 <div className="space-y-8">
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Part Complexity
                     </label>
                     <select
@@ -596,13 +596,13 @@ export default function QuoteEngine() {
                         </option>
                       ))}
                     </select>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">
                       &quot;{COMPLEXITIES[complexity as keyof typeof COMPLEXITIES].desc}&quot;
                     </p>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Bounding Box (mm)
                     </label>
                     <div className="grid grid-cols-3 gap-4">
@@ -646,7 +646,7 @@ export default function QuoteEngine() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Quantity
                     </label>
                     <div className="relative">
@@ -667,7 +667,7 @@ export default function QuoteEngine() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Delivery City
                     </label>
                     <select
@@ -688,13 +688,13 @@ export default function QuoteEngine() {
               <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center relative z-10">
                 <button
                   onClick={() => setStep(1)}
-                  className="px-8 py-4 rounded-2xl border border-slate-200 bg-white text-slate-400 hover:text-slate-900 hover:border-slate-400 transition-all font-bold uppercase tracking-widest text-[11px]"
+                  className="px-8 py-4 rounded-2xl border border-slate-200 bg-white text-blue-100 hover:text-slate-900 hover:border-slate-400 transition-all font-bold uppercase tracking-widest text-[11px]"
                 >
                   ← Back
                 </button>
                 <button
                   onClick={calculateQuote}
-                  className="bg-[#2F5FA7] hover:bg-[#1E3A66] shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all flex items-center gap-2 transform active:scale-95"
+                  className="bg-blue-600 hover:bg-[#1E3A66] shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all flex items-center gap-2 transform active:scale-95"
                 >
                   Calculate Range <ChevronRight size={16} />
                 </button>
@@ -715,13 +715,13 @@ export default function QuoteEngine() {
             <h3 className="text-2xl uppercase tracking-tight font-bold text-slate-900 mb-4">
               Analyzing Constraints
             </h3>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-10">
+            <p className="text-blue-100 font-bold uppercase tracking-widest text-[10px] mb-10">
               Matching requirements with MechMaster machine rates
             </p>
 
             <div className="w-full max-w-sm bg-slate-100 rounded-full h-1.5 mb-6 overflow-hidden">
               <div
-                className="bg-[#2F5FA7] h-full transition-all duration-300 ease-linear rounded-full"
+                className="bg-blue-600 h-full transition-all duration-300 ease-linear rounded-full"
                 style={{ width: `${loadingProgress}%` }}
               />
             </div>
@@ -756,7 +756,7 @@ export default function QuoteEngine() {
                   <h2 className="text-2xl uppercase tracking-tight font-bold text-slate-900">
                     Est. Budget Range
                   </h2>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-[0.2em] font-bold">
+                  <p className="text-[10px] text-blue-100 mt-1 uppercase tracking-[0.2em] font-bold">
                     Projected for Indian Manufacturing Job Shops
                   </p>
                 </div>
@@ -781,7 +781,7 @@ export default function QuoteEngine() {
                       {results.high_estimate.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 flex items-center gap-2 uppercase tracking-widest font-bold mt-6">
+                  <p className="text-[10px] text-blue-100 flex items-center gap-2 uppercase tracking-widest font-bold mt-6">
                     <CheckCircle className="w-4 h-4 text-emerald-500" /> Indicative manufacturing
                     band (incl. taxes)
                   </p>
@@ -794,7 +794,7 @@ export default function QuoteEngine() {
                   </h4>
                   <ul className="space-y-4">
                     <li className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-blue-100">
                         Material
                       </span>{' '}
                       <span className="text-xs font-bold text-slate-900 text-right">
@@ -802,19 +802,19 @@ export default function QuoteEngine() {
                       </span>
                     </li>
                     <li className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-blue-100">
                         Process
                       </span>{' '}
                       <span className="text-xs font-bold text-slate-900 text-right">{process}</span>
                     </li>
                     <li className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-blue-100">
                         Finish
                       </span>{' '}
                       <span className="text-xs font-bold text-slate-900 text-right">{finish}</span>
                     </li>
                     <li className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-blue-100">
                         Tolerance
                       </span>{' '}
                       <span className="text-xs font-bold text-slate-900 text-right">
@@ -836,7 +836,7 @@ export default function QuoteEngine() {
               {/* Bottom Metric Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 border-t border-slate-100 bg-white relative z-10">
                 <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-slate-50 transition-colors">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 group-hover:text-[#2F5FA7] transition-colors">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 mb-3 group-hover:text-[#2F5FA7] transition-colors">
                     Per Part (incl. GST)
                   </p>
                   <p className="text-3xl font-bold text-slate-900">
@@ -844,7 +844,7 @@ export default function QuoteEngine() {
                   </p>
                 </div>
                 <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-slate-50 transition-colors">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 group-hover:text-[#2F5FA7] transition-colors">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 mb-3 group-hover:text-[#2F5FA7] transition-colors">
                     Build Volume
                   </p>
                   <p className="text-3xl font-bold text-slate-900">
@@ -854,8 +854,8 @@ export default function QuoteEngine() {
                     </span>
                   </p>
                 </div>
-                <div className="p-8 flex flex-col items-center sm:items-start relative overflow-hidden group hover:bg-[#2F5FA7] transition-all duration-500">
-                  <div className="absolute inset-0 bg-[#2F5FA7]/5 group-hover:bg-[#2F5FA7] transition-colors" />
+                <div className="p-8 flex flex-col items-center sm:items-start relative overflow-hidden group hover:bg-blue-600 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[#2F5FA7]/5 group-hover:bg-blue-600 transition-colors" />
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#2F5FA7] mb-3 relative z-10 group-hover:text-blue-100">
                     Est. Lead Time
                   </p>
@@ -895,7 +895,7 @@ export default function QuoteEngine() {
 
                 <div className="space-y-6 font-medium text-sm">
                   <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] pt-1">
+                    <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px] pt-1">
                       Material Cost
                     </span>
                     <span className="text-slate-900 font-bold">
@@ -906,7 +906,7 @@ export default function QuoteEngine() {
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] pt-1">
+                    <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px] pt-1">
                       Milling/Turning Cost
                     </span>
                     <span className="text-slate-900 font-bold">
@@ -917,7 +917,7 @@ export default function QuoteEngine() {
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] pt-1">
+                    <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px] pt-1">
                       Finishing & Surface
                     </span>
                     <span className="text-slate-900 font-bold">
@@ -936,7 +936,7 @@ export default function QuoteEngine() {
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] pt-1">
+                    <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px] pt-1">
                       Logistics (India)
                     </span>
                     <span className="text-slate-900 font-bold">
@@ -944,7 +944,7 @@ export default function QuoteEngine() {
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-slate-50 pb-3">
-                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] pt-1">
+                    <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px] pt-1">
                       Applicable GST (18%)
                     </span>
                     <span className="text-slate-900 font-bold">
@@ -993,12 +993,12 @@ export default function QuoteEngine() {
                       key={factor}
                       className="flex gap-4 items-start bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:border-[#2F5FA7] transition-all"
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#2F5FA7] mt-2 group-hover:scale-150 transition-transform" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 group-hover:scale-150 transition-transform" />
                       <div>
                         <p className="text-slate-900 font-bold uppercase tracking-[0.1em] text-[10px] mb-1.5">
                           {factor}
                         </p>
-                        <p className="text-slate-400 text-xs leading-relaxed font-medium">{desc}</p>
+                        <p className="text-blue-100 text-xs leading-relaxed font-medium">{desc}</p>
                       </div>
                     </div>
                   ))}
@@ -1007,7 +1007,7 @@ export default function QuoteEngine() {
             </div>
 
             {/* Action Bar */}
-            <div className="bg-[#2F5FA7] border border-[#2F5FA7] p-10 rounded-3xl flex flex-col xl:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden group">
+            <div className="bg-blue-600 border border-[#2F5FA7] p-10 rounded-3xl flex flex-col xl:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden group">
               <div
                 className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{

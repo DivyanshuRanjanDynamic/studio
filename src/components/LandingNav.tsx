@@ -209,7 +209,7 @@ export function LandingNav() {
             >
               <ShoppingCart className="w-5 h-5 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
               {totalItems > 0 && (
-                <span className="absolute top-0.5 right-0.5 sm:-top-0.5 sm:-right-0.5 w-4 h-4 bg-[#2F5FA7] text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-in zoom-in duration-300">
+                <span className="absolute top-0.5 right-0.5 sm:-top-0.5 sm:-right-0.5 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-in zoom-in duration-300">
                   {totalItems}
                 </span>
               )}
@@ -224,7 +224,7 @@ export function LandingNav() {
                         className="flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-slate-50 transition-colors group"
                         suppressHydrationWarning
                       >
-                        <div className="w-8 h-8 rounded-full bg-[#2F5FA7] flex items-center justify-center text-xs font-bold text-white ring-2 ring-white group-hover:shadow-[0_0_15px_rgba(47,95,167,0.2)] transition-all">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white ring-2 ring-white group-hover:shadow-[0_0_15px_rgba(47,95,167,0.2)] transition-all">
                           {initials}
                         </div>
                       </button>
@@ -271,7 +271,7 @@ export function LandingNav() {
                   <div className="flex items-center gap-2">
                     <Link
                       href="/login"
-                      className="relative inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-6 sm:py-2 text-[10px] sm:text-sm font-bold text-white rounded-full bg-[#2F5FA7] hover:bg-[#1E3A66] shadow-md hover:shadow-lg transition-all duration-300 mr-2 sm:mr-0"
+                      className="relative inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-6 sm:py-2 text-[10px] sm:text-sm font-bold text-white rounded-full bg-blue-600 hover:bg-[#1E3A66] shadow-md hover:shadow-lg transition-all duration-300 mr-2 sm:mr-0"
                     >
                       Get Started
                     </Link>
@@ -299,7 +299,7 @@ export function LandingNav() {
           <div
             className={`mx-2 mt-1 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-100 shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-4 flex flex-col gap-1`}
           >
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-3">
+            <div className="text-[10px] font-black text-blue-100 uppercase tracking-[0.2em] px-4 mb-3">
               Navigation
             </div>
             <div className="flex flex-col gap-1 px-1">
@@ -328,7 +328,7 @@ export function LandingNav() {
                   <Link
                     href="/login"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-center bg-[#2F5FA7] hover:bg-[#1E3A66] font-bold rounded-2xl h-12 text-sm text-white shadow-none transition-colors"
+                    className="flex items-center justify-center bg-blue-600 hover:bg-[#1E3A66] font-bold rounded-2xl h-12 text-sm text-white shadow-none transition-colors"
                   >
                     Get Started
                   </Link>
@@ -406,13 +406,13 @@ export function LandingNav() {
               <div className="flex items-center gap-10 py-4">
                 {MATERIAL_CATEGORIES.map((cat) => (
                   <div key={cat.name} className="group relative">
-                    <button className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-[#2F5FA7] transition-all uppercase tracking-[0.2em] py-1">
+                    <button className="flex items-center gap-1.5 text-[10px] font-bold text-blue-200 hover:text-[#2F5FA7] transition-all uppercase tracking-[0.2em] py-1">
                       {cat.name}
                       <ChevronDown className="w-3 h-3 text-slate-300 transition-transform group-hover:rotate-180" />
                     </button>
                     {/* Professional Dropdown */}
                     <div className="absolute top-[calc(100%+0px)] left-0 w-64 bg-white border border-slate-100 p-5 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all z-50 shadow-[0_30px_60px_-15px_rgba(47,95,167,0.15)] rounded-2xl">
-                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                      <div className="text-[9px] font-black text-blue-100 uppercase tracking-[0.2em] mb-3">
                         Select {cat.name}
                       </div>
                       <ul className="space-y-2.5">

@@ -113,7 +113,7 @@ export default function InstantQuotePage() {
           <h1 className="text-3xl md:text-5xl uppercase tracking-tight font-bold text-slate-900 mb-4">
             Instant Quote
           </h1>
-          <p className="text-slate-500 text-lg mb-8 font-medium">
+          <p className="text-blue-200 text-lg mb-8 font-medium">
             Upload your file, configure options, get a price in seconds.
           </p>
 
@@ -121,7 +121,7 @@ export default function InstantQuotePage() {
           <div className="flex items-center justify-between relative max-w-2xl mx-auto">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 z-0 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#2F5FA7] transition-all duration-700 ease-in-out"
+                className="h-full bg-blue-600 transition-all duration-700 ease-in-out"
                 style={{ width: stepIndex === 0 ? '0%' : stepIndex === 1 ? '50%' : '100%' }}
               />
             </div>
@@ -137,16 +137,16 @@ export default function InstantQuotePage() {
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 border-2 ${
                       isActive
-                        ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white shadow-xl scale-110'
+                        ? 'bg-blue-600 border-[#2F5FA7] text-white shadow-xl scale-110'
                         : isPast
-                          ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white'
-                          : 'bg-white border-slate-200 text-slate-400'
+                          ? 'bg-blue-600 border-[#2F5FA7] text-white'
+                          : 'bg-white border-slate-200 text-blue-100'
                     }`}
                   >
                     {isPast ? <CheckCircle size={20} /> : <span>{i + 1}</span>}
                   </div>
                   <span
-                    className={`mt-3 text-[10px] font-bold uppercase tracking-[0.2em] ${isActive || isPast ? 'text-[#2F5FA7]' : 'text-slate-400'}`}
+                    className={`mt-3 text-[10px] font-bold uppercase tracking-[0.2em] ${isActive || isPast ? 'text-[#2F5FA7]' : 'text-blue-100'}`}
                   >
                     {s.label}
                   </span>
@@ -183,13 +183,13 @@ export default function InstantQuotePage() {
                 multiple
                 onChange={fileUpload.handleFileSelect}
               />
-              <div className="w-24 h-24 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-105 group-hover:bg-[#2F5FA7] transition-all shadow-lg relative z-10">
+              <div className="w-24 h-24 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-105 group-hover:bg-blue-600 transition-all shadow-lg relative z-10">
                 <UploadCloud className="w-12 h-12 text-[#2F5FA7] group-hover:text-white transition-colors" />
               </div>
               <h3 className="text-2xl uppercase tracking-tight font-bold mb-3 text-slate-900 relative z-10">
                 {fileUpload.files.length > 0 ? 'Add More Files' : 'Upload CAD Files'}
               </h3>
-              <p className="text-slate-400 font-bold uppercase tracking-widest mb-8 text-[11px] relative z-10">
+              <p className="text-blue-100 font-bold uppercase tracking-widest mb-8 text-[11px] relative z-10">
                 Drag and drop or click to upload — DXF, STEP, STP, STL
               </p>
               <div className="flex flex-wrap justify-center gap-3 text-[10px] text-[#2F5FA7] font-bold tracking-widest uppercase relative z-10">
@@ -235,7 +235,7 @@ export default function InstantQuotePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-slate-900 text-sm truncate">{f.fileName}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">
                           {(f.fileSizeBytes / 1024).toFixed(0)} KB ·{' '}
                           {f.geometry
                             ? `${f.geometry.boundingBox.widthMm}×${f.geometry.boundingBox.heightMm}mm`
@@ -265,7 +265,7 @@ export default function InstantQuotePage() {
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-8 text-[11px] font-bold tracking-widest uppercase text-slate-400">
+            <div className="flex items-center justify-center gap-8 text-[11px] font-bold tracking-widest uppercase text-blue-100">
               <span className="flex items-center gap-2.5">
                 <Shield size={16} className="text-emerald-500" /> NDA Protected
               </span>
@@ -277,7 +277,7 @@ export default function InstantQuotePage() {
             <button
               onClick={handleContinueToConfigure}
               disabled={fileUpload.files.length === 0}
-              className="w-full bg-[#2F5FA7] hover:bg-[#1E3A66] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all flex items-center justify-center gap-2 transform active:scale-95"
+              className="w-full bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all flex items-center justify-center gap-2 transform active:scale-95"
             >
               Configure Quote <ChevronRight size={16} />
             </button>
@@ -296,7 +296,7 @@ export default function InstantQuotePage() {
                   </div>
                   <div>
                     <span className="font-bold text-slate-900 block">{activeFile.fileName}</span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    <span className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">
                       {activeFile.geometry
                         ? `${activeFile.geometry.boundingBox.widthMm}×${activeFile.geometry.boundingBox.heightMm}mm · ${activeFile.geometry.holeCount} holes`
                         : 'Analyzing...'}
@@ -315,12 +315,12 @@ export default function InstantQuotePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left: Configuration Selectors */}
               <div className="lg:col-span-2 bg-white border border-slate-100 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-[#2F5FA7]" />
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
                   {/* Material */}
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Material
                     </label>
                     <select
@@ -338,7 +338,7 @@ export default function InstantQuotePage() {
 
                   {/* Thickness */}
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Thickness
                     </label>
                     <select
@@ -356,7 +356,7 @@ export default function InstantQuotePage() {
 
                   {/* Finish */}
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Surface Finish
                     </label>
                     <select
@@ -374,7 +374,7 @@ export default function InstantQuotePage() {
 
                   {/* Quantity */}
                   <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Quantity
                     </label>
                     <div className="relative">
@@ -396,7 +396,7 @@ export default function InstantQuotePage() {
 
                   {/* Turnaround */}
                   <div className="space-y-2 md:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Turnaround
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -406,7 +406,7 @@ export default function InstantQuotePage() {
                           onClick={() => quote.setTurnaround(opt.type)}
                           className={`px-4 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border text-center ${
                             quote.state.turnaround === opt.type
-                              ? 'bg-[#2F5FA7] text-white border-[#2F5FA7] shadow-lg'
+                              ? 'bg-blue-600 text-white border-[#2F5FA7] shadow-lg'
                               : 'bg-white text-slate-600 border-slate-200 hover:border-[#2F5FA7]/50 hover:text-[#2F5FA7]'
                           }`}
                         >
@@ -417,7 +417,7 @@ export default function InstantQuotePage() {
                             className={`block mt-1 ${
                               quote.state.turnaround === opt.type
                                 ? 'text-blue-200'
-                                : 'text-slate-400'
+                                : 'text-blue-100'
                             }`}
                           >
                             {opt.multiplier === 1
@@ -435,7 +435,7 @@ export default function InstantQuotePage() {
                 {/* DFM Feedback */}
                 {quote.dfmIssues.length > 0 && (
                   <div className="mt-8 space-y-3">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-500" /> DFM Feedback
                     </h4>
                     {quote.dfmIssues.map((issue: DFMIssue, idx: number) => (
@@ -459,7 +459,7 @@ export default function InstantQuotePage() {
                             >
                               {issue.message}
                             </p>
-                            <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                            <p className="text-[10px] text-blue-200 mt-1 font-medium">
                               💡 {issue.fixSuggestion}
                             </p>
                           </div>
@@ -473,14 +473,14 @@ export default function InstantQuotePage() {
                 <div className="mt-10 pt-8 border-t border-slate-100 flex justify-between items-center">
                   <button
                     onClick={() => setStep('upload')}
-                    className="px-8 py-4 rounded-2xl border border-slate-200 bg-white text-slate-400 hover:text-slate-900 hover:border-slate-400 transition-all font-bold uppercase tracking-widest text-[11px]"
+                    className="px-8 py-4 rounded-2xl border border-slate-200 bg-white text-blue-100 hover:text-slate-900 hover:border-slate-400 transition-all font-bold uppercase tracking-widest text-[11px]"
                   >
                     ← Back
                   </button>
                   <button
                     onClick={handleGetQuote}
                     disabled={!quote.quoteResult || quote.hasBlockingIssues || quote.isCalculating}
-                    className="bg-[#2F5FA7] hover:bg-[#1E3A66] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all flex items-center gap-2 transform active:scale-95"
+                    className="bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all flex items-center gap-2 transform active:scale-95"
                   >
                     {quote.isCalculating ? (
                       <>
@@ -513,14 +513,14 @@ export default function InstantQuotePage() {
                         <p className="text-4xl font-bold text-slate-900 tracking-tighter">
                           ₹{quote.quoteResult.pricePerPart.toLocaleString('en-IN')}
                         </p>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">
+                        <p className="text-[10px] text-blue-100 uppercase tracking-widest font-bold mt-1">
                           per part
                         </p>
                       </div>
 
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">
                             Total ({quote.state.quantity} pcs)
                           </span>
                           <span className="text-xl font-bold text-slate-900">
@@ -531,7 +531,7 @@ export default function InstantQuotePage() {
 
                       {/* Breakdown */}
                       <div className="space-y-3">
-                        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100">
                           Cost Breakdown
                         </h4>
                         {[
@@ -541,7 +541,7 @@ export default function InstantQuotePage() {
                           ['Finish', quote.quoteResult.breakdown.finishCost],
                         ].map(([label, cost]) => (
                           <div key={label as string} className="flex justify-between text-xs">
-                            <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                            <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px]">
                               {label}
                             </span>
                             <span className="text-slate-900 font-bold font-mono">
@@ -591,7 +591,7 @@ export default function InstantQuotePage() {
                       <p className="text-xs text-red-600 font-bold">{quote.error}</p>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 py-12 text-center">
+                    <p className="text-xs text-blue-100 py-12 text-center">
                       Upload a file to see live pricing
                     </p>
                   )}
@@ -600,7 +600,7 @@ export default function InstantQuotePage() {
                 {/* Tier Pricing Table */}
                 {quote.tierPricing.length > 0 && (
                   <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100 mb-4">
                       Tier Pricing
                     </h4>
                     <div className="space-y-2">
@@ -609,12 +609,12 @@ export default function InstantQuotePage() {
                           key={tier.quantity}
                           className={`flex justify-between items-center py-2 px-3 rounded-xl text-xs ${
                             tier.quantity === quote.state.quantity
-                              ? 'bg-[#2F5FA7] text-white'
+                              ? 'bg-blue-600 text-white'
                               : 'hover:bg-slate-50'
                           }`}
                         >
                           <span
-                            className={`font-bold ${tier.quantity === quote.state.quantity ? 'text-blue-100' : 'text-slate-400'} uppercase tracking-widest text-[10px]`}
+                            className={`font-bold ${tier.quantity === quote.state.quantity ? 'text-blue-100' : 'text-blue-100'} uppercase tracking-widest text-[10px]`}
                           >
                             {tier.quantity} pc{tier.quantity > 1 ? 's' : ''}
                           </span>
@@ -653,7 +653,7 @@ export default function InstantQuotePage() {
                   <h2 className="text-2xl uppercase tracking-tight font-bold text-slate-900">
                     Your Quote
                   </h2>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-[0.2em] font-bold">
+                  <p className="text-[10px] text-blue-100 mt-1 uppercase tracking-[0.2em] font-bold">
                     Valid for 15 minutes · {activeFile?.fileName}
                   </p>
                 </div>
@@ -675,7 +675,7 @@ export default function InstantQuotePage() {
                       ₹{quote.quoteResult.totalPrice.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 flex items-center gap-2 uppercase tracking-widest font-bold mt-4">
+                  <p className="text-[10px] text-blue-100 flex items-center gap-2 uppercase tracking-widest font-bold mt-4">
                     <CheckCircle className="w-4 h-4 text-emerald-500" /> Total for{' '}
                     {quote.state.quantity} parts · ₹
                     {quote.quoteResult.pricePerPart.toLocaleString('en-IN')}/part
@@ -707,7 +707,7 @@ export default function InstantQuotePage() {
                       ],
                     ].map(([lbl, val]) => (
                       <li key={lbl} className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-blue-100">
                           {lbl}
                         </span>
                         <span className="text-xs font-bold text-slate-900 text-right">{val}</span>
@@ -720,7 +720,7 @@ export default function InstantQuotePage() {
               {/* Bottom metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 border-t border-slate-100 bg-white">
                 <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-slate-50 transition-colors">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 mb-3">
                     Per Part
                   </p>
                   <p className="text-3xl font-bold text-slate-900">
@@ -728,7 +728,7 @@ export default function InstantQuotePage() {
                   </p>
                 </div>
                 <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-slate-50 transition-colors">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 mb-3">
                     Quantity
                   </p>
                   <p className="text-3xl font-bold text-slate-900">
@@ -738,8 +738,8 @@ export default function InstantQuotePage() {
                     </span>
                   </p>
                 </div>
-                <div className="p-8 flex flex-col items-center sm:items-start relative overflow-hidden group hover:bg-[#2F5FA7] transition-all duration-500">
-                  <div className="absolute inset-0 bg-[#2F5FA7]/5 group-hover:bg-[#2F5FA7] transition-colors" />
+                <div className="p-8 flex flex-col items-center sm:items-start relative overflow-hidden group hover:bg-blue-600 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[#2F5FA7]/5 group-hover:bg-blue-600 transition-colors" />
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#2F5FA7] mb-3 relative z-10 group-hover:text-blue-100">
                     Lead Time
                   </p>
@@ -756,7 +756,7 @@ export default function InstantQuotePage() {
             </div>
 
             {/* Actions */}
-            <div className="bg-[#2F5FA7] border border-[#2F5FA7] p-10 rounded-3xl flex flex-col xl:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden group">
+            <div className="bg-blue-600 border border-[#2F5FA7] p-10 rounded-3xl flex flex-col xl:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden group">
               <div
                 className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{

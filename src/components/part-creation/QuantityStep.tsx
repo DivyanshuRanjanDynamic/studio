@@ -66,7 +66,7 @@ export function QuantityStep({
         <h3 className="text-lg font-bold uppercase tracking-wide text-slate-900 mb-2">
           Quantity & Review
         </h3>
-        <p className="text-xs uppercase tracking-widest font-bold text-slate-500">
+        <p className="text-xs uppercase tracking-widest font-bold text-blue-200">
           Specify the quantity and review your part configuration
         </p>
       </div>
@@ -75,7 +75,7 @@ export function QuantityStep({
       <Card className="bg-blue-50 border-[#2F5FA7]/20 p-6">
         <div className="space-y-4">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#2F5FA7] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
               <Hash className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -85,7 +85,7 @@ export function QuantityStep({
               >
                 Required Quantity
               </Label>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+              <p className="text-[10px] text-blue-200 uppercase tracking-wider font-bold">
                 No minimum quantity required
               </p>
             </div>
@@ -102,7 +102,7 @@ export function QuantityStep({
               className="h-14 text-2xl font-bold text-center uppercase tracking-wider text-slate-900 bg-white border-slate-200"
             />
             <div className="text-center">
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-bold">PCS</p>
+              <p className="text-xs text-blue-100 uppercase tracking-wider font-bold">PCS</p>
             </div>
           </div>
 
@@ -119,7 +119,7 @@ export function QuantityStep({
 
       {/* Quantity Breaks Info */}
       <div className="space-y-3">
-        <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">
+        <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
           Volume Discount Tiers
         </p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -128,8 +128,8 @@ export function QuantityStep({
               key={breakPoint.qty}
               className={`text-center p-3 rounded-xl border transition-all ${
                 quantity >= breakPoint.qty
-                  ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white'
-                  : 'bg-slate-50 border-slate-200 text-slate-500'
+                  ? 'bg-blue-600 border-[#2F5FA7] text-white'
+                  : 'bg-slate-50 border-slate-200 text-blue-200'
               }`}
             >
               <p
@@ -138,7 +138,7 @@ export function QuantityStep({
                 {breakPoint.qty}+
               </p>
               <p
-                className={`text-[9px] uppercase tracking-wider font-bold ${quantity >= breakPoint.qty ? 'text-blue-100' : 'text-slate-400'}`}
+                className={`text-[9px] uppercase tracking-wider font-bold ${quantity >= breakPoint.qty ? 'text-blue-100' : 'text-blue-100'}`}
               >
                 {breakPoint.discount}
               </p>
@@ -155,18 +155,18 @@ export function QuantityStep({
         </div>
         <div className="space-y-2">
           <div className="flex justify-between text-[10px]">
-            <span className="text-slate-400 uppercase tracking-wider font-bold">Quantity:</span>
+            <span className="text-blue-100 uppercase tracking-wider font-bold">Quantity:</span>
             <span className="text-white font-bold font-mono">{quantity} PCS</span>
           </div>
           <div className="flex justify-between text-[10px]">
-            <span className="text-slate-400 uppercase tracking-wider font-bold">
+            <span className="text-blue-100 uppercase tracking-wider font-bold">
               Est. Per Part:
             </span>
             <span className="text-white font-bold font-mono">To be quoted</span>
           </div>
           <div className="border-t border-slate-700 pt-2 mt-2">
             <div className="flex justify-between">
-              <span className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">
+              <span className="text-blue-100 text-[10px] uppercase tracking-wider font-bold">
                 Status:
               </span>
               <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[8px] uppercase tracking-wider font-bold">

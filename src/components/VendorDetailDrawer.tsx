@@ -71,7 +71,7 @@ export function VendorDetailDrawer({ open, onOpenChange, application }: VendorDe
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-2">
+              <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold mb-2">
                 Workshop Address
               </p>
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 leading-5 text-slate-700">
@@ -80,7 +80,7 @@ export function VendorDetailDrawer({ open, onOpenChange, application }: VendorDe
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-2">
+              <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold mb-2">
                 Capabilities
               </p>
               <div className="flex flex-wrap gap-2">
@@ -109,7 +109,7 @@ export function VendorDetailDrawer({ open, onOpenChange, application }: VendorDe
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold mb-1">{label}</p>
+      <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold mb-1">{label}</p>
       <p className="text-slate-800 leading-6">{value}</p>
     </div>
   );

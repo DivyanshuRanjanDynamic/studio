@@ -156,7 +156,7 @@ export default function AnodizingPage() {
                   Design for <br />
                   <span className="text-cyan-400">Anodizing</span>
                 </h2>
-                <p className="text-xl text-slate-400 leading-relaxed font-medium">
+                <p className="text-xl text-blue-100 leading-relaxed font-medium">
                   Surface finish and part geometry dictate the uniformity of the oxide layer.
                 </p>
               </div>
@@ -193,7 +193,7 @@ export default function AnodizingPage() {
                       <h4 className="text-xl font-bold mb-2 flex items-center gap-2">
                         {item.title}
                       </h4>
-                      <p className="text-slate-400 font-medium leading-relaxed">{item.desc}</p>
+                      <p className="text-blue-100 font-medium leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -211,7 +211,7 @@ export default function AnodizingPage() {
                   <div className="bg-white/95 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl inline-flex items-center gap-4">
                     <div className="w-3 h-3 rounded-full bg-cyan-500 animate-pulse" />
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">
                         Chemical Analysis
                       </p>
                       <p className="text-sm font-bold text-slate-900 text-nowrap">
@@ -296,7 +296,7 @@ export default function AnodizingPage() {
                 <Link href="/login?redirect=/dashboard">
                   <Button
                     size="lg"
-                    className="w-full md:w-auto px-16 h-20 bg-[#2F5FA7] hover:bg-blue-700 text-white rounded-[2rem] font-black text-xl gap-4 shadow-[0_20px_50px_rgba(47,95,167,0.3)]"
+                    className="w-full md:w-auto px-16 h-20 bg-blue-600 hover:bg-blue-700 text-white rounded-[2rem] font-black text-xl gap-4 shadow-[0_20px_50px_rgba(47,95,167,0.3)]"
                   >
                     Start Your Project <ArrowRight className="w-6 h-6" />
                   </Button>

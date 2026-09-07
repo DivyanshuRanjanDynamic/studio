@@ -48,7 +48,7 @@ export function WizardFooter({
         <div className="h-8 w-px bg-slate-200" />
 
         <div className="flex flex-col">
-          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+          <span className="text-[8px] font-black text-blue-100 uppercase tracking-widest leading-none mb-1">
             Live Configuration Est.
           </span>
           <span className="text-xl font-black text-slate-900 tracking-tighter leading-none">
@@ -83,7 +83,7 @@ export function WizardFooter({
           <Button
             onClick={onSubmit}
             disabled={!canProceed || isSubmitting}
-            className="h-12 px-8 tracking-[0.2em] uppercase text-[10px] font-black bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl"
+            className="h-12 px-8 tracking-[0.2em] uppercase text-[10px] font-black bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl"
           >
             {isSubmitting ? (
               <>
@@ -101,7 +101,7 @@ export function WizardFooter({
           <Button
             onClick={onNext}
             disabled={!canProceed || isSubmitting}
-            className="h-12 px-10 tracking-[0.2em] uppercase text-[10px] font-black bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl group"
+            className="h-12 px-10 tracking-[0.2em] uppercase text-[10px] font-black bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl group"
           >
             Next
             <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />

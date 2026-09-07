@@ -71,12 +71,12 @@ export function NewsletterSignup() {
       className="p-6 rounded-2xl border border-slate-200 bg-white space-y-4 border-t-2 border-t-[#2F5FA7] shadow-sm"
     >
       <h4 className="text-sm font-bold text-[#1E3A66]">MechHub Precision</h4>
-      <p className="text-xs text-slate-500 leading-relaxed">
+      <p className="text-xs text-blue-200 leading-relaxed">
         Join 500+ professionals receiving manufacturing insights.
       </p>
       <Input
         type="email"
-        className="h-9 text-xs bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-slate-400"
+        className="h-9 text-xs bg-slate-50 border-slate-200 text-[#1E3A66] placeholder:text-blue-100"
         placeholder="you@company.com"
         value={email}
         onChange={(e) => {
@@ -96,7 +96,7 @@ export function NewsletterSignup() {
         type="submit"
         size="sm"
         disabled={status === 'loading'}
-        className="w-full h-9 bg-[#2F5FA7] hover:bg-[#1E3A66] text-white font-bold text-[10px] uppercase tracking-wider disabled:opacity-50"
+        className="w-full h-9 bg-blue-600 hover:bg-[#1E3A66] text-white font-bold text-[10px] uppercase tracking-wider disabled:opacity-50"
       >
         {status === 'loading' ? (
           <>

@@ -36,13 +36,13 @@ export const ContactQueries: React.FC<ContactQueriesProps> = ({
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
             Contact Queries
           </h1>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black mt-1">
+          <p className="text-[10px] text-blue-200 uppercase tracking-[0.2em] font-black mt-1">
             Customer inquiries from the Contact Us page.
           </p>
         </div>
         <Badge
           variant="outline"
-          className="px-3 py-1 border-slate-200 text-slate-500 uppercase tracking-widest font-bold"
+          className="px-3 py-1 border-slate-200 text-blue-200 uppercase tracking-widest font-bold"
         >
           {queries?.length || 0} Queries
         </Badge>
@@ -90,12 +90,12 @@ export const ContactQueries: React.FC<ContactQueriesProps> = ({
                       {cq.email}
                     </a>
                     {cq.phone && (
-                      <div className="text-[10px] text-slate-400 mt-0.5">{cq.phone}</div>
+                      <div className="text-[10px] text-blue-100 mt-0.5">{cq.phone}</div>
                     )}
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-slate-700 font-medium">
-                      {cq.company || <span className="text-slate-400 italic">—</span>}
+                      {cq.company || <span className="text-blue-100 italic">—</span>}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -111,7 +111,7 @@ export const ContactQueries: React.FC<ContactQueriesProps> = ({
                         year: 'numeric',
                       })}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-blue-200">
                       {new Date(cq.createdAt).toLocaleTimeString('en-IN', {
                         hour: '2-digit',
                         minute: '2-digit',

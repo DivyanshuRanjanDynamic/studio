@@ -25,7 +25,7 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
         <h3 className="text-xl font-bold text-slate-900 mb-2 uppercase tracking-tight">
           Your cart is empty
         </h3>
-        <p className="text-slate-400 text-sm font-medium">
+        <p className="text-blue-100 text-sm font-medium">
           Add some designs to your cart to proceed with an order.
         </p>
       </div>
@@ -50,7 +50,7 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
               key={item.id}
               className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-1 h-full bg-[#2F5FA7] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
 
               <div className="flex items-start gap-5">
                 {/* Part Icon/Preview */}
@@ -75,13 +75,13 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
                     <div>
-                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                         Material
                       </span>
                       <span className="text-[11px] font-bold text-slate-700">{material?.name}</span>
                     </div>
                     <div>
-                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                         Thickness
                       </span>
                       <span className="text-[11px] font-bold text-slate-700">
@@ -89,7 +89,7 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
                       </span>
                     </div>
                     <div>
-                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                         Quantity
                       </span>
                       <span className="text-[11px] font-bold text-slate-700">
@@ -97,7 +97,7 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                         Price
                       </span>
                       <span className="text-[13px] font-bold text-[#2F5FA7]">

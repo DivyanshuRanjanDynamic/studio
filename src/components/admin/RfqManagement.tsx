@@ -39,7 +39,7 @@ export const RfqManagement: React.FC<RfqManagementProps> = ({
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
           Project Lifecycle Control
         </h1>
-        <Badge variant="outline" className="px-3 py-1 border-slate-200 text-slate-500">
+        <Badge variant="outline" className="px-3 py-1 border-slate-200 text-blue-200">
           {rfqs.length} RFQs
         </Badge>
       </div>
@@ -48,12 +48,12 @@ export const RfqManagement: React.FC<RfqManagementProps> = ({
         <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-slate-500">Project & Buyer</TableHead>
-              <TableHead className="text-slate-500">Requirements</TableHead>
-              <TableHead className="text-slate-500">Lifecycle Stage</TableHead>
-              <TableHead className="text-slate-500">Payment</TableHead>
-              <TableHead className="text-slate-500">Assignment</TableHead>
-              <TableHead className="text-slate-500">Actions</TableHead>
+              <TableHead className="text-blue-200">Project & Buyer</TableHead>
+              <TableHead className="text-blue-200">Requirements</TableHead>
+              <TableHead className="text-blue-200">Lifecycle Stage</TableHead>
+              <TableHead className="text-blue-200">Payment</TableHead>
+              <TableHead className="text-blue-200">Assignment</TableHead>
+              <TableHead className="text-blue-200">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -68,13 +68,13 @@ export const RfqManagement: React.FC<RfqManagementProps> = ({
                 <TableRow key={rfq.id} className="border-b border-slate-100">
                   <TableCell>
                     <div className="font-bold text-slate-900">{rfq.projectName}</div>
-                    <div className="text-sm text-slate-500">{rfq.userName}</div>
+                    <div className="text-sm text-blue-200">{rfq.userName}</div>
                   </TableCell>
                   <TableCell>
                     <div className="text-xs text-slate-700">
                       {rfq.manufacturingProcess || 'Multi-Part Project'}
                     </div>
-                    <div className="text-[10px] text-slate-500 uppercase">
+                    <div className="text-[10px] text-blue-200 uppercase">
                       {rfq.material
                         ? `${rfq.material} | Qty: ${rfq.quantity}`
                         : 'Review parts for details'}
@@ -106,7 +106,7 @@ export const RfqManagement: React.FC<RfqManagementProps> = ({
                         {rfq.paymentStatus?.completion?.paid ? '100% Paid' : '50% Paid'}
                       </Badge>
                     ) : (
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-2 italic">
+                      <span className="text-[10px] text-blue-100 font-bold uppercase tracking-widest pl-2 italic">
                         Unpaid
                       </span>
                     )}
@@ -117,7 +117,7 @@ export const RfqManagement: React.FC<RfqManagementProps> = ({
                         Assigned
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-slate-200 text-slate-500">
+                      <Badge variant="outline" className="border-slate-200 text-blue-200">
                         Pending
                       </Badge>
                     )}

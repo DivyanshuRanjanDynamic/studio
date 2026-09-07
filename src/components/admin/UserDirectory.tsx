@@ -24,10 +24,10 @@ export const UserDirectory: React.FC<UserDirectoryProps> = ({ users }) => {
         <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-slate-500">Full Name</TableHead>
-              <TableHead className="text-slate-500">Organization</TableHead>
-              <TableHead className="text-slate-500">Contact</TableHead>
-              <TableHead className="text-slate-500">Status</TableHead>
+              <TableHead className="text-blue-200">Full Name</TableHead>
+              <TableHead className="text-blue-200">Organization</TableHead>
+              <TableHead className="text-blue-200">Contact</TableHead>
+              <TableHead className="text-blue-200">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -37,7 +37,7 @@ export const UserDirectory: React.FC<UserDirectoryProps> = ({ users }) => {
                 <TableCell className="text-slate-700">{u.teamName}</TableCell>
                 <TableCell>
                   <div className="text-sm text-slate-600">{u.email}</div>
-                  <div className="text-xs text-slate-500">{u.phone}</div>
+                  <div className="text-xs text-blue-200">{u.phone}</div>
                 </TableCell>
                 <TableCell>
                   <Badge className="bg-primary/20 text-primary">{u.status}</Badge>

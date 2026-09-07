@@ -122,7 +122,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
               </DialogTitle>
             </div>
           </div>
-          <DialogDescription className="text-xs uppercase tracking-widest font-bold text-slate-500">
+          <DialogDescription className="text-xs uppercase tracking-widest font-bold text-blue-200">
             Create a new project to organize your manufacturing parts
           </DialogDescription>
         </DialogHeader>
@@ -144,7 +144,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
               disabled={isSubmitting}
               autoFocus
             />
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+            <p className="text-[10px] text-blue-100 uppercase tracking-wider font-bold">
               Give your project a descriptive name for easy identification
             </p>
           </div>
@@ -162,7 +162,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
             <Button
               type="submit"
               disabled={isSubmitting || !projectName.trim()}
-              className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
+              className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-blue-600 hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
             >
               {isSubmitting ? (
                 <>

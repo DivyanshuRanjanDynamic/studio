@@ -43,11 +43,11 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
         <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-slate-500">Company</TableHead>
-              <TableHead className="text-slate-500">Capabilities</TableHead>
-              <TableHead className="text-slate-500">Rating</TableHead>
-              <TableHead className="text-slate-500">Location</TableHead>
-              <TableHead className="text-slate-500">Actions</TableHead>
+              <TableHead className="text-blue-200">Company</TableHead>
+              <TableHead className="text-blue-200">Capabilities</TableHead>
+              <TableHead className="text-blue-200">Rating</TableHead>
+              <TableHead className="text-blue-200">Location</TableHead>
+              <TableHead className="text-blue-200">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -68,7 +68,7 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
                         {v.fullName}
                         {v.isVerified && <ShieldCheck className="w-3 h-3 text-secondary" />}
                       </div>
-                      <div className="text-[10px] text-slate-500">{v.teamName}</div>
+                      <div className="text-[10px] text-blue-200">{v.teamName}</div>
                     </div>
                   </div>
                 </TableCell>
@@ -91,7 +91,7 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
                   </div>
                 </TableCell>
                 <TableCell className="text-xs text-slate-700">
-                  <MapPin className="w-3.5 h-3.5 inline mr-1.5 text-slate-400" />
+                  <MapPin className="w-3.5 h-3.5 inline mr-1.5 text-blue-100" />
                   {v.location}
                 </TableCell>
                 <TableCell>
@@ -99,7 +99,7 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-slate-500 hover:text-blue-600"
+                      className="h-8 w-8 text-blue-200 hover:text-blue-600"
                       onClick={() => onEditVendor(v)}
                     >
                       <Edit3 className="w-4 h-4" />
@@ -108,7 +108,7 @@ export const VendorRegistry: React.FC<VendorRegistryProps> = ({
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50"
+                        className="h-8 w-8 text-blue-200 hover:text-red-600 hover:bg-red-50"
                         onClick={() => onDeleteVendor(v)}
                       >
                         <Trash2 className="w-4 h-4" />

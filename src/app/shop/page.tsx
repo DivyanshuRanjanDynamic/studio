@@ -415,12 +415,12 @@ export default function ShopPage() {
         <div className="sticky top-[72px] z-30 mb-6 rounded-[28px] border border-slate-200 bg-white/95 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex items-center gap-2 lg:hidden">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search products"
-                className="h-11 rounded-2xl border-slate-200 bg-slate-50 pl-11 pr-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#2F5FA7]"
+                className="h-11 rounded-2xl border-slate-200 bg-slate-50 pl-11 pr-3 text-sm font-medium text-slate-900 placeholder:text-blue-100 focus-visible:ring-[#2F5FA7]"
               />
             </div>
 
@@ -433,7 +433,7 @@ export default function ShopPage() {
                   <Filter className="mr-1.5 h-4 w-4" />
                   Filter
                   {activeFilterCount > 0 && (
-                    <span className="ml-1 rounded-full bg-[#2F5FA7] px-1.5 py-0.5 text-[10px] font-black text-white">
+                    <span className="ml-1 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white">
                       {activeFilterCount}
                     </span>
                   )}
@@ -446,7 +446,7 @@ export default function ShopPage() {
                     <SheetTitle className="text-lg font-black tracking-tight text-slate-900">
                       Filters
                     </SheetTitle>
-                    <SheetDescription className="text-sm text-slate-500">
+                    <SheetDescription className="text-sm text-blue-200">
                       Sort by price or pick tags like Bearings and Linear Motion.
                     </SheetDescription>
                   </SheetHeader>
@@ -454,7 +454,7 @@ export default function ShopPage() {
 
                 <div className="space-y-6 px-5 py-5">
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                       Sort
                     </h3>
                     <select
@@ -473,7 +473,7 @@ export default function ShopPage() {
                   </section>
 
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                       Tags
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -482,7 +482,7 @@ export default function ShopPage() {
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
                           className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${selectedCategory === category.id
-                            ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white'
+                            ? 'border-[#2F5FA7] bg-blue-600 text-white'
                             : 'border-slate-200 bg-white text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
                             }`}
                         >
@@ -493,7 +493,7 @@ export default function ShopPage() {
                   </section>
 
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                       Price
                     </h3>
                     <div className="space-y-2">
@@ -513,7 +513,7 @@ export default function ShopPage() {
                   </section>
 
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                       Availability
                     </h3>
                     <div className="space-y-2">
@@ -541,7 +541,7 @@ export default function ShopPage() {
                       Clear
                     </Button>
                     <SheetClose asChild>
-                      <Button className="h-11 rounded-2xl bg-[#2F5FA7] text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1F447D]">
+                      <Button className="h-11 rounded-2xl bg-blue-600 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1F447D]">
                         View {filteredProducts.length}
                       </Button>
                     </SheetClose>
@@ -553,12 +553,12 @@ export default function ShopPage() {
 
           <div className="hidden flex-col gap-3 lg:flex xl:flex-row xl:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search by SKU, part name, spec or category"
-                className="h-12 rounded-2xl border-slate-200 bg-slate-50 pl-11 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#2F5FA7]"
+                className="h-12 rounded-2xl border-slate-200 bg-slate-50 pl-11 text-sm font-medium text-slate-900 placeholder:text-blue-100 focus-visible:ring-[#2F5FA7]"
               />
             </div>
 
@@ -581,7 +581,7 @@ export default function ShopPage() {
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
                     className={`rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition ${selectedCategory === category.id
-                      ? 'border-[#2F5FA7] bg-[#2F5FA7] text-white shadow-lg shadow-blue-900/15'
+                      ? 'border-[#2F5FA7] bg-blue-600 text-white shadow-lg shadow-blue-900/15'
                       : 'border-slate-200 bg-white text-slate-600 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
                       }`}
                   >
@@ -597,7 +597,7 @@ export default function ShopPage() {
           <aside className="hidden h-fit rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-[168px] lg:block">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
                   Browse Filters
                 </p>
                 <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900">
@@ -611,7 +611,7 @@ export default function ShopPage() {
 
             <div className="space-y-6 py-5">
               <section>
-                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                   Category
                 </h3>
                 <div className="space-y-2">
@@ -625,7 +625,7 @@ export default function ShopPage() {
                         }`}
                     >
                       <span className="text-sm font-semibold text-slate-800">{category.label}</span>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500 shadow-sm">
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-blue-200 shadow-sm">
                         {categoryCounts[category.id] || 0}
                       </span>
                     </button>
@@ -634,7 +634,7 @@ export default function ShopPage() {
               </section>
 
               <section>
-                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                   Price
                 </h3>
                 <div className="space-y-2">
@@ -654,7 +654,7 @@ export default function ShopPage() {
               </section>
 
               <section>
-                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
                   Availability
                 </h3>
                 <div className="space-y-2">
@@ -675,16 +675,16 @@ export default function ShopPage() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-200">
                 Result Snapshot
               </p>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl bg-white p-3 shadow-sm">
-                  <p className="text-xs font-semibold text-slate-500">Min price</p>
+                  <p className="text-xs font-semibold text-blue-200">Min price</p>
                   <p className="mt-1 text-lg font-black text-slate-900">₹{pricingSummary.min}</p>
                 </div>
                 <div className="rounded-2xl bg-white p-3 shadow-sm">
-                  <p className="text-xs font-semibold text-slate-500">Average</p>
+                  <p className="text-xs font-semibold text-blue-200">Average</p>
                   <p className="mt-1 text-lg font-black text-slate-900">₹{pricingSummary.avg}</p>
                 </div>
               </div>
@@ -739,7 +739,7 @@ export default function ShopPage() {
                 </p>
                 <Button
                   onClick={clearAllFilters}
-                  className="mt-6 rounded-2xl bg-[#2F5FA7] px-6 text-sm font-bold hover:bg-[#1F447D]"
+                  className="mt-6 rounded-2xl bg-blue-600 px-6 text-sm font-bold hover:bg-[#1F447D]"
                 >
                   Reset filters
                 </Button>
@@ -836,7 +836,7 @@ export default function ShopPage() {
                     },
                   ].map((row) => (
                     <Fragment key={row.label}>
-                      <div key={`${row.label}-label`} className="rounded-2xl bg-slate-100 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                      <div key={`${row.label}-label`} className="rounded-2xl bg-slate-100 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
                         {row.label}
                       </div>
                       {compareList.map((product) => (

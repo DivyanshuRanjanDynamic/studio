@@ -158,7 +158,7 @@ export function FlatPatternViewer({
                 <span className={`${line.direction === 'UP' ? 'text-blue-400' : 'text-orange-400'} font-medium`}>
                   {line.direction}
                 </span>
-                <span className="font-mono text-slate-400">R{line.radius.toFixed(1)}</span>
+                <span className="font-mono text-blue-100">R{line.radius.toFixed(1)}</span>
               </div>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function FlatPatternViewer({
 
       {/* ── Top-Left: Badge ── */}
       <div className="absolute top-4 left-4 z-10">
-        <div className="bg-[#2F5FA7] border px-3 py-1.5 rounded-lg border-[#2F5FA7] shadow-lg shadow-blue-500/20">
+        <div className="bg-blue-600 border px-3 py-1.5 rounded-lg border-[#2F5FA7] shadow-lg shadow-blue-500/20">
           <p className="text-[10px] font-mono font-black text-white uppercase tracking-widest flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             2D Flat Pattern
@@ -244,25 +244,25 @@ export function FlatPatternViewer({
         <div className="flex flex-col bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-xl overflow-hidden">
           <button
             onClick={handleZoomIn}
-            className="px-3 py-2.5 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border-b border-slate-700/50"
+            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors border-b border-slate-700/50"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={handleZoomOut}
-            className="px-3 py-2.5 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border-b border-slate-700/50"
+            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors border-b border-slate-700/50"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="px-3 py-2.5 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border-b border-slate-700/50"
+            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors border-b border-slate-700/50"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setBendsVisible((v) => !v)}
-            className="px-3 py-2.5 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors"
           >
             {bendsVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
           </button>
@@ -272,7 +272,7 @@ export function FlatPatternViewer({
       {/* ── Bottom-Right: Zoom Level ── */}
       <div className="absolute bottom-4 right-4 z-10">
         <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/30 px-2.5 py-1 rounded-lg">
-          <span className="text-[9px] font-mono font-bold text-slate-500">
+          <span className="text-[9px] font-mono font-bold text-blue-200">
             {Math.round(zoom * 100)}%
           </span>
         </div>

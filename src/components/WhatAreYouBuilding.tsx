@@ -315,8 +315,8 @@ export function WhatAreYouBuilding() {
           <ScrollReveal variant="fade-down" delay={100}>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#2F5FA7] mb-6">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2F5FA7] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2F5FA7]" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-600 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
               </span>
               For Every Builder
             </div>

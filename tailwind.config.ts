@@ -24,6 +24,28 @@ export default {
         'heading-lg-sm': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
       },
       colors: {
+        // MechHub design system tokens
+        mh: {
+          // Backgrounds
+          'bg-base':     '#080C14',
+          'bg-surface':  '#0D1421',
+          'bg-elevated': '#121A2B',
+          'bg-border':   '#1E2D45',
+          // Brand Blue
+          'blue-dim':    '#1A3A5C',
+          'blue-mid':    '#2563EB',
+          'blue':        '#3B82F6',
+          'blue-light':  '#60A5FA',
+          'blue-glow':   '#93C5FD',
+          // Text
+          'text-primary':   '#F0F6FF',
+          'text-secondary': '#8BA3C0',
+          'text-tertiary':  '#4A6580',
+          // Semantic
+          'success': '#22C55E',
+          'warning': '#F59E0B',
+          'danger':  '#EF4444',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

@@ -138,7 +138,7 @@ export function BlogEngagement({ slug }: BlogEngagementProps) {
           'flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 group focus:outline-none focus:ring-2 disabled:opacity-50',
           isLiked
             ? 'bg-red-50 border-red-200 text-red-500 focus:ring-red-500/50'
-            : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-[#1E3A66] focus:ring-[#2F5FA7]/50'
+            : 'bg-white border-slate-200 text-blue-200 hover:bg-slate-50 hover:text-[#1E3A66] focus:ring-[#2F5FA7]/50'
         )}
       >
         <Heart
@@ -151,7 +151,7 @@ export function BlogEngagement({ slug }: BlogEngagementProps) {
           {likes} {likes === 1 ? 'Like' : 'Likes'}
         </span>
       </button>
-      <p className="text-sm text-slate-500 font-medium hidden sm:block">
+      <p className="text-sm text-blue-200 font-medium hidden sm:block">
         Did you find this article helpful?
       </p>
     </div>

@@ -132,7 +132,7 @@ export function ServiceMaterialGrid({
         </div>
 
         <div className="max-w-md mx-auto relative mb-12">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-100" />
           <input
             type="text"
             placeholder="Search materials..."
@@ -173,12 +173,12 @@ export function ServiceMaterialGrid({
                 <div className="text-sm font-black text-slate-900 mb-1 truncate uppercase tracking-tight group-hover:text-blue-600 transition-colors">
                   {mat.name}
                 </div>
-                <div className="text-[10px] font-bold text-slate-500 truncate opacity-80">
+                <div className="text-[10px] font-bold text-blue-200 truncate opacity-80">
                   {mat.thicknesses}
                 </div>
               </div>
               <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white" />
+                <ArrowRight className="w-4 h-4 text-blue-100 group-hover:text-white" />
               </div>
             </div>
           ))}
@@ -187,7 +187,7 @@ export function ServiceMaterialGrid({
         {filteredMaterials.length === 0 && (
           <div className="text-center py-20 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
             <Info className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-bold uppercase tracking-widest">
+            <p className="text-blue-200 font-bold uppercase tracking-widest">
               No materials found for this search
             </p>
           </div>
@@ -213,7 +213,7 @@ export function ServiceMaterialGrid({
                   }}
                   className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors"
                 >
-                  <X className="w-6 h-6 text-slate-400" />
+                  <X className="w-6 h-6 text-blue-100" />
                 </button>
                 <div
                   className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-slate-200 text-slate-700`}
@@ -249,7 +249,7 @@ export function ServiceMaterialGrid({
                 )}
 
                 <div>
-                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+                  <h4 className="text-[11px] font-black text-blue-100 uppercase tracking-[0.2em] mb-4">
                     SPECIFICATIONS
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
@@ -263,7 +263,7 @@ export function ServiceMaterialGrid({
                         key={p.l}
                         className="bg-slate-50 p-4 rounded-2xl border border-slate-100"
                       >
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        <div className="text-[9px] font-bold text-blue-100 uppercase tracking-widest mb-1">
                           {p.l}
                         </div>
                         <div className="text-xs font-bold text-slate-700">{p.v}</div>
@@ -273,7 +273,7 @@ export function ServiceMaterialGrid({
                 </div>
 
                 <div>
-                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+                  <h4 className="text-[11px] font-black text-blue-100 uppercase tracking-[0.2em] mb-4">
                     COMPATIBILITY
                   </h4>
                   <div className="flex flex-wrap gap-2">
@@ -291,7 +291,7 @@ export function ServiceMaterialGrid({
                 <div className="pt-10">
                   <Button
                     onClick={handleQuoteClick}
-                    className="w-full h-16 bg-[#2F5FA7] hover:bg-[#1E3A66] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-200 group"
+                    className="w-full h-16 bg-blue-600 hover:bg-[#1E3A66] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-200 group"
                   >
                     Get Quote with this Material{' '}
                     <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />

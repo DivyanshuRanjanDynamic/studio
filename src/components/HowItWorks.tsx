@@ -1,13 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useState } from 'react';
 import { Settings, Upload, Zap, Package, Play, ArrowRight, ShieldCheck } from 'lucide-react';
 import { ScrollReveal, TextReveal } from '@/components/ScrollReveal';
 
 export function HowItWorks() {
   const [isPlaying, setIsPlaying] = useState(true);
-  const videoUrl = "https://marketing-video-mechhub.s3.eu-north-1.amazonaws.com/Screen%20Recording%202026-04-25%20041930111.mp4?response-content-disposition=inline&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEGkaCmV1LW5vcnRoLTEiRjBEAiALN6FCuSp%2F7TFZjib0YBMV%2FfDpzl7vua53PXZrbNvidwIgEwRvDkuZ7XYI%2FHXumEyR9ViKqMgI1%2B3MjRKn5DTilDQquQMIMhAAGgwxMjk1ODgxNTY1NTgiDMU11EkOwHDMXkxNbyqWAyzWrUgEdmLzYteTurN%2B310BilxYQhgYIG%2Bidd%2B7O4%2F9cL%2FSFu%2FbsU1BTehwqLBUCFiw0TpZA7pVnAGg0%2BqzjFOhVQsP4uJVcyw0mX8b71Q075joCJ1kwwfN3nUsd1q1u3hE50qnvfH7wAGSnbiyyLpzrHonkQdCVtFVBMccqW8WkOmFpNekdUDVLABeJ%2FhOXNGBa%2BPHWftU255c7%2BeD9AMl1LIC53cbHlu%2BTd1%2ByHWS26kIx39JtNfcoXiA9ogSmafOGuRylWMGhRNU8KwWly4nd7XAnF6x9pMKM639QVJ%2FkD4tPh4U67JxH1OdQp9o6AsQBF%2B5k3gcxDlfL3CKj5dEvDDDrjc3IH4sndytyt7yCk%2FQQxkElqfrEjwSNynLNr%2FO3Yqy0Hs4TWSaXGD22mfL0vVAIGPFPoyGicJwER5Le6PkWqW6qYFBGvQEVN1YAAIBpcDAJCCw6B9XkWaWJALZYnUyvfIqI2swxrxV%2BTXelLuWjK83XKzR%2BcldsS2MTJ%2BeCiMH8I1w0Kp3HYbe9qOTdit36i4wk9390AY63wI87IUf6U5Rh%2FL2Uch%2FlmWbbzMdAiKGgNBsJYwPEj1QWIgjewuBmvxOB86N4tzxVMixn%2B0IJafzy8XXHZdKdCt0cM2%2BU6oMv1lDu96%2F29d1csIXwR7XcuD3N46UA39i5gG%2BHmZQkshhqIE19BML8VOs5yVUmfDDErkrvR6CS5o3TEvazOn4tqVo5IKYYe%2B0B3D91e3z84Z5RykqZyxSQFL1bj9owJv0Z7Oj5MbRVMV3WxpQDcL%2BVlQuaEklhjrehMFu3J47i%2BhrvItpQal%2B38dHYDKjEPaBPdEPQ%2FoPVH9mEajnsKztgo7OH7R4hQ1xF5X4I5%2BIW%2BfyQZQWRr944d%2BP%2BwBkBjSmuizesXI1LkZprfUFXwze2Yo42kC6EkpLVh90vtltzam5MXekjQidpFq9dsLfnIJTrIz5iiwMeIq8IQ%2FwfZC887KqUa8e0LX0BdXrg1v9CYaSp81Y1Un18Xo%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAR4LAOLCHCAD3V7KC%2F20260603%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20260603T004325Z&X-Amz-Expires=43200&X-Amz-SignedHeaders=host&X-Amz-Signature=273790c9571c85596da03f5629c0ee2541372d7bf82750b9805e874b130bfd9b";
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoUrl = "https://marketing-video-mechhub.s3.eu-north-1.amazonaws.com/Screen+Recording+2026-04-25+041930111.mp4"
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 1.5;
+    }
+  }, []);
 
   return (
     <section id="how-it-works" className="py-20 md:py-28 relative overflow-hidden bg-white">
@@ -39,9 +46,16 @@ export function HowItWorks() {
             <div className="relative aspect-video w-full rounded-xl md:rounded-[22px] overflow-hidden bg-slate-950 flex items-center justify-center border border-white/10">
               {
                 <video
+                  ref={videoRef}
                   src={videoUrl}
-                  controls
                   autoPlay
+                  loop
+                  muted
+                  playsInline
+                  controls
+                  onLoadedMetadata={(e) => {
+                    e.currentTarget.playbackRate = 1.5;
+                  }}
                   className="w-full h-full object-contain"
                 />
               }

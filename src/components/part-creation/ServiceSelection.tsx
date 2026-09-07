@@ -55,7 +55,7 @@ export function ServiceSelection({
         <h3 className="text-lg font-bold uppercase tracking-wide text-slate-900 mb-2">
           Part Configuration
         </h3>
-        <p className="text-xs uppercase tracking-widest font-bold text-slate-500">
+        <p className="text-xs uppercase tracking-widest font-bold text-blue-200">
           Name your part and select manufacturing service
         </p>
       </div>
@@ -81,14 +81,14 @@ export function ServiceSelection({
             Part name must include at least one letter (not only numbers).
           </p>
         )}
-        <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">
+        <p className="text-[9px] text-blue-100 uppercase tracking-wider font-bold">
           Give this component a descriptive name for your quote
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
-          <Label className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">
+          <Label className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
             Select Manufacturing Service
           </Label>
         </div>
@@ -106,7 +106,7 @@ export function ServiceSelection({
                 <div className="flex items-start gap-4">
                   <div
                     className={`w-5 h-6 rounded-xl flex items-center justify-center border shadow-sm transition-colors ${selectedService === service.id
-                        ? 'bg-[#2F5FA7] text-white border-[#2F5FA7]'
+                        ? 'bg-blue-600 text-white border-[#2F5FA7]'
                         : 'bg-slate-50 text-[#2F5FA7] border-slate-100 group-hover:bg-blue-50'
                       }`}
                   >
@@ -123,7 +123,7 @@ export function ServiceSelection({
               </div>
 
               {selectedService === service.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#2F5FA7]" />
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600" />
               )}
             </Card>
           ))}

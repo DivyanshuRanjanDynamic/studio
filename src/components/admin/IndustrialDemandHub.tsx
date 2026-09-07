@@ -64,7 +64,7 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
             Industrial Demand Hub
           </h1>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black mt-1">
+          <p className="text-[10px] text-blue-200 uppercase tracking-[0.2em] font-black mt-1">
             Algorithm-driven prioritization based on buyer interest flags.
           </p>
         </div>
@@ -124,7 +124,7 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
                 <TableCell colSpan={6} className="text-center py-24">
                   <div className="flex flex-col items-center gap-3">
                     <TrendingUp className="w-8 h-8 text-slate-200" />
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                    <p className="text-xs text-blue-100 font-bold uppercase tracking-widest">
                       No market signals captured.
                     </p>
                   </div>
@@ -140,7 +140,7 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
                     <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                       {data.name}
                     </div>
-                    <div className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter mt-0.5">
+                    <div className="text-[10px] font-mono text-blue-100 uppercase tracking-tighter mt-0.5">
                       {data.sku}
                     </div>
                   </TableCell>
@@ -167,7 +167,7 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="py-4 text-[11px] text-slate-500 font-medium">
+                  <TableCell className="py-4 text-[11px] text-blue-200 font-medium">
                     {new Date(data.lastDate).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="py-4">

@@ -102,9 +102,9 @@ export default function CheckoutPage() {
         <h1 className="text-2xl font-bold text-slate-900 mb-2 uppercase tracking-tight">
           Your cart is empty
         </h1>
-        <p className="text-slate-400 mb-8 font-medium">Add some quotes or products to proceed.</p>
+        <p className="text-blue-100 mb-8 font-medium">Add some quotes or products to proceed.</p>
         <Link href="/quote/instant">
-          <button className="bg-[#2F5FA7] hover:bg-[#1E3A66] text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all shadow-lg active:scale-95">
+          <button className="bg-blue-600 hover:bg-[#1E3A66] text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all shadow-lg active:scale-95">
             Start a New Design
           </button>
         </Link>
@@ -153,7 +153,7 @@ export default function CheckoutPage() {
                 <div className="flex flex-col items-center gap-2">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${checkout.step === s.id
-                        ? 'bg-[#2F5FA7] border-[#2F5FA7] text-white shadow-lg'
+                        ? 'bg-blue-600 border-[#2F5FA7] text-white shadow-lg'
                         : i < ['cart', 'shipping', 'payment'].indexOf(checkout.step)
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'bg-white border-slate-200 text-slate-300'
@@ -162,7 +162,7 @@ export default function CheckoutPage() {
                     <span className="text-[10px] font-black">{i + 1}</span>
                   </div>
                   <span
-                    className={`text-[9px] font-bold uppercase tracking-widest ${checkout.step === s.id ? 'text-[#2F5FA7]' : 'text-slate-400'}`}
+                    className={`text-[9px] font-bold uppercase tracking-widest ${checkout.step === s.id ? 'text-[#2F5FA7]' : 'text-blue-100'}`}
                   >
                     {s.label}
                   </span>
@@ -196,7 +196,7 @@ export default function CheckoutPage() {
               <div className="animate-in fade-in slide-in-from-left-4 duration-500">
                 <button
                   onClick={checkout.prevStep}
-                  className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#2F5FA7] transition-colors mb-6"
+                  className="flex items-center gap-2 text-[10px] font-bold text-blue-100 uppercase tracking-widest hover:text-[#2F5FA7] transition-colors mb-6"
                 >
                   <ChevronLeft size={14} /> Back to Cart
                 </button>
@@ -211,7 +211,7 @@ export default function CheckoutPage() {
               <div className="animate-in fade-in slide-in-from-left-4 duration-500">
                 <button
                   onClick={checkout.prevStep}
-                  className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-[#2F5FA7] transition-colors mb-6"
+                  className="flex items-center gap-2 text-[10px] font-bold text-blue-100 uppercase tracking-widest hover:text-[#2F5FA7] transition-colors mb-6"
                 >
                   <ChevronLeft size={14} /> Back to Shipping
                 </button>
@@ -227,10 +227,10 @@ export default function CheckoutPage() {
             {checkout.step === 'payment' && !checkout.order && (
               <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center space-y-6">
                 <Loader2 className="w-10 h-10 text-[#2F5FA7] animate-spin mx-auto" />
-                <p className="text-slate-500 font-medium">Finalizing order details...</p>
+                <p className="text-blue-200 font-medium">Finalizing order details...</p>
                 <button
                   onClick={() => checkout.createOrder()}
-                  className="bg-[#2F5FA7] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[11px]"
+                  className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[11px]"
                 >
                   Try again
                 </button>
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  <span className="text-[11px] font-bold text-blue-100 uppercase tracking-widest">
                     Subtotal
                   </span>
                   <span className="text-sm font-bold text-slate-700">
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                  <span className="text-[11px] font-bold text-blue-100 uppercase tracking-widest">
                     GST (18%)
                   </span>
                   <span className="text-sm font-bold text-slate-700">
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
                 <button
                   onClick={checkout.nextStep}
                   disabled={quoteCart.isEmpty && shopCart.totalItems === 0}
-                  className="w-full bg-[#2F5FA7] hover:bg-[#1E3A66] disabled:opacity-40 text-white font-bold tracking-widest uppercase text-[11px] py-5 rounded-2xl transition-all shadow-xl shadow-blue-900/10 flex items-center justify-center gap-3 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 text-white font-bold tracking-widest uppercase text-[11px] py-5 rounded-2xl transition-all shadow-xl shadow-blue-900/10 flex items-center justify-center gap-3 active:scale-95"
                 >
                   Proceed to Shipping <ArrowRight size={14} />
                 </button>
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
               {/* Trust Badge */}
               <div className="flex items-center gap-3 pt-4 opacity-50 justify-center">
                 <ShieldCheck size={16} className="text-[#2F5FA7]" />
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-[9px] font-bold text-blue-100 uppercase tracking-widest">
                   Industrial Encryption
                 </span>
               </div>

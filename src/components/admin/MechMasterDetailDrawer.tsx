@@ -122,7 +122,7 @@ export function MechMasterDetailDrawer({
           <div className="flex items-center justify-between">
             {isEditing ? (
               <div className="space-y-2 w-full">
-                <Label className="text-[10px] uppercase font-bold text-slate-500">Company Name</Label>
+                <Label className="text-[10px] uppercase font-bold text-blue-200">Company Name</Label>
                 <Input
                   value={editData.teamName || ''}
                   onChange={(e) => setEditData({ ...editData, teamName: e.target.value })}
@@ -204,7 +204,7 @@ export function MechMasterDetailDrawer({
 
           {/* Workshop Address */}
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">
+            <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold">
               Workshop Address
             </p>
             {isEditing ? (
@@ -221,7 +221,7 @@ export function MechMasterDetailDrawer({
 
           {/* Capabilities */}
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">
+            <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold">
               Manufacturing Capabilities
             </p>
             {isEditing ? (
@@ -248,7 +248,7 @@ export function MechMasterDetailDrawer({
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-slate-400 italic">No capabilities listed</span>
+                  <span className="text-blue-100 italic">No capabilities listed</span>
                 )}
               </div>
             )}
@@ -256,7 +256,7 @@ export function MechMasterDetailDrawer({
 
           {/* Portfolio/Bio */}
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.15em] text-slate-500 font-semibold">
+            <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold">
               Business Intelligence & Experience
             </p>
             {isEditing ? (
@@ -321,7 +321,7 @@ function InfoField({
 }) {
   return (
     <div className="space-y-1">
-      <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500 font-bold">
+      <p className="text-[10px] uppercase tracking-[0.15em] text-blue-200 font-bold">
         {label}
       </p>
       {isEditing && editNode ? editNode : <p className="text-slate-800 font-medium">{value}</p>}

@@ -48,12 +48,12 @@ export const ProductCatalogue: React.FC<ProductCatalogueProps> = ({
         <Table className="min-w-[800px]">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-slate-500">Product & SKU</TableHead>
-              <TableHead className="text-slate-500">Category</TableHead>
-              <TableHead className="text-slate-500">Pricing (INR)</TableHead>
-              <TableHead className="text-slate-500 text-center">Stock</TableHead>
-              <TableHead className="text-slate-500">Status</TableHead>
-              <TableHead className="text-slate-500 text-right">Actions</TableHead>
+              <TableHead className="text-blue-200">Product & SKU</TableHead>
+              <TableHead className="text-blue-200">Category</TableHead>
+              <TableHead className="text-blue-200">Pricing (INR)</TableHead>
+              <TableHead className="text-blue-200 text-center">Stock</TableHead>
+              <TableHead className="text-blue-200">Status</TableHead>
+              <TableHead className="text-blue-200 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -81,7 +81,7 @@ export const ProductCatalogue: React.FC<ProductCatalogueProps> = ({
                 >
                   <TableCell>
                     <div className="font-bold text-slate-900 mb-0.5">{prod.name}</div>
-                    <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                    <div className="text-[10px] font-mono text-blue-200 uppercase tracking-widest">
                       {prod.sku}
                     </div>
                   </TableCell>
@@ -95,7 +95,7 @@ export const ProductCatalogue: React.FC<ProductCatalogueProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="text-sm font-bold text-slate-900">₹{prod.salePrice}</div>
-                    <div className="text-[10px] text-slate-400 line-through opacity-60">
+                    <div className="text-[10px] text-blue-100 line-through opacity-60">
                       ₹{prod.basePrice}
                     </div>
                   </TableCell>

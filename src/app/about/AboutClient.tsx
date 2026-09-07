@@ -25,7 +25,7 @@ export default function AboutClient() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-[#2F5FA7] transition-all group"
+            className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-blue-100 hover:text-[#2F5FA7] transition-all group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Hub
@@ -57,7 +57,7 @@ export default function AboutClient() {
               <span className="text-[#2F5FA7]">Future of Fabrication.</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-slate-500 leading-relaxed max-w-2xl font-medium">
+            <p className="text-lg md:text-xl text-blue-200 leading-relaxed max-w-2xl font-medium">
               MechHub is an institutional-grade marketplace connecting design teams with verified
               CNC, laser, and fabrication experts — making precision production accessible,
               reliable, and lightning-fast.
@@ -87,7 +87,7 @@ export default function AboutClient() {
               <div className="text-5xl font-bold text-slate-900 mb-2">
                 ₹40,000<span className="text-[#2F5FA7]"> Cr</span>
               </div>
-              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-100">
                 Total Addressable Market
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function AboutClient() {
               <div className="text-5xl font-bold text-slate-900 mb-2">
                 20<span className="text-[#2F5FA7]">+</span>
               </div>
-              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-100">
                 Verified MechMasters
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function AboutClient() {
               <div className="text-5xl font-bold text-slate-900 mb-2">
                 24<span className="text-[#2F5FA7]">h</span>
               </div>
-              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-100">
                 Average Bidding Response
               </div>
             </div>
@@ -122,11 +122,11 @@ export default function AboutClient() {
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
                 The Strategic Mission
               </h2>
-              <p className="text-lg text-slate-500 leading-relaxed font-medium">
+              <p className="text-lg text-blue-200 leading-relaxed font-medium">
                 India&apos;s custom manufacturing market is worth ₹40,000 Crore — yet there remains
                 no unified platform connecting buyers with precision manufacturing shops.
               </p>
-              <p className="text-slate-500 leading-relaxed pt-2">
+              <p className="text-blue-200 leading-relaxed pt-2">
                 MechHub bridges this gap. We are building a vertically integrated infrastructure
                 where any engineer can upload a CAD file, receive an instant DFM review, and get
                 matched with a verified manufacturing partner (
@@ -155,7 +155,7 @@ export default function AboutClient() {
             <h2 className="text-4xl font-bold tracking-tight text-slate-900">
               Why Engineers Choose MechHub
             </h2>
-            <p className="text-slate-500 font-medium max-w-xl mx-auto">
+            <p className="text-blue-200 font-medium max-w-xl mx-auto">
               Built for engineers, by engineers. We own the standards for precision procurement.
             </p>
           </div>
@@ -186,7 +186,7 @@ export default function AboutClient() {
                   <item.icon className="w-7 h-7 text-[#2F5FA7]" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">{item.title}</h3>
-                <p className="text-sm text-slate-400 font-medium leading-relaxed">{item.desc}</p>
+                <p className="text-sm text-blue-100 font-medium leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -201,7 +201,7 @@ export default function AboutClient() {
               <h2 className="text-4xl font-bold tracking-tight text-slate-900">
                 The Technical Leadership
               </h2>
-              <p className="text-slate-500 font-medium leading-relaxed max-w-xl mx-auto lg:ml-0">
+              <p className="text-blue-200 font-medium leading-relaxed max-w-xl mx-auto lg:ml-0">
                 A cross-functional team of engineers solving the high-friction procurement gap in
                 the Indian manufacturing sector.
               </p>
@@ -268,7 +268,7 @@ export default function AboutClient() {
                   <p className="text-xs font-black uppercase tracking-wider text-[#2F5FA7]">
                     {member.role}
                   </p>
-                  <p className="text-xs text-slate-400 font-medium leading-relaxed pt-2 line-clamp-2">
+                  <p className="text-xs text-blue-100 font-medium leading-relaxed pt-2 line-clamp-2">
                     {member.bio}
                   </p>
                 </div>

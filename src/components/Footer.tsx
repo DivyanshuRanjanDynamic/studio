@@ -45,12 +45,6 @@ export function Footer() {
                 href={user ? '/login' : '/login?tab=register&redirect=/dashboard'}
                 className="w-full sm:w-auto"
               >
-                <Button
-                  className="w-full h-11 px-7 text-sm font-bold bg-white text-[#1E3A66] hover:bg-blue-50 rounded-full shadow-lg transition-all"
-                  suppressHydrationWarning
-                >
-                  Upload Your Design <ArrowRight className="ml-1.5 w-3.5 h-3.5 inline" />
-                </Button>
               </Link>
               <Button
                 variant="ghost"

@@ -37,7 +37,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
         </h1>
         <Badge
           variant="outline"
-          className="px-3 py-1 border-slate-200 text-slate-500 uppercase tracking-widest font-bold"
+          className="px-3 py-1 border-slate-200 text-blue-200 uppercase tracking-widest font-bold"
         >
           {orders?.length || 0} Orders
         </Badge>
@@ -47,11 +47,11 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-slate-500">Order Ref</TableHead>
-              <TableHead className="text-slate-500">Customer & Logistics</TableHead>
-              <TableHead className="text-slate-500">Component Lineage</TableHead>
-              <TableHead className="text-slate-500 text-right">Value (INR)</TableHead>
-              <TableHead className="text-slate-500">Fulfillment Status</TableHead>
+              <TableHead className="text-blue-200">Order Ref</TableHead>
+              <TableHead className="text-blue-200">Customer & Logistics</TableHead>
+              <TableHead className="text-blue-200">Component Lineage</TableHead>
+              <TableHead className="text-blue-200 text-right">Value (INR)</TableHead>
+              <TableHead className="text-blue-200">Fulfillment Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -68,10 +68,10 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                   className="border-b border-slate-100 group hover:bg-slate-50/50"
                 >
                   <TableCell>
-                    <div className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">
+                    <div className="font-mono text-[10px] text-blue-200 uppercase tracking-widest">
                       #{order.id.slice(-8)}
                     </div>
-                    <div className="text-[9px] text-slate-400 mt-1 uppercase font-bold">
+                    <div className="text-[9px] text-blue-100 mt-1 uppercase font-bold">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </div>
                   </TableCell>
@@ -79,7 +79,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                     <div className="font-bold text-slate-900 text-sm italic underline decoration-slate-200 underline-offset-4">
                       {order.shippingAddress?.fullName || 'N/A'}
                     </div>
-                    <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-tighter truncate max-w-[150px]">
+                    <div className="text-[10px] text-blue-200 mt-1 uppercase tracking-tighter truncate max-w-[150px]">
                       {order.shippingAddress?.city || 'Unknown'},{' '}
                       {order.shippingAddress?.state || 'N/A'}
                     </div>
@@ -92,7 +92,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                           className="text-[10px] text-slate-700 font-medium flex items-center gap-2"
                         >
                           <span className="text-[#2F5FA7]">[{item.quantity}x]</span> {item.name}{' '}
-                          <span className="text-[8px] text-slate-400 italic">(Quote)</span>
+                          <span className="text-[8px] text-blue-100 italic">(Quote)</span>
                         </div>
                       ))}
                       {(order.shopItems || []).map((item: any, idx: number) => (
@@ -101,7 +101,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                           className="text-[10px] text-slate-700 font-medium flex items-center gap-2"
                         >
                           <span className="text-[#2F5FA7]">[{item.quantity}x]</span> {item.name}{' '}
-                          <span className="text-[8px] text-slate-400 italic">(Product)</span>
+                          <span className="text-[8px] text-blue-100 italic">(Product)</span>
                         </div>
                       ))}
                     </div>
