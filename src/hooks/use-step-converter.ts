@@ -4,6 +4,7 @@ import { ConversionResult } from '@/types/viewer';
 
 export interface UseStepConverterReturn {
   isConverting: boolean;
+  jobStatus: string | null;
   error: string | null;
   result: ConversionResult | null;
   stlBuffer: ArrayBuffer | null;
@@ -16,18 +17,22 @@ export interface UseStepConverterReturn {
  */
 export function useStepConverter(): UseStepConverterReturn {
   const [isConverting, setIsConverting] = useState(false);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ConversionResult | null>(null);
   const [stlBuffer, setStlBuffer] = useState<ArrayBuffer | null>(null);
 
   const convertFile = useCallback(async (file: File) => {
     setIsConverting(true);
+    setJobStatus('queued');
     setError(null);
     setResult(null);
     setStlBuffer(null);
 
     try {
-      const conversionResult = await convertStepFile(file);
+      const conversionResult = await convertStepFile(file, (status) => {
+        setJobStatus(status);
+      });
       setResult(conversionResult);
       
       // Convert base64 STL to ArrayBuffer for Three.js
@@ -43,6 +48,7 @@ export function useStepConverter(): UseStepConverterReturn {
 
   const reset = useCallback(() => {
     setIsConverting(false);
+    setJobStatus(null);
     setError(null);
     setResult(null);
     setStlBuffer(null);
@@ -50,6 +56,7 @@ export function useStepConverter(): UseStepConverterReturn {
 
   return {
     isConverting,
+    jobStatus,
     error,
     result,
     stlBuffer,

@@ -21,9 +21,26 @@ const CONVERT_URL = BASE_URL.endsWith('/convert') || BASE_URL.endsWith('convertS
   ? BASE_URL
   : `${BASE_URL.replace(/\/$/, '')}/convert`;
 
+const SERVICE_BASE_ROOT = CONVERT_URL.replace(/\/convert$/, '').replace(/\/convertStep$/, '');
+
 console.log(`[stepConverter] Using CAD Service URL: ${CONVERT_URL}`);
 
-export async function convertStepFile(file: File): Promise<ConversionResult> {
+interface JobStatusResponse {
+  jobId: string;
+  status: 'queued' | 'processing' | 'done' | 'failed';
+  fileName?: string;
+  fileSize?: number;
+  resultUrl?: string | null;
+  result?: ConversionResult | null;
+  error?: string | null;
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function convertStepFile(
+  file: File,
+  onStatusUpdate?: (status: string) => void
+): Promise<ConversionResult> {
   const form = new FormData();
   form.append('file', file);
 
@@ -42,16 +59,62 @@ export async function convertStepFile(file: File): Promise<ConversionResult> {
     );
   }
 
-  if (!res.ok) {
+  if (!res.ok && res.status !== 202) {
     // The FastAPI service returns { "detail": "..." } on errors (422/4xx/5xx).
     // The legacy Firebase function returns { "error": "..." }.
-    // We handle both shapes here.
     const body = await res.json().catch(() => ({})) as Record<string, string>;
     const message = body.detail ?? body.error ?? `Conversion failed (${res.status})`;
     throw new Error(message);
   }
 
-  return res.json() as Promise<ConversionResult>;
+  const responseData = await res.json();
+
+  // If async job started (returns jobId)
+  if (responseData && responseData.jobId) {
+    const jobId = responseData.jobId as string;
+    onStatusUpdate?.('queued');
+
+    const maxAttempts = 200; // ~5 minutes timeout with 1500ms delay
+    let attempt = 0;
+
+    while (attempt < maxAttempts) {
+      await sleep(1500);
+      attempt++;
+
+      const statusUrl = `${SERVICE_BASE_ROOT}/status/${jobId}`;
+      let statusRes: Response;
+      try {
+        statusRes = await fetch(statusUrl);
+      } catch (err) {
+        console.warn(`[stepConverter] Status check attempt ${attempt} network glitch:`, err);
+        continue;
+      }
+
+      if (!statusRes.ok) {
+        console.warn(`[stepConverter] Status check attempt ${attempt} returned ${statusRes.status}`);
+        continue;
+      }
+
+      const job: JobStatusResponse = await statusRes.json();
+      onStatusUpdate?.(job.status);
+
+      if (job.status === 'done') {
+        if (job.result) {
+          return job.result;
+        }
+        throw new Error('Async job completed without result data.');
+      }
+
+      if (job.status === 'failed') {
+        throw new Error(job.error || 'CAD conversion failed in background worker.');
+      }
+    }
+
+    throw new Error('CAD conversion timed out. Please try uploading a smaller STEP file.');
+  }
+
+  // Direct synchronous fallback result
+  return responseData as ConversionResult;
 }
 
 
@@ -62,3 +125,4 @@ export function stlBase64ToBuffer(base64: string): ArrayBuffer {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes.buffer as ArrayBuffer;
 }
+

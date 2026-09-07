@@ -1368,18 +1368,6 @@ function UserDashboardContent() {
                                         )}
 
                                       <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                                        <Button
-                                          className="flex-1 tracking-widest h-11 text-xs bg-blue-600 hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
-                                          onClick={() => handleSelectVendor(quote)}
-                                          disabled={isConfirming}
-                                        >
-                                          {isConfirming ? (
-                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                          ) : (
-                                            <Check className="w-4 h-4 mr-2" />
-                                          )}
-                                          Accept Offer
-                                        </Button>
                                         <div className="flex flex-1 gap-3">
                                           <Button
                                             variant="outline"
