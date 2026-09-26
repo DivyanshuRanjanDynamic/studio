@@ -8,7 +8,7 @@ import { ScrollReveal, TextReveal } from '@/components/ScrollReveal';
 export function HowItWorks() {
   const [isPlaying, setIsPlaying] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const videoUrl = "https://marketing-video-mechhub.s3.eu-north-1.amazonaws.com/Screen+Recording+2026-04-25+041930111.mp4"
+  const videoUrl = "https://marketing-video-mechhub.s3.eu-north-1.amazonaws.com/export-1790457526275.mp4"
 
   useEffect(() => {
     if (videoRef.current) {

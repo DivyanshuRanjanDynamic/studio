@@ -33,7 +33,7 @@ const steps = [
 
 // S3 demo video (existing from original HowItWorks)
 const VIDEO_URL =
-  'https://marketing-video-mechhub.s3.eu-north-1.amazonaws.com/Screen%20Recording%202026-04-25%20041930111.mp4';
+  'https://marketing-video-mechhub.s3.eu-north-1.amazonaws.com/export-1790457526275.mp4';
 
 export function HowItWorks() {
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
