@@ -946,7 +946,7 @@ function LoginPageContent() {
                             Account Type:
                           </span>
                           <span className="text-xs font-black uppercase tracking-wider text-slate-900">
-                            Customer
+                            Innovator
                           </span>
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
                         </div>
@@ -1015,7 +1015,7 @@ function LoginPageContent() {
                           ) : (
                             <UserPlus className="mr-2 h-4 w-4" />
                           )}
-                          Register as Customer
+                          Register as Innovator
                         </Button>
                       </CardFooter>
                     </form>
