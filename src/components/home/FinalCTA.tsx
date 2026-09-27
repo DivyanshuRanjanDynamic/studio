@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Lock, Zap, MapPin, PackageCheck } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 const badges = [
   { icon: Lock, label: 'NDA Protected' },
@@ -12,10 +13,15 @@ const badges = [
 ];
 
 export function FinalCTA() {
+  const { user } = useUser();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   const btnsRef = useRef<HTMLDivElement>(null);
   const badgesRef = useRef<HTMLDivElement>(null);
+
+  const uploadHref = user
+    ? '/dashboard?tab=projects'
+    : '/login?tab=register&redirect=/dashboard?tab=projects';
 
   useEffect(() => {
     const elements = [headingRef.current, subRef.current, btnsRef.current, badgesRef.current];
@@ -80,7 +86,7 @@ export function FinalCTA() {
             className="mt-10 flex flex-col sm:flex-row gap-4 justify-center mh-reveal"
           >
             <Link
-              href="/upload"
+              href={uploadHref}
               className="mh-btn-secondary-dark text-base hover:bg-blue-500 text-white px-8 py-3.5 justify-center"
             >
               Upload Your Design <ArrowRight size={18} />

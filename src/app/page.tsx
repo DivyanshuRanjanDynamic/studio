@@ -49,7 +49,7 @@ export default function Home() {
   const { toast } = useToast();
   const db = useFirestore();
   const router = useRouter();
-  const user = useUser();
+  const { user } = useUser();
 
   // Rotating Hero Text State
   const heroPhrases = ['Custom Manufacturing \n Made Fast & Affordable'];
@@ -98,6 +98,10 @@ export default function Home() {
       description: `We're currently working on the ${feature}. Check back soon for updates!`,
     });
   };
+
+  const uploadHref = user
+    ? '/dashboard?tab=projects'
+    : '/login?tab=register&redirect=/dashboard?tab=projects';
 
   return (
     <div className="min-h-screen relative overflow-x-hidden bg-white" suppressHydrationWarning>
@@ -148,8 +152,10 @@ export default function Home() {
 
               <ScrollReveal variant="fade-up" delay={200}>
                 <p className="text-base md:text-lg text-white/80 max-w-xl leading-relaxed mb-10 font-medium">
-                  <span className="text-cyan-300 font-bold">Upload a design</span> and get precision
-                  engineered parts delivered with transparency. Built for students, startups, and
+                  <Link href={uploadHref} className="text-cyan-300 font-bold hover:underline">
+                    Upload a design
+                  </Link>{' '}
+                  and get precision engineered parts delivered with transparency. Built for students, startups, and
                   hobbyists.
                 </p>
               </ScrollReveal>
@@ -157,7 +163,7 @@ export default function Home() {
               <ScrollReveal variant="fade-up" delay={300}>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-12 md:mb-20 w-full lg:justify-start">
                   <Link
-                    href="/upload"
+                    href={uploadHref}
                     className="w-full md:w-auto"
                   >
                     <Button

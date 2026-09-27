@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,11 +47,22 @@ const FORMAT_LABELS = ['STEP', 'STL', 'DXF', 'PDF', 'IGES', 'OBJ', 'DWG', 'JPG',
 
 export default function UploadPage() {
   const router = useRouter();
+  const { user, isUserLoading } = useUser();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [files, setFiles] = useState<DesignFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedProcesses, setSelectedProcesses] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!isUserLoading) {
+      if (user) {
+        router.replace('/dashboard?tab=projects');
+      } else {
+        router.replace('/login?tab=register&redirect=/dashboard?tab=projects');
+      }
+    }
+  }, [user, isUserLoading, router]);
 
   const processFiles = useCallback(
     (fileList: FileList | File[]) => {
