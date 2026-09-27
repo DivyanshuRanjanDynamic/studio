@@ -157,7 +157,7 @@ export default function Home() {
               <ScrollReveal variant="fade-up" delay={300}>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-12 md:mb-20 w-full lg:justify-start">
                   <Link
-                    href="/login?tab=register&redirect=/dashboard"
+                    href="/upload"
                     className="w-full md:w-auto"
                   >
                     <Button

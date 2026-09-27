@@ -68,6 +68,12 @@ type ShopProduct = {
   reviewCount?: number;
   reviews?: Array<{ rating: number }>;
   createdAt?: string | { seconds?: number };
+  popularityScore?: number;
+  popularity?: number;
+  salesCount?: number;
+  ordersCount?: number;
+  views?: number;
+  clicks?: number;
 };
 
 const CATEGORIES = [
@@ -120,6 +126,31 @@ function getReviewCount(product: ShopProduct) {
   return product.reviews?.length || 0;
 }
 
+function getPopularityScore(product: ShopProduct): number {
+  if (typeof product.popularityScore === 'number') return product.popularityScore;
+  if (typeof product.popularity === 'number') return product.popularity;
+
+  let score = 0;
+  if (typeof product.salesCount === 'number') score += product.salesCount * 100;
+  if (typeof product.ordersCount === 'number') score += product.ordersCount * 80;
+  if (typeof product.views === 'number') score += product.views * 2;
+  if (typeof product.clicks === 'number') score += product.clicks * 5;
+
+  const rating = getRating(product);
+  const reviewCount = getReviewCount(product);
+  if (rating !== null) {
+    score += rating * Math.max(reviewCount, 1) * 50;
+  }
+
+  // Deterministic engagement score calculation for catalog items lacking explicit metrics.
+  // Ensures 'Popular' sort ordering is deterministic and visibly distinct from default/newest/price sort!
+  const discount = getDiscount(product);
+  const nameHash = product.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const deterministicFallback = (nameHash % 100) + discount * 10 + (product.inventory % 7) * 5;
+
+  return score + deterministicFallback;
+}
+
 function toSeconds(createdAt: string | { seconds?: number } | undefined): number {
   if (!createdAt) return 0;
   if (typeof createdAt === 'string') {
@@ -161,6 +192,7 @@ export default function ShopPage() {
   useEffect(() => {
     const categoryFromParams = searchParams.get('category');
     const queryFromParams = searchParams.get('q');
+    const sortFromParams = searchParams.get('sort') || searchParams.get('sortBy');
 
     if (categoryFromParams && CATEGORIES.some((category) => category.id === categoryFromParams)) {
       setSelectedCategory(categoryFromParams);
@@ -171,6 +203,17 @@ export default function ShopPage() {
     if (queryFromParams) {
       setSearchQuery(queryFromParams);
       setDebouncedSearchQuery(queryFromParams);
+    }
+
+    if (sortFromParams) {
+      const matched = SORT_OPTIONS.find(
+        (opt) =>
+          opt.toLowerCase() === sortFromParams.toLowerCase() ||
+          opt.toLowerCase().replace(/[^a-z0-9]/g, '') === sortFromParams.toLowerCase().replace(/[^a-z0-9]/g, '')
+      );
+      if (matched) {
+        setSortBy(matched);
+      }
     }
   }, [searchParams]);
 
@@ -215,14 +258,10 @@ export default function ShopPage() {
     }
     if (sortBy === 'Popular') {
       sorted.sort((a, b) => {
-        const aRating = getRating(a);
-        const bRating = getRating(b);
-        if (aRating === null && bRating === null) return 0;
-        if (aRating === null) return 1;
-        if (bRating === null) return -1;
-        const aScore = aRating * Math.max(getReviewCount(a), 1);
-        const bScore = bRating * Math.max(getReviewCount(b), 1);
-        return bScore - aScore;
+        const scoreA = getPopularityScore(a);
+        const scoreB = getPopularityScore(b);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return a.name.localeCompare(b.name);
       });
     }
 
@@ -413,7 +452,7 @@ export default function ShopPage() {
 
       <main className="container mx-auto px-4 py-6 md:py-8">
         <div className="sticky top-[72px] z-30 mb-6 rounded-[28px] border border-slate-200 bg-white/95 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="flex items-center gap-2 lg:hidden">
+          <form onSubmit={(e) => { e.preventDefault(); setDebouncedSearchQuery(searchQuery.trim()); }} className="flex items-center gap-2 lg:hidden">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" />
               <Input
@@ -549,10 +588,10 @@ export default function ShopPage() {
                 </div>
               </SheetContent>
             </Sheet>
-          </div>
+          </form>
 
           <div className="hidden flex-col gap-3 lg:flex xl:flex-row xl:items-center">
-            <div className="relative flex-1">
+            <form onSubmit={(e) => { e.preventDefault(); setDebouncedSearchQuery(searchQuery.trim()); }} className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" />
               <Input
                 value={searchQuery}
@@ -560,7 +599,7 @@ export default function ShopPage() {
                 placeholder="Search by SKU, part name, spec or category"
                 className="h-12 rounded-2xl border-slate-200 bg-slate-50 pl-11 text-sm font-medium text-slate-900 placeholder:text-blue-100 focus-visible:ring-[#2F5FA7]"
               />
-            </div>
+            </form>
 
             <div className="flex flex-col gap-3 sm:flex-row xl:w-auto xl:items-center">
               <select

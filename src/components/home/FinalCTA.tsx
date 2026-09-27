@@ -80,7 +80,7 @@ export function FinalCTA() {
             className="mt-10 flex flex-col sm:flex-row gap-4 justify-center mh-reveal"
           >
             <Link
-              href="/login?tab=register&redirect=/dashboard"
+              href="/upload"
               className="mh-btn-secondary-dark text-base hover:bg-blue-500 text-white px-8 py-3.5 justify-center"
             >
               Upload Your Design <ArrowRight size={18} />

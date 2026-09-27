@@ -21,8 +21,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith('/profile') ||
     pathname.startsWith('/projects') ||
     pathname.startsWith('/checkout') ||
-    pathname.startsWith('/orders') ||
-    pathname.startsWith('/upload');
+    pathname.startsWith('/orders');
   const isAuthRoute = pathname === '/login';
 
   // 1. If trying to access a protected route without a session

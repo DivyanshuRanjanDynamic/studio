@@ -926,6 +926,17 @@ function LoginPageContent() {
                     </CardHeader>
                     <form onSubmit={handleSignUp}>
                       <CardContent className="space-y-4">
+                        {/* Account Type Confirmation */}
+                        <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
+                          <UserIcon className="w-4 h-4 text-[#2F5FA7]" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#2F5FA7]">
+                            Account Type:
+                          </span>
+                          <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                            Customer
+                          </span>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
+                        </div>
                         <div className="space-y-2">
                           <Label
                             htmlFor="reg-name"
@@ -991,7 +1002,7 @@ function LoginPageContent() {
                           ) : (
                             <UserPlus className="mr-2 h-4 w-4" />
                           )}
-                          Register as Innovator
+                          Register as Customer
                         </Button>
                       </CardFooter>
                     </form>
