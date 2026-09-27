@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { email, password, fullName, role } = body;
+    const { email: rawEmail, password, fullName, role } = body;
+    const email = (rawEmail || '').trim().toLowerCase();
 
     if (!email || !password || !fullName) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
@@ -28,9 +29,22 @@ export async function POST(req: NextRequest) {
     // 1. Pre-validation: Check Firestore for existing profile
     const existingProfile = await UserRepository.getUserByEmail(email);
     if (existingProfile.success) {
-      return NextResponse.json({
-        error: 'This email is already registered. Please sign in.'
-      }, { status: 409 });
+      // Verify if corresponding Firebase Auth user actually exists
+      let authUserExists = false;
+      try {
+        await adminAuth.getUserByEmail(email);
+        authUserExists = true;
+      } catch (e) {
+        authUserExists = false;
+      }
+
+      if (authUserExists) {
+        return NextResponse.json({
+          error: 'This email is already registered. Please sign in.'
+        }, { status: 409 });
+      } else {
+        logger.warn({ event: 'RegisterAPI: Found stale Firestore profile without Auth user - allowing clean re-registration', email });
+      }
     }
 
     // 2. Ghost Check & Purge: Check Firebase Auth for existing account without profile

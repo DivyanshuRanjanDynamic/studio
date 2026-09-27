@@ -40,18 +40,28 @@ export const UserRepository = {
    */
   async getUserByEmail(email: string): Promise<Result<User, AppError>> {
     try {
+      const normalizedEmail = (email || '').trim().toLowerCase();
+      if (!normalizedEmail) return err(notFoundError('User with email', email));
+
       const { adminFirestore } = getFirebaseAdmin();
 
       if (adminFirestore) {
-        const querySnapshot = await adminFirestore.collection(COLLECTION_NAME).where('email', '==', email).limit(1).get();
+        let querySnapshot = await adminFirestore.collection(COLLECTION_NAME).where('email', '==', normalizedEmail).limit(1).get();
+        if (querySnapshot.empty && normalizedEmail !== email) {
+          querySnapshot = await adminFirestore.collection(COLLECTION_NAME).where('email', '==', email).limit(1).get();
+        }
         if (querySnapshot.empty) return err(notFoundError('User with email', email));
         const userDoc = querySnapshot.docs[0];
         return ok({ id: userDoc.id, ...userDoc.data() } as User);
       }
 
       const { query, collection, where, getDocs, limit } = await import('firebase/firestore');
-      const q = query(collection(db, COLLECTION_NAME), where('email', '==', email), limit(1));
-      const snapshot = await getDocs(q);
+      let q = query(collection(db, COLLECTION_NAME), where('email', '==', normalizedEmail), limit(1));
+      let snapshot = await getDocs(q);
+      if (snapshot.empty && normalizedEmail !== email) {
+        q = query(collection(db, COLLECTION_NAME), where('email', '==', email), limit(1));
+        snapshot = await getDocs(q);
+      }
 
       if (snapshot.empty) return err(notFoundError('User with email', email));
       const userDoc = snapshot.docs[0];

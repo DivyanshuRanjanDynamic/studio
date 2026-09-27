@@ -17,13 +17,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { fullName, email, role } = body;
+    const { fullName, email: rawEmail, role } = body;
+    const email = (rawEmail || '').trim().toLowerCase();
 
     logger.info({ event: 'API: Provisioning user doc', uid: auth.uid, email });
 
     const result = await UserService.provisionNewUser({
       uid: auth.uid,
-      email: email || '',
+      email: email,
       fullName: fullName,
       role: role,
       emailVerified: false, // Will be updated during verification callback properly

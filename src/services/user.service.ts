@@ -139,7 +139,8 @@ export const UserService = {
     role?: UserRole;
     emailVerified?: boolean;
   }): Promise<Result<void, AppError>> {
-    const { uid, email, fullName, role: providedRole, emailVerified = false } = params;
+    const { uid, email: rawEmail, fullName, role: providedRole, emailVerified = false } = params;
+    const email = (rawEmail || '').trim().toLowerCase();
 
     const isWhitelistedAdmin = isAdmin(email);
     const targetRole: UserRole = isWhitelistedAdmin ? 'admin' : (providedRole || 'customer');

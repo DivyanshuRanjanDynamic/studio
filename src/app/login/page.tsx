@@ -27,6 +27,7 @@ import {
   updateProfile,
   signInWithPopup,
   signInWithCustomToken,
+  deleteUser,
   GoogleAuthProvider,
   User,
 } from 'firebase/auth';
@@ -330,7 +331,8 @@ function LoginPageContent() {
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     const fullName = formData.get('fullName') as string;
-    const email = formData.get('email') as string;
+    const rawEmail = formData.get('email') as string;
+    const email = (rawEmail || '').trim().toLowerCase();
     const password = formData.get('password') as string;
 
     if (password.length < 8) {
@@ -364,7 +366,7 @@ function LoginPageContent() {
 
       // 1. Proactively provision user document in Firestore
       // This ensures the record exists immediately, even before email verification.
-      await fetch('/api/v1/user/provision', {
+      const provisionRes = await fetch('/api/v1/user/provision', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -372,6 +374,11 @@ function LoginPageContent() {
         },
         body: JSON.stringify({ email, fullName: trimmedName, role: loginRole }),
       });
+
+      if (!provisionRes.ok) {
+        const errorData = await provisionRes.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Profile creation failed during registration');
+      }
 
       // 2. Send verification email
       await fetch('/api/v1/auth/send-verification', {
@@ -387,6 +394,12 @@ function LoginPageContent() {
       setResendCooldown(60);
       setLoading(false);
     } catch (error: any) {
+      // Clean rollback: if Auth user was created but downstream provisioning failed, delete the newly created Auth user
+      if (auth.currentUser && auth.currentUser.email?.toLowerCase() === email) {
+        await deleteUser(auth.currentUser).catch((delErr) => {
+          console.error('Rollback of created auth user failed:', delErr);
+        });
+      }
       setLoading(false);
       const msg = resolveUserFriendlyMessage(error);
       if (msg) {
