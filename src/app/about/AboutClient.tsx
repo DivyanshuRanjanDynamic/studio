@@ -193,7 +193,7 @@ export default function AboutClient() {
         </div>
       </section>
 
-      {/* Leadership Team */}
+      {/* Leadership Team
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-20">
@@ -276,7 +276,7 @@ export default function AboutClient() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Institutional Liaison */}
       <section className="py-24 border-t border-slate-100">
@@ -291,7 +291,7 @@ export default function AboutClient() {
                   <span className="text-blue-300">Hub Presence.</span>
                 </h2>
                 <p className="text-lg text-blue-100/60 leading-relaxed font-medium">
-                  Strategic partners of the prestigious VIT Vellore TBI ecosystem. We are redefining
+                  Strategic partners of the prestigious IIM Bangalore ecosystem. We are redefining
                   precision procurement for India.
                 </p>
                 <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
@@ -302,9 +302,9 @@ export default function AboutClient() {
                   <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/80 transition-colors hover:bg-white/10">
                     <MapPin className="w-5 h-5 text-blue-400" />
                     <span className="text-sm font-bold text-left leading-tight">
-                      VIT Vellore,
+                      Wakad,
                       <br />
-                      Tamil Nadu, India
+                      Pune, Maharashtra, India
                     </span>
                   </div>
                 </div>
