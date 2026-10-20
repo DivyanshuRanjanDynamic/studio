@@ -32,7 +32,9 @@ export function signConvertTicket(
 }
 
 export function mintConvertTicket(userId: string, now: number = Date.now()): Result<ConvertTicket, AppError> {
-  const secret = process.env.CONVERTER_SERVICE_TOKEN || "mjQ6s6z7y5o1i9v2u3t4a6h7k2q9l1w2m1p3v7x8t6r9z5s4o2k9g3t5a8h9l1w6m7p2v9x3t6r2z5s4o2k1g7t5a8h3l1w6m7p2v9x3t6r9z5s4o2k9g3t5a8h9l1w6m7p2v9x3t6r2z5s4o2k1g7t5a8h3l1w6m7p2";
+  // Fail closed: with no configured token, the converter can't be reached securely.
+  // Never fall back to a source-committed secret.
+  const secret = process.env.CONVERTER_SERVICE_TOKEN;
   if (!secret) {
     return err(
       new AppError({

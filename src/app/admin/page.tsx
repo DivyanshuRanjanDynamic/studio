@@ -121,6 +121,7 @@ import { ConsultationRequests } from '@/components/admin/ConsultationRequests';
 import { OrderManagement } from '@/components/admin/OrderManagement';
 import { IndustrialDemandHub } from '@/components/admin/IndustrialDemandHub';
 import { ContactQueries } from '@/components/admin/ContactQueries';
+import { RfqInstantCosts } from '@/components/admin/RfqInstantCosts';
 import { MechMasterDetailDrawer } from '@/components/admin/MechMasterDetailDrawer';
 
 // Constants moved to @/config/constants
@@ -332,18 +333,38 @@ export default function AdminPanel() {
     }, {});
   }, [restockRequests]);
 
-  // Sync partCosts when selectedRfqParts changes
+  // Sync partCosts when selectedRfqParts changes. Prefill each part with the
+  // admin's prior price (unitCost) or, failing that, the instant engine's price
+  // so the worksheet starts from a real number instead of blank.
   useEffect(() => {
     if (selectedRfqParts && selectedRfqParts.length > 0) {
       const initialCosts: Record<string, string> = {};
+      let subtotal = 0;
       selectedRfqParts.forEach((part: any) => {
-        initialCosts[part.id] = part.unitCost ? part.unitCost.toString() : '';
+        const price = part.unitCost || part.instantQuote?.pricePerPart || 0;
+        initialCosts[part.id] = price ? String(price) : '';
+        subtotal += Number(price) * (part.quantity || 0);
       });
       setPartCosts(initialCosts);
+      // Only seed the quote total if the admin hasn't typed one yet.
+      setSendQuotePrice((prev) => (prev && Number(prev) > 0 ? prev : subtotal ? String(subtotal) : ''));
     } else {
       setPartCosts({});
     }
   }, [selectedRfqParts]);
+
+  // Fill the worksheet with the instant engine prices on demand.
+  const applyInstantPrices = (pricePerPartById: Record<string, string>) => {
+    setPartCosts((prev) => {
+      const next = { ...prev, ...pricePerPartById };
+      const subtotal = (selectedRfqParts || []).reduce(
+        (sum: number, p: any) => sum + Number(next[p.id] || 0) * (p.quantity || 0),
+        0
+      );
+      setSendQuotePrice(subtotal ? String(subtotal) : '');
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -1279,11 +1300,11 @@ export default function AdminPanel() {
         (() => {
           // Aggregate all design files
           const partFiles = (selectedRfqParts || [])
-            .filter((p: any) => p.fileUrl)
+            .filter((p: any) => p.cadFile?.fileUrl)
             .map((p: any) => ({
-              name: p.fileName || `${p.name}_Design`,
-              dataUrl: p.fileUrl,
-              partName: p.name,
+              name: p.cadFile?.fileName || `${p.partName || 'part'}_design`,
+              dataUrl: p.cadFile.fileUrl,
+              partName: p.partName,
             }));
 
           const fileList: { name: string; dataUrl: string; size?: number; partName?: string }[] = [
@@ -1506,6 +1527,14 @@ export default function AdminPanel() {
                       )}
 
                     {/* Pricing Worksheet */}
+                    {selectedRfqParts && selectedRfqParts.length > 0 && (
+                      <RfqInstantCosts
+                        parts={selectedRfqParts as any}
+                        project={selectedRfq}
+                        onApplyInstantPrices={applyInstantPrices}
+                      />
+                    )}
+
                     {selectedRfqParts && selectedRfqParts.length > 0 && (
                       <div className="mb-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
