@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ProjectService } from '@/services/project.service';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 import { logger } from '@/utils/logger';
 import { authenticateRequest } from '@/lib/auth-middleware';
 
@@ -46,7 +47,7 @@ export const ProjectController = {
   async submitRfq(request: Request) {
     try {
       // 1. Rate Limiting
-      const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+      const ip = getClientIdentifier(request.headers);
       const limiter = await rateLimit(`rfq-submit:${ip}`, 3, 60000);
       if (!limiter.success) {
         return rateLimitResponse(limiter.reset);

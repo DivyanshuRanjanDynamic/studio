@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { QuoteCartItem, QuoteResult } from '@/types/quoting';
+import type { AnyQuoteResult, QuoteCartItem } from '@/types/quoting';
 import { logger } from '@/utils/logger';
 import { nanoid } from 'nanoid';
 
@@ -39,7 +39,7 @@ export function useQuoteCart() {
     }
   }, [items, isInitialized]);
 
-  const addToCart = useCallback((quote: QuoteResult, fileName: string) => {
+  const addToCart = useCallback((quote: AnyQuoteResult, fileName: string) => {
     setItems((prev) => {
       // Deduplicate if the exact same quoteRef is added again
       if (prev.find((item) => item.quote.quoteRef === quote.quoteRef)) {

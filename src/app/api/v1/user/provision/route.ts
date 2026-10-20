@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { UserService } from '@/services/user.service';
+import { UserRepository } from '@/repositories/user.repository';
 import { logger } from '@/utils/logger';
 import { authenticateRequest } from '@/lib/auth-middleware';
 
 /**
  * POST /api/v1/user/provision
- * Proactively creates a user document in Firestore.
+ * Creates the caller's user document in Firestore right after sign-up.
  * Expects a Bearer token in Authorization header.
+ *
+ * Security: the email comes from the verified token (never the body), the role is
+ * always a self-service one (customer), and an existing profile is never overwritten —
+ * otherwise a signed-in user could re-provision themselves with a different role.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -16,18 +20,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const email = (auth.email || '').trim().toLowerCase();
+    if (!email) {
+      return NextResponse.json({ error: 'Account has no email address' }, { status: 400 });
+    }
+
+    const existing = await UserRepository.getUserById(auth.uid);
+    if (existing.success) {
+      logger.info({ event: 'API: Provision skipped, profile exists', uid: auth.uid });
+      return NextResponse.json({ status: 'success' });
+    }
+
     const body = await req.json().catch(() => ({}));
-    const { fullName, email: rawEmail, role } = body;
-    const email = (rawEmail || '').trim().toLowerCase();
+    const fullName = typeof body?.fullName === 'string' ? body.fullName.trim().slice(0, 100) : undefined;
 
     logger.info({ event: 'API: Provisioning user doc', uid: auth.uid, email });
 
     const result = await UserService.provisionNewUser({
       uid: auth.uid,
-      email: email,
-      fullName: fullName,
-      role: role,
-      emailVerified: false, // Will be updated during verification callback properly
+      email,
+      fullName,
+      role: 'customer',
+      emailVerified: auth.emailVerified ?? false,
     });
 
     if (!result.success) {

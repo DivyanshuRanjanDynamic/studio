@@ -151,12 +151,15 @@ export interface QuantityTier {
   readonly savingsPercent: number;
 }
 
+/** Any priced quote — laser (sheet) or CNC (analysis-backed) */
+export type AnyQuoteResult = QuoteResult | CncQuoteResult;
+
 /** Cart item for multi-part orders */
 export interface QuoteCartItem {
   readonly id: string;
   readonly fileName: string;
   readonly filePreviewUrl?: string;
-  readonly quote: QuoteResult;
+  readonly quote: AnyQuoteResult;
 }
 
 /** Uploaded file tracking */
@@ -173,4 +176,155 @@ export interface UploadedFile {
   readonly previewSvg?: string;
   readonly uploadProgress: number;
   readonly error?: string;
+}
+
+// ═══════════════════════════════════════════════════
+// CNC Costing — mirrors POST /analyze-cnc on the CAD converter
+// ═══════════════════════════════════════════════════
+
+/** Material families with distinct cutting rates (keys of `machiningTime`) */
+export type MachinabilityGroup =
+  | 'aluminium'
+  | 'brass'
+  | 'copper'
+  | 'mild_steel'
+  | 'alloy_steel'
+  | 'stainless'
+  | 'plastic';
+
+export type CncProcess = 'cnc_machining_3axis' | 'cnc_machining_5axis' | 'cnc_turning';
+
+/** Process the customer picks on the instant-quote page */
+export type QuoteProcessMode = 'laser' | 'cnc_milling' | 'cnc_turning';
+
+export interface CncMachiningTime {
+  readonly roughingMin: number;
+  readonly finishingMin: number;
+  readonly drillingMin: number;
+  readonly secondaryMillingMin: number;
+  readonly toolChangeMin: number;
+  readonly overheadMin: number;
+  readonly cycleMin: number;
+}
+
+export interface CncHoleGroup {
+  readonly diameterMm: number;
+  readonly depthMm: number;
+  readonly through: boolean;
+  readonly depthToDiameter: number;
+  readonly count: number;
+}
+
+export interface CncStock {
+  readonly shape: 'block' | 'round_bar';
+  readonly dimensionsMm:
+    | { readonly x: number; readonly y: number; readonly z: number }
+    | { readonly diameter: number; readonly length: number };
+  readonly volumeMm3: number;
+  readonly removedVolumeMm3: number;
+  readonly removalRatio: number;
+}
+
+/** Material-agnostic part analysis — price any material/quantity from one upload */
+export interface CncAnalysis {
+  readonly version: string;
+  readonly units: 'mm';
+  readonly part: {
+    readonly volumeMm3: number;
+    readonly surfaceAreaMm2: number;
+    readonly boundingBox: { readonly x: number; readonly y: number; readonly z: number };
+    readonly faceCount: number;
+    readonly bodyCount: number;
+  };
+  readonly process: {
+    readonly recommended: CncProcess;
+    readonly secondaryMilling: boolean;
+    readonly turnableFraction: number;
+    readonly turningAxis: {
+      readonly origin: { readonly x: number; readonly y: number; readonly z: number };
+      readonly direction: { readonly x: number; readonly y: number; readonly z: number };
+    } | null;
+  };
+  readonly stock: CncStock | null;
+  readonly setups: {
+    readonly count: number;
+    readonly directions: readonly string[];
+    readonly inaccessibleAreaMm2: number;
+  };
+  readonly features: {
+    readonly holes: readonly CncHoleGroup[];
+    readonly holeCount: number;
+    readonly minInternalRadiusMm: number | null;
+    readonly minWallThicknessMm: number | null;
+    readonly sharpInternalCorners: number;
+  };
+  readonly toolCount: number;
+  readonly machiningTime: Readonly<Record<MachinabilityGroup, CncMachiningTime>>;
+  readonly setupTimeMin: number;
+  readonly handlingTimePerPartMin: number;
+  readonly programmingTimeMin: number;
+  readonly dfm: readonly DFMIssue[];
+  readonly analysisMs: number;
+}
+
+/** Per-material CNC stock pricing and cutting behaviour */
+export interface CncMaterialData {
+  readonly machinabilityGroup: MachinabilityGroup;
+  readonly blockPricePerKg: number; // INR, plate/block stock
+  readonly barPricePerKg: number; // INR, round bar stock
+}
+
+/** Shop economics — every rate a machine shop would want to override */
+export interface CncShopRates {
+  readonly machineRatePerHour: Readonly<Record<CncProcess, number>>; // INR, incl. operator
+  readonly setupRatePerHour: number; // INR
+  readonly programmingRatePerHour: number; // INR
+  readonly materialWastePct: number; // saw kerf, offcuts, handling scrap
+  readonly marginPct: number;
+}
+
+export interface CncQuoteBreakdown {
+  readonly materialCost: number;
+  readonly machiningCost: number;
+  readonly setupCost: number; // amortised per part
+  readonly programmingCost: number; // amortised per part
+  readonly finishCost: number;
+  /** Rigid tapping time + tap wear, per part (absent on quotes made before tapping existed) */
+  readonly tappingCost?: number;
+  readonly tappedHoles?: number;
+  readonly cycleTimeMin: number;
+  readonly quantityMultiplier: number;
+  readonly rushMultiplier: number;
+  readonly marginPct: number;
+}
+
+export interface CncQuoteRequest {
+  readonly materialId: string;
+  readonly finishType: FinishType;
+  readonly quantity: number;
+  readonly turnaround: TurnaroundType;
+  /** Override the analyser's recommendation, e.g. force 5-axis */
+  readonly process?: CncProcess;
+  /** Threads to cut, matched server-side against the analysis's hole groups */
+  readonly taps?: readonly CncTapRequest[];
+}
+
+/** One thread size and how many analysed holes get it (e.g. 4 × M6x1.0) */
+export interface CncTapRequest {
+  readonly tapId: string;
+  readonly count: number;
+}
+
+export interface CncQuoteResult {
+  readonly pricePerPart: number;
+  readonly totalPrice: number;
+  readonly leadTimeDays: number;
+  readonly process: CncProcess;
+  readonly breakdown: CncQuoteBreakdown;
+  readonly dfmIssues: readonly DFMIssue[];
+  readonly hasBlockingIssues: boolean;
+  readonly expiresAt: number; // Unix timestamp
+  readonly quoteRef: string;
+  readonly parameters: CncQuoteRequest;
+  readonly analysis: CncAnalysis;
 }

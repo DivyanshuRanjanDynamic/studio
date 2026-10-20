@@ -17,6 +17,8 @@ export interface UseFileUploadReturn {
   isDragging: boolean;
   activeFileId: string | null;
   activeGeometry: ParsedGeometry | null;
+  /** Original File for the active upload — needed by /analyze-cnc */
+  activeRawFile: File | null;
   // Actions
   handleFileDrop: (e: React.DragEvent) => void;
   handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -81,6 +83,8 @@ export function useFileUpload(): UseFileUploadReturn {
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
   const fileIdCounter = useRef(0);
+  // File objects aren't serialisable state; keep them beside the metadata.
+  const rawFiles = useRef(new Map<string, File>());
 
   const processFiles = useCallback(
     async (fileList: FileList | File[]) => {
@@ -121,6 +125,7 @@ export function useFileUpload(): UseFileUploadReturn {
           uploadProgress: 100,
         };
 
+        rawFiles.current.set(id, file);
         setFiles((prev) => {
           const updated = [...prev, uploadedFile];
           return updated;
@@ -156,6 +161,7 @@ export function useFileUpload(): UseFileUploadReturn {
 
   const removeFile = useCallback(
     (id: string) => {
+      rawFiles.current.delete(id);
       setFiles((prev) => prev.filter((f) => f.id !== id));
       setActiveFileId((prev) => {
         if (prev === id) {
@@ -173,12 +179,14 @@ export function useFileUpload(): UseFileUploadReturn {
   }, []);
 
   const activeGeometry = files.find((f) => f.id === activeFileId)?.geometry ?? null;
+  const activeRawFile = activeFileId ? (rawFiles.current.get(activeFileId) ?? null) : null;
 
   return {
     files,
     isDragging,
     activeFileId,
     activeGeometry,
+    activeRawFile,
     handleFileDrop,
     handleFileSelect,
     removeFile,

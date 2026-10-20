@@ -1,4 +1,5 @@
 import { HoleFeature, BendFeature, BoundingBox, FlatPattern } from '@/types/viewer';
+import type { CncProcess, CncQuoteBreakdown, FinishType } from '@/types/quoting';
 
 /** Main manufacturing service types */
 export type ManufacturingService =
@@ -99,6 +100,29 @@ export interface TapSelection {
 }
 
 /** Mechanical part in a project */
+/** Snapshot of the server's CNC quote for one part (see POST /api/v1/projects/[id]/parts) */
+export interface PartInstantQuote {
+  readonly quoteRef: string;
+  readonly analysisId: string;
+  readonly currency: 'INR';
+  readonly pricePerPart: number;
+  readonly totalPrice: number;
+  readonly quantity: number;
+  readonly leadTimeDays: number;
+  readonly process: CncProcess;
+  readonly materialId: string;
+  readonly finishType: FinishType;
+  readonly breakdown: CncQuoteBreakdown;
+  readonly stock: string;
+  readonly hasBlockingIssues: boolean;
+  readonly dfmIssues: ReadonlyArray<{ readonly code: string; readonly message: string; readonly blocking: boolean }>;
+  /** Selected secondary processes the engine doesn't price (confirmed on RFQ) */
+  readonly unpricedProcesses: readonly SecondaryProcess[];
+  readonly pricedAt: string;
+  /** Instant prices are estimates valid until the RFQ is reviewed */
+  readonly expiresAt: number;
+}
+
 export interface MechanicalPart {
   readonly id: string;
   readonly projectId: string;
@@ -127,9 +151,16 @@ export interface MechanicalPart {
     readonly z: number;
   };
   readonly quantity: number;
+  /** Admin-agreed unit price (set when the quotation is sent) */
   readonly unitCost?: number;
   readonly discountTier?: string;
   readonly status: PartStatus;
+  /** Server-computed instant price at the time the part was added (CNC only) */
+  readonly instantQuote?: PartInstantQuote | null;
+  /** 'instant' when instantQuote is set; otherwise priced by an engineer on RFQ */
+  readonly quoteStatus?: 'instant' | 'manual_review';
+  /** Why there is no instant price, shown to the customer */
+  readonly quoteNote?: string;
   readonly analysis?: {
     readonly holes?: HoleFeature[];
     readonly bends?: BendFeature[];
@@ -170,6 +201,21 @@ export interface ProjectRFQ {
   readonly shortlistedVendorIds?: string[];
   readonly timelineEvents?: TimelineEvent[];
   readonly negotiationHistory?: NegotiationMessage[];
+  /** When the customer sent the RFQ */
+  readonly quoteRequestedAt?: string;
+  /** Instant-cost snapshot captured when the RFQ was sent (admin-facing) */
+  readonly instantCostSnapshot?: {
+    readonly currency: 'INR';
+    readonly partsSubtotal: number;
+    readonly gst: number;
+    readonly shipping: number;
+    readonly total: number;
+    readonly partCount: number;
+    readonly pricedPartCount: number;
+    readonly pendingPartCount: number;
+    readonly maxLeadTimeDays: number;
+    readonly capturedAt: string;
+  };
   readonly paymentStatus?: {
     readonly advance?: {
       readonly paid: boolean;

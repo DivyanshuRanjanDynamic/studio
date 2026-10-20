@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 import { NotificationService } from '@/services/notification.service';
 import { logger } from '@/utils/logger';
 import type { NotificationEvent } from '@/types/notification';
@@ -32,7 +33,7 @@ const CLIENT_ALLOWED_EVENTS = new Set([
 export async function POST(req: NextRequest) {
   try {
     // 1. Rate limit
-    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+    const ip = getClientIdentifier(req.headers);
     const limiter = await rateLimit(`notifications:${ip}`, 20, 60000);
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);

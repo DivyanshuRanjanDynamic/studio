@@ -17,6 +17,7 @@ import {
   Layers,
   Pencil,
   Settings,
+  Zap,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { useState, useEffect, useRef } from 'react';
@@ -36,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { getDashboardHrefByRole } from '@/lib/roles';
 
 const NAV_LINKS = [
+  { href: '/quote/instant', label: 'Instant Quote' },
   { href: '/#materials', label: 'Materials' },
   { href: '/shop', label: 'Shop' },
 ];
@@ -305,6 +307,7 @@ export function LandingNav() {
             <div className="flex flex-col gap-1 px-1">
               {[
                 { label: 'Services', href: '/#services', icon: Settings },
+                { label: 'Instant Quote', href: '/quote/instant', icon: Zap },
                 { label: 'Materials', href: '/#materials', icon: Layers },
                 { label: 'Shop', href: '/shop', icon: ShoppingCart },
               ].map((link) => (

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles, unauthorizedResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { ProjectRepository } from '@/repositories/project.repository';
+import { FileAccessRepository } from '@/repositories/file-access.repository';
 import { logger } from '@/utils/logger';
 import { nanoid } from 'nanoid';
 import { ProjectArtifact } from '@/models/project.model';
@@ -53,6 +54,16 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid artifact data', details: parsed.error.flatten() }, { status: 400 });
     }
 
+    // Only files this caller uploaded can be attached — otherwise any vendor could
+    // attach (and so expose to the project owner) someone else's file.
+    const upload = await FileAccessRepository.getUploadRecord(parsed.data.fileKey);
+    if (!upload.success) {
+      return NextResponse.json({ error: 'Could not verify the file' }, { status: 503 });
+    }
+    if (!upload.data || upload.data.userId !== auth.uid) {
+      return forbiddenResponse('You can only attach files you uploaded');
+    }
+
     const nowIso = new Date().toISOString();
     const artifact: ProjectArtifact = {
       id: `art_${nanoid(12)}`,
@@ -84,6 +95,12 @@ export async function POST(
       artifacts: [...artifacts, artifact],
       timelineEvents,
     });
+
+    // Lets the project owner (and its vendor) download the attached file.
+    const attached = await FileAccessRepository.attachToProject(upload.data.fileId, projectId);
+    if (!attached.success) {
+      logger.error({ event: 'API: Artifact saved but file not linked to project', projectId, fileKey: artifact.fileKey });
+    }
 
     return NextResponse.json({ success: true, artifact });
   } catch (error: any) {

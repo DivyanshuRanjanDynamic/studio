@@ -1,35 +1,66 @@
+import { createHash } from 'crypto';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
 
-import type { Transaction, DocumentSnapshot } from 'firebase-admin/firestore';
+import type { Transaction } from 'firebase-admin/firestore';
+
+export interface RateLimitOptions {
+  /**
+   * What to do when the limiter's store (Firestore) is unavailable.
+   * 'deny' (default): refuse — for anything that costs money or sends mail
+   * (Gemini, emails, public forms, sign-up). 'allow': let it through — only for
+   * authenticated, payment- or login-critical paths where a Firestore blip must
+   * not block a paying customer.
+   */
+  onStoreError?: 'deny' | 'allow';
+}
+
+export interface RateLimitResult {
+  success: boolean;
+  remaining: number;
+  reset: number;
+}
+
+/** Firestore doc id for an identifier: readable prefix + hash (ids can't contain '/', must be short) */
+function limitDocId(identifier: string): string {
+  const prefix = identifier.split(':')[0].replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || 'rl';
+  const hash = createHash('sha256').update(identifier).digest('hex').slice(0, 40);
+  return `${prefix}_${hash}`;
+}
 
 /**
- * Basic Firestore-based rate limiter for serverless environments.
- * Tracks requests per IP address or User ID within a given window.
+ * Firestore-based sliding-window rate limiter for serverless environments.
+ * Key on a user id when the caller is authenticated, otherwise on
+ * getClientIdentifier() (never on raw X-Forwarded-For — the client controls it).
  */
-export async function rateLimit(identifier: string, limit: number = 10, windowMs: number = 60000) {
-  const { adminFirestore } = getFirebaseAdmin();
-
-  if (!adminFirestore) {
-    logger.warn({
-      event: 'rate_limit_skipped',
-      reason: 'Firestore Admin not initialized',
-    });
-
-    return { success: true, remaining: 999, reset: Date.now() };
-  }
-
+export async function rateLimit(
+  identifier: string,
+  limit: number = 10,
+  windowMs: number = 60000,
+  options: RateLimitOptions = {}
+): Promise<RateLimitResult> {
+  const onStoreError = options.onStoreError ?? 'deny';
   const now = Date.now();
-  const limitRef = adminFirestore.collection('rate_limits').doc(identifier);
+  const unavailable = (reason: string, error?: string): RateLimitResult => {
+    logger.error({ event: 'rate_limit_store_unavailable', reason, error, identifier, onStoreError });
+    return onStoreError === 'allow'
+      ? { success: true, remaining: 0, reset: now + windowMs }
+      : { success: false, remaining: 0, reset: now + Math.min(windowMs, 30_000) };
+  };
+
+  const { adminFirestore } = getFirebaseAdmin();
+  if (!adminFirestore) return unavailable('Firestore Admin not initialized');
+
+  const limitRef = adminFirestore.collection('rate_limits').doc(limitDocId(identifier));
 
   try {
-    const result = await adminFirestore.runTransaction(async (transaction: Transaction) => {
+    return await adminFirestore.runTransaction(async (transaction: Transaction) => {
       const doc = (await transaction.get(limitRef)) as any;
       const data: any = doc.data() || { requests: [], count: 0 };
 
       // Filter out old requests
-      const validRequests = (data.requests || []).filter(
+      const validRequests: number[] = (data.requests || []).filter(
         (timestamp: number) => timestamp > now - windowMs
       );
 
@@ -46,17 +77,8 @@ export async function rateLimit(identifier: string, limit: number = 10, windowMs
 
       return { success: true, remaining: limit - newRequests.length, reset: now + windowMs };
     });
-
-    return result;
   } catch (error) {
-    logger.error({
-      event: 'rate_limit_error',
-      error: (error as Error).message,
-      identifier,
-    });
-
-    // Fallback to allow if transaction fails to avoid blocking users
-    return { success: true, remaining: 1, reset: now + windowMs };
+    return unavailable('transaction failed', (error as Error).message);
   }
 }
 
@@ -67,7 +89,7 @@ export function rateLimitResponse(reset: number) {
       status: 429,
       headers: {
         'X-RateLimit-Reset': reset.toString(),
-        'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
+        'Retry-After': Math.max(1, Math.ceil((reset - Date.now()) / 1000)).toString(),
       },
     }
   );

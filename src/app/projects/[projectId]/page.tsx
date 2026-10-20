@@ -23,7 +23,6 @@ import {
   MechanicalPart,
   ProjectRFQStatus,
   ManufacturingService,
-  NegotiationMessage,
   SERVICE_DISPLAY_NAMES,
 } from '@/models/project.model';
 import { PartCreationWizard } from '@/components/part-creation/PartCreationWizard';
@@ -56,7 +55,6 @@ import {
   Truck,
   CheckCircle2,
   Hammer,
-  TrendingUp,
   Gavel,
 } from 'lucide-react';
 
@@ -87,6 +85,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { calculateProjectFinances } from '@/utils/finance';
+import { ProjectCostSummary } from '@/components/projects/ProjectCostSummary';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -442,6 +441,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [isRequestingQuote, setIsRequestingQuote] = useState(false);
+  const [isDownloadingQuote, setIsDownloadingQuote] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
   const [optimisticParts, setOptimisticParts] = useState<MechanicalPart[]>([]);
   const [pendingPartDeleteId, setPendingPartDeleteId] = useState<string | null>(null);
@@ -546,6 +546,37 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
     cachedPartsRef.current = [...cachedPartsRef.current, newPart];
   };
 
+  const handleDownloadQuotation = async () => {
+    if (!project) return;
+    setIsDownloadingQuote(true);
+    try {
+      const res = await fetch(`/api/v1/projects/${projectId}/quotation`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Could not generate the quotation');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = match?.[1] || `quotation-${projectId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({
+        title: 'Download failed',
+        description: error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloadingQuote(false);
+    }
+  };
+
   const handleRequestQuote = async () => {
     if (!db || !project || !parts || parts.length === 0) {
       toast({
@@ -559,97 +590,59 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
     setIsRequestingQuote(true);
 
     try {
-      await updateDocumentNonBlocking(doc(db, 'projectRFQs', projectId), {
-        status: 'quote_requested',
-        userPhone: userProfile?.phone || '',
-        quoteRequestedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      // Server captures the instant-cost snapshot, moves the project to
+      // quote_requested and emails admin. The realtime listener updates the UI.
+      const res = await fetch(`/api/v1/projects/${projectId}/request-quote`, { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || 'Failed to request a quote');
+      }
 
       toast({
         title: 'Quote Requested!',
         description: 'Your order is being reviewed. You will receive your quotation shortly.',
       });
-
-      // Trigger notifications via internal API (fire-and-forget)
-      const customerName = user?.displayName || userProfile?.fullName || 'Customer';
-      const customerEmail = user?.email || '';
-      const partCount = parts?.length || 0;
-
-      fetch('/api/v1/notifications/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          events: [
-            {
-              type: 'rfq_submitted_customer',
-              customer: { email: customerEmail, name: customerName },
-              projectName: project.projectName,
-              projectId: project.id,
-              partCount: partCount,
-            },
-            {
-              type: 'admin_new_rfq',
-              customerName,
-              customerEmail,
-              projectName: project.projectName,
-              projectId: project.id,
-              partCount: partCount,
-            },
-          ],
-        }),
-      }).catch((err) => console.error('Failed to trigger RFQ notifications:', err));
     } catch (error: any) {
       console.error('Error requesting quote:', error);
-      const msg = resolveUserFriendlyMessage(error);
-      if (msg) toast(msg);
+      toast({
+        title: 'Could not request quote',
+        description: error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsRequestingQuote(false);
     }
   };
 
   const handleNegotiate = async (message: string, proposedPrice?: number) => {
-    if (!db || !project) return;
+    if (!project) return;
     try {
-      const negotiationEntry: NegotiationMessage = {
-        role: 'user',
-        message,
-        proposedPrice,
-        timestamp: new Date().toISOString(),
-      };
-
-      await updateDocumentNonBlocking(doc(db, 'projectRFQs', projectId), {
-        status: 'negotiation',
-        negotiationHistory: [...(project?.negotiationHistory || []), negotiationEntry],
-        updatedAt: new Date().toISOString(),
+      // The server stamps the message as role:'user' and notifies admin, so a
+      // customer can't forge admin replies or rewrite the thread.
+      const res = await fetch(`/api/v1/projects/${projectId}/negotiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          ...(typeof proposedPrice === 'number' ? { proposedPrice } : {}),
+        }),
       });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || 'Failed to send your message');
+      }
 
       toast({
         title: 'Counter-offer Sent',
         description: 'Your message has been sent to the Admin for review.',
       });
-
-      // Trigger admin notification (fire-and-forget)
-      const customerName = user?.displayName || userProfile?.fullName || 'Customer';
-      const customerEmail = user?.email || '';
-
-      fetch('/api/v1/notifications/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'admin_negotiation_customer_reply',
-          customerName,
-          customerEmail,
-          projectName: project.projectName,
-          projectId: project.id,
-          customerMessage: message,
-          proposedPrice: proposedPrice,
-        }),
-      }).catch((err) => console.error('Failed to trigger negotiation notification:', err));
     } catch (error: any) {
       console.error('Error negotiating:', error);
-      const msg = resolveUserFriendlyMessage(error);
-      if (msg) toast(msg);
+      toast({
+        title: 'Could not send message',
+        description: error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -1158,6 +1151,33 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Project cost summary — instant estimate (draft) or the agreed quote */}
+                {projectParts.length > 0 && (
+                  <>
+                    <ProjectCostSummary
+                      parts={projectParts}
+                      agreedSubtotal={project.finalPrice || project.quotedPrice || null}
+                      className="bg-white border-slate-200 shadow-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleDownloadQuotation}
+                      disabled={isDownloadingQuote}
+                      className="w-full h-11 tracking-widest uppercase text-[10px] font-bold border-slate-200 text-[#2F5FA7] hover:bg-blue-50"
+                    >
+                      {isDownloadingQuote ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Preparing PDF...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" /> Download Quotation (PDF)
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="details" className="space-y-4">
@@ -1480,84 +1500,6 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     You will receive your quotation shortly
                   </p>
                 </CardContent>
-              </Card>
-            )}
-
-            {/* Manufacturing Price Breakdown (Worksheet) */}
-            {project.quotedPrice && projectParts.length > 0 && (
-              <Card className="bg-white border-slate-200 shadow-sm overflow-hidden mb-6">
-                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-                  <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#1E3A66]">
-                    <TrendingUp className="w-3.5 h-3.5" /> Manufacturing Price Breakdown
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-[11px] border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/50 border-b border-slate-100">
-                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">
-                          Part
-                        </th>
-                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">
-                          Qty
-                        </th>
-                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-right">
-                          Unit (₹)
-                        </th>
-                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-right">
-                          Total (₹)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {projectParts.map((part) => {
-                        const unitCost = part.unitCost || 0;
-                        const total = unitCost * (part.quantity || 0);
-                        return (
-                          <tr key={part.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-4 py-3">
-                              <p className="font-bold text-slate-900 leading-tight truncate max-w-[120px]">
-                                {part.partName}
-                              </p>
-                              <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">
-                                {part.material?.name || 'Custom'}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3 text-center font-mono font-bold text-slate-600">
-                              {part.quantity}
-                            </td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-500">
-                              {unitCost.toLocaleString('en-IN')}
-                            </td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
-                              {total.toLocaleString('en-IN')}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot className="bg-slate-50/50 border-t border-slate-100">
-                      <tr>
-                        <td
-                          colSpan={3}
-                          className="px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-400"
-                        >
-                          Parts Subtotal
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-[#1E3A66] font-mono">
-                          ₹
-                          {Math.max(
-                            basePrice,
-                            projectParts.reduce(
-                              (sum, p) => sum + (p.unitCost || 0) * (p.quantity || 0),
-                              0
-                            )
-                          ).toLocaleString('en-IN')}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
               </Card>
             )}
 

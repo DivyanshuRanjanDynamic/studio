@@ -28,6 +28,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 import { NotificationService } from '@/services/notification.service';
 import { calculateProjectFinances } from '@/utils/finance';
 
@@ -54,8 +55,8 @@ export async function POST(req: NextRequest) {
   let razorpayOrderId = 'unknown';
 
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-    const limiter = await rateLimit(`payment-verify:${ip}`, 10, 60000);
+    const ip = getClientIdentifier(req.headers);
+    const limiter = await rateLimit(`payment-verify:${ip}`, 10, 60000, { onStoreError: 'allow' });
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);
     }

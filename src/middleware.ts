@@ -21,13 +21,16 @@ export function middleware(req: NextRequest) {
     pathname.startsWith('/profile') ||
     pathname.startsWith('/projects') ||
     pathname.startsWith('/checkout') ||
-    pathname.startsWith('/orders');
+    pathname.startsWith('/orders') ||
+    // CNC / laser instant pricing is for registered users only
+    pathname.startsWith('/quote/instant');
   const isAuthRoute = pathname === '/login';
 
   // 1. If trying to access a protected route without a session
   if (isProtectedRoute && !session) {
     const url = new URL('/login', req.url);
-    url.searchParams.set('redirect', pathname);
+    // Keep the query so shared links (/quote/instant?ref=…) survive sign-in
+    url.searchParams.set('redirect', `${pathname}${req.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 

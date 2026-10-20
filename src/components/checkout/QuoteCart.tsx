@@ -4,6 +4,8 @@ import React from 'react';
 import { Trash2, FileText, IndianRupee, Layers } from 'lucide-react';
 import type { QuoteCartItem } from '@/types/quoting';
 import { getMaterialById } from '@/lib/quoting/materials';
+import { isCncQuote } from '@/lib/quoting/pricing-engine';
+import { CNC_PROCESS_LABELS } from '@/lib/quoting/cnc-materials';
 
 interface QuoteCartProps {
   items: QuoteCartItem[];
@@ -44,6 +46,9 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
       <div className="space-y-3">
         {items.map((item) => {
           const material = getMaterialById(item.quote.parameters.materialId);
+          const spec = isCncQuote(item.quote)
+            ? { label: 'Process', value: CNC_PROCESS_LABELS[item.quote.process] }
+            : { label: 'Thickness', value: `${item.quote.parameters.thicknessMm}mm` };
 
           return (
             <div
@@ -82,11 +87,9 @@ export function QuoteCart({ items, onRemove, isLoading }: QuoteCartProps) {
                     </div>
                     <div>
                       <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
-                        Thickness
+                        {spec.label}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-700">
-                        {item.quote.parameters.thicknessMm}mm
-                      </span>
+                      <span className="text-[11px] font-bold text-slate-700">{spec.value}</span>
                     </div>
                     <div>
                       <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">

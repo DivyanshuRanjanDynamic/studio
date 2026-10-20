@@ -3,15 +3,14 @@ import type { QuoteOrder } from '@/models/order.model';
 import { orderCreateSchema as checkoutSchema } from '@/validators/order.validator';
 import { Result, ok, err } from '@/utils/result';
 import { AppError, validationError, internalError, ErrorCode } from '@/utils/errors';
-import { SHIPPING_OPTIONS } from '@/models/order.model';
 import { logger } from '@/utils/logger';
 import { CheckoutService } from '@/services/checkout.service';
 import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { calculateProjectFinances } from '@/utils/finance';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -29,8 +28,8 @@ export const OrderController = {
     const requestId = req.headers.get('x-request-id') || 'req_internal';
 
     try {
-      const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-      const limiter = await rateLimit(`order-create:${ip}`, 8, 60000);
+      const ip = getClientIdentifier(req.headers);
+      const limiter = await rateLimit(`order-create:${ip}`, 8, 60000, { onStoreError: 'allow' });
       if (!limiter.success) {
         return rateLimitResponse(limiter.reset);
       }
@@ -120,42 +119,27 @@ export const OrderController = {
         }
       }
 
-      // 2. Resolve shipping option
-      const shippingOption = SHIPPING_OPTIONS.find((o) => o.id === shippingOptionId);
-      if (!shippingOption) {
+      // 5. Price from saved quotes (never the cart's own totals) and the shipping registry
+      const priced = await CheckoutService.priceOrder({
+        items,
+        shopItems,
+        shippingOptionId,
+        projectId,
+        isAdvance,
+        isBalance,
+        advancePercentage,
+      }, userId);
+      if (!priced.success) {
+        const error = priced.error;
+        logger.warn({ event: 'API: Order pricing rejected', requestId, code: error.code, message: error.message });
         return NextResponse.json(
-          {
-            success: false,
-            error: { code: ErrorCode.NOT_FOUND, message: 'Invalid shipping option' },
-          },
-          { status: 400 }
+          { success: false, error: { code: error.code, message: error.message } },
+          { status: error.statusCode }
         );
       }
 
-      // 3. Create Razorpay Order
-      const quoteSubtotal = (items || []).reduce(
-        (sum: number, item: any) => sum + item.quote.totalPrice,
-        0
-      );
-      const shopSubtotal = (shopItems || []).reduce(
-        (sum: number, item: any) => sum + item.salePrice * item.quantity,
-        0
-      );
-      const subtotal = quoteSubtotal + shopSubtotal;
-
-      const finances = calculateProjectFinances(subtotal, shippingOption.price);
-      let finalTotal = finances.total;
-
-      if (isAdvance) {
-        finalTotal = finances.advance;
-      } else if (isBalance) {
-        finalTotal = finances.balance;
-      } else if (projectId && advancePercentage) {
-        // Fallback for custom advance percentages
-        finalTotal = Math.round(finalTotal * advancePercentage);
-      }
-
-      const amountPaise = Math.round(finalTotal * 100);
+      // 6. Create Razorpay Order
+      const amountPaise = Math.round(priced.data.total * 100);
 
       const razorpayOrder = await razorpay.orders.create({
         amount: amountPaise,
@@ -170,7 +154,7 @@ export const OrderController = {
         },
       });
 
-      // 4. Create internal order record via Service
+      // 7. Create internal order record via Service (re-validates the same quotes)
       const result = await CheckoutService.createOrder({
         userId,
         items: items as any,
@@ -181,6 +165,7 @@ export const OrderController = {
         advancePercentage,
         isBalance,
         isAdvance,
+        razorpayOrderId: razorpayOrder.id,
       });
 
       if (!result.success) {
@@ -226,8 +211,8 @@ export const OrderController = {
     const requestId = req.headers.get('x-request-id') || 'req_verify';
 
     try {
-      const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-      const limiter = await rateLimit(`order-verify:${ip}`, 10, 60000);
+      const ip = getClientIdentifier(req.headers);
+      const limiter = await rateLimit(`order-verify:${ip}`, 10, 60000, { onStoreError: 'allow' });
       if (!limiter.success) {
         return rateLimitResponse(limiter.reset);
       }

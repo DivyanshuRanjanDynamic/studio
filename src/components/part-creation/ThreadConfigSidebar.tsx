@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ALL_TAPS, METRIC_TAPS, IMPERIAL_TAPS } from '@/config/manufacturing';
 import { ConversionResult } from '@/types/viewer';
+import type { TapCandidate } from '@/lib/quoting/tapping';
 import { TapSelection } from '@/models/project.model';
 import { ExpertCTA } from './ExpertCTA';
 
@@ -32,6 +33,10 @@ interface ThreadConfigSidebarProps {
   onTappingNotesChange: (notes: string) => void;
   onResetAll: () => void;
   onClose: () => void;
+  /** Holes a standard tap fits (highlighted in the viewer) */
+  tapCandidates?: readonly TapCandidate[];
+  /** Selects the suggested thread on every tappable hole */
+  onApplySuggested?: () => void;
 }
 
 export function ThreadConfigSidebar({
@@ -42,8 +47,11 @@ export function ThreadConfigSidebar({
   tappingNotes,
   onTappingNotesChange,
   onResetAll,
-  onClose
+  onClose,
+  tapCandidates = [],
+  onApplySuggested,
 }: ThreadConfigSidebarProps) {
+  const tappable = new Set(tapCandidates.map((c) => c.holeIndex));
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
   const hasHoles = conversionResult?.holes && conversionResult.holes.length > 0;
 
@@ -139,6 +147,30 @@ export function ThreadConfigSidebar({
               </Badge>
             </div>
 
+            {tapCandidates.length > 0 ? (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-3">
+                <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                  {tapCandidates.length} tappable hole{tapCandidates.length === 1 ? '' : 's'} highlighted
+                </p>
+                <p className="text-[10px] font-bold text-amber-700/80 leading-relaxed">
+                  These holes match a standard tap drill. Pick a thread for each, or apply the suggested threads.
+                </p>
+                {onApplySuggested && (
+                  <Button
+                    onClick={onApplySuggested}
+                    className="w-full h-9 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Apply suggested threads
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <p className="px-1 text-[10px] font-bold text-slate-400 leading-relaxed">
+                No hole matches a standard tap drill size. You can still choose threads below, or describe them in the
+                notes.
+              </p>
+            )}
+
             <div className="space-y-3">
               {conversionResult?.holes?.map((hole, idx) => {
                 const selection = selectedTaps.find(t => t.holeIndex === idx);
@@ -167,6 +199,11 @@ export function ThreadConfigSidebar({
                         <div className="flex flex-col">
                           <p className="text-[11px] font-black text-slate-900 leading-tight tabular-nums">{diamInch.toFixed(4)}"</p>
                           <p className="text-[8px] font-bold text-blue-100 uppercase tracking-tighter tabular-nums">{diamMm.toFixed(2)}mm DIA</p>
+                          {tappable.has(idx) && (
+                            <span className="mt-1 w-fit px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest">
+                              Tappable
+                            </span>
+                          )}
                         </div>
                         <div className="h-6 w-px bg-slate-100" />
                         <div className="flex flex-col">

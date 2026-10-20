@@ -5,6 +5,7 @@ import { s3Client } from '@/lib/s3-client';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { authenticateRequest, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
+import { FileAccessRepository } from '@/repositories/file-access.repository';
 
 // ═══════════════════════════════════════════════════
 // POST /api/v1/files/upload-intent — Real S3 Presigned URL
@@ -90,6 +91,22 @@ export async function POST(request: NextRequest) {
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 mins
+
+    // 5. Record who owns this key. Downloads authorise from this record — never from
+    //    documents a customer can create — so no record, no upload URL.
+    const recorded = await FileAccessRepository.recordUpload({
+      fileId,
+      fileKey: key,
+      userId: auth.uid,
+      fileName: String(fileName).slice(0, 255),
+      fileSize,
+      kind: isCad ? 'cad' : 'artifact',
+      source: 'server',
+      createdAt: new Date().toISOString(),
+    });
+    if (!recorded.success) {
+      return NextResponse.json({ error: 'Could not prepare the upload' }, { status: 503 });
+    }
 
     logger.info({ event: 'API: Real S3 upload intent generated', fileId, key, isCad, reqId });
 

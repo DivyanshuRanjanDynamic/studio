@@ -58,6 +58,16 @@ export function MaterialSelection({
     asa: 'UV and weather resistant, suitable for outdoor 3D printed components.',
     'al-6061-cnc':
       'A machining-grade aluminum that balances strength, weight, and excellent machinability.',
+    // CNC (pricing catalogue ids)
+    al_6061: 'A machining-grade aluminium that balances strength, weight, and excellent machinability.',
+    al_5052: 'Softer, corrosion-resistant aluminium. Machines well for covers and marine parts.',
+    ms_a36: 'Low-cost structural steel for brackets, plates and fixtures. Needs a protective finish.',
+    en8: 'Medium-carbon steel for shafts, pins and gears where strength matters.',
+    en24: 'High-tensile alloy steel for heavily loaded shafts and tooling. Slower to machine.',
+    ss_304: 'General-purpose stainless with excellent corrosion resistance. Slower to machine than aluminium.',
+    ss_316: 'Marine and chemical-grade stainless. Best corrosion resistance, highest machining cost.',
+    brass: 'Free-machining and corrosion resistant. Ideal for fittings, bushes and connectors.',
+    copper: 'Best electrical and thermal conductivity. Used for bus bars, heat sinks and electrodes.',
   };
 
   const getMaterialInfo = (material: MaterialOption) =>

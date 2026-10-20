@@ -22,6 +22,7 @@ import { logger } from '@/utils/logger';
 import { calculateProjectFinances } from '@/utils/finance';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 
 const CreateOrderSchema = z.object({
   rfqId: z.string().min(1).max(200),
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
   let currentRfqId = 'unknown';
 
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-    const limiter = await rateLimit(`payment-create-order:${ip}`, 8, 60000);
+    const ip = getClientIdentifier(req.headers);
+    const limiter = await rateLimit(`payment-create-order:${ip}`, 8, 60000, { onStoreError: 'allow' });
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);
     }

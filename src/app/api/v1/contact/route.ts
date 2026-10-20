@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 import { NotificationService } from '@/services/notification.service';
 
 const ContactSchema = z.object({
@@ -16,7 +17,7 @@ const ContactSchema = z.object({
 export async function POST(request: Request) {
   try {
     // 1. Rate Limiting
-    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    const ip = getClientIdentifier(request.headers);
     const limiter = await rateLimit(`contact:${ip}`, 3, 60000);
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);

@@ -83,7 +83,13 @@ export default function Home() {
   // Fetch a subset of active vendors for the landing page showcase
   const landingVendorsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'users'), where('isActive', '==', true), limit(12));
+    // Rules only expose active vendor profiles, so the query must say so.
+    return query(
+      collection(db, 'users'),
+      where('role', 'in', ['vendor', 'mechmaster']),
+      where('isActive', '==', true),
+      limit(12)
+    );
   }, [db]);
   const { data: landingVendors } = useCollection(landingVendorsQuery);
   const filteredLandingVendors = useMemo(

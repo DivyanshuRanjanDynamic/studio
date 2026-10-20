@@ -4,20 +4,11 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
-
-  let db: ReturnType<typeof useFirestore> | null = null;
-  try {
-    db = useFirestore();
-  } catch {
-    // Firebase not available
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,20 +21,19 @@ export function NewsletterSignup() {
       return;
     }
 
-    if (!db) {
-      setErrorMsg('Service unavailable. Please try again later.');
-      setStatus('error');
-      return;
-    }
-
     setStatus('loading');
 
     try {
-      await addDoc(collection(db, 'newsletter_subscribers'), {
-        email: trimmed.toLowerCase(),
-        subscribedAt: serverTimestamp(),
-        source: 'blog_sidebar',
+      // Server route: validated, rate-limited, idempotent per address.
+      const res = await fetch('/api/v1/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed.toLowerCase(), source: 'blog_sidebar' }),
       });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || `Signup failed (${res.status})`);
+      }
       setStatus('success');
       setEmail('');
     } catch (err) {

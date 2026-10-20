@@ -9,6 +9,16 @@ import { isAdmin } from '@/lib/auth-utils';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 /**
+ * Roles anyone may get by signing up. Everything else (vendor, mechmaster, admin)
+ * is granted by an admin or by a verified ADMIN_EMAILS address — never by a request.
+ */
+export const SELF_SERVICE_ROLES: readonly UserRole[] = ['customer', 'vendor_pending'];
+
+export function toSelfServiceRole(requested: unknown): UserRole {
+  return SELF_SERVICE_ROLES.includes(requested as UserRole) ? (requested as UserRole) : 'customer';
+}
+
+/**
  * UserService orchestrates business logic for users,
  * bridging repositories, validators, and external services.
  */
@@ -70,12 +80,14 @@ export const UserService = {
         updateData.fullName = fullName;
       }
 
-      // Identify the intended role
-      const isWhitelistedAdmin = isAdmin(email);
+      // Identify the intended role — the whitelist only counts once the address is proven
+      const isWhitelistedAdmin = isAdmin(email) && emailVerified;
 
       // Sync role if missing or if admin elevation is needed
       if (!existingUser.data.role || (isWhitelistedAdmin && existingUser.data.role !== 'admin')) {
-        updateData.role = isWhitelistedAdmin ? 'admin' : (providedRole || existingUser.data.role || 'customer');
+        updateData.role = isWhitelistedAdmin
+          ? 'admin'
+          : existingUser.data.role || toSelfServiceRole(providedRole);
 
         if (updateData.role === 'admin') {
           const { adminAuth } = getFirebaseAdmin();
@@ -142,8 +154,9 @@ export const UserService = {
     const { uid, email: rawEmail, fullName, role: providedRole, emailVerified = false } = params;
     const email = (rawEmail || '').trim().toLowerCase();
 
-    const isWhitelistedAdmin = isAdmin(email);
-    const targetRole: UserRole = isWhitelistedAdmin ? 'admin' : (providedRole || 'customer');
+    // Requests can only ask for a self-service role; admin needs a verified whitelisted email.
+    const isWhitelistedAdmin = isAdmin(email) && emailVerified;
+    const targetRole: UserRole = isWhitelistedAdmin ? 'admin' : toSelfServiceRole(providedRole);
 
     logger.info({ event: 'UserService: Provisioning new user', email, uid, role: targetRole });
 

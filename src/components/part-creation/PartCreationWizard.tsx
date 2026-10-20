@@ -14,13 +14,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import {
-  useUser,
-  useFirestore,
-  addDocumentNonBlocking,
-  updateDocumentNonBlocking,
-} from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import {
   ManufacturingService,
   SecondaryProcess,
@@ -36,6 +30,12 @@ import { SecondaryProcessSelection, SECONDARY_PROCESSES, COLOR_OPTIONS } from '.
 import { BendingStep } from './BendingStep';
 import { QuantityStep } from './QuantityStep';
 import { ThreadConfigSidebar } from './ThreadConfigSidebar';
+import { InstantQuoteStep } from './InstantQuoteStep';
+import { useWizardCncAnalysis } from '@/hooks/use-wizard-cnc-analysis';
+import { buildCncQuoteRequest } from '@/lib/quoting/wizard-pricing';
+import { generateCncQuote, getCncTierTable } from '@/lib/quoting/pricing-engine';
+import { findTapCandidates } from '@/lib/quoting/tapping';
+import { addPartToProject } from '@/services/quoteApi.service';
 import { isPartNameValid } from '@/lib/validation/part-name';
 import { STLViewer } from '@/components/viewer/STLViewer';
 import { FlatPatternViewer } from '@/components/viewer/FlatPatternViewer';
@@ -55,10 +55,12 @@ import {
   Loader2,
   Box,
   Monitor,
-  CornerUpRight
+  CornerUpRight,
+  Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 
-type WizardStep = 'service' | 'file' | 'material' | 'secondary' | 'bending' | 'quantity';
+type WizardStep = 'service' | 'file' | 'material' | 'secondary' | 'bending' | 'quantity' | 'quote';
 
 const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
   { id: 'service', label: 'Service', icon: <Layers className="w-4 h-4" /> },
@@ -67,7 +69,10 @@ const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
   { id: 'secondary', label: 'Finishing', icon: <Palette className="w-4 h-4" /> },
   { id: 'bending', label: 'Bending', icon: <CornerUpRight className="w-4 h-4" /> },
   { id: 'quantity', label: 'Quantity', icon: <Hash className="w-4 h-4" /> },
+  { id: 'quote', label: 'Instant Quote', icon: <Sparkles className="w-4 h-4" /> },
 ];
+
+const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
 interface PartCreationWizardProps {
   isOpen: boolean;
@@ -85,7 +90,6 @@ export function PartCreationWizard({
   standalone = false,
 }: PartCreationWizardProps) {
   const { user } = useUser();
-  const db = useFirestore();
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState<WizardStep>('service');
@@ -130,6 +134,40 @@ export function PartCreationWizard({
 
   // Memoized selections for viewer performance
   const selectedIndices = useMemo(() => selectedTaps.map(t => t.holeIndex), [selectedTaps]);
+
+  // ── Instant CNC costing: server-side analysis of the uploaded STEP file ──
+  const isCnc = selectedService === 'cnc_machining' || selectedService === 'cnc_turning';
+  const cncAnalysis = useWizardCncAnalysis(uploadedFile?.fileUrl, uploadedFile?.fileName, isCnc);
+
+  // Holes a standard tap fits — highlighted when tapping is on
+  const tapCandidates = useMemo(() => findTapCandidates(conversionResult?.holes), [conversionResult]);
+  const tappableIndices = useMemo(() => tapCandidates.map((c) => c.holeIndex), [tapCandidates]);
+
+  // Live price from the same engine the server uses when the part is added
+  const pricing = useMemo(() => {
+    if (!isCnc || !cncAnalysis.analysis || !selectedMaterial) return null;
+    const built = buildCncQuoteRequest({
+      materialId: selectedMaterial.id,
+      secondaryProcesses,
+      coatingColor,
+      taps: selectedTaps,
+      quantity,
+    });
+    if (!built.priceable) return { quote: null, reason: built.reason, unpriced: [], request: null };
+    const result = generateCncQuote(cncAnalysis.analysis, built.request);
+    return result.success
+      ? { quote: result.data, reason: null, unpriced: built.unpriced, request: built.request }
+      : { quote: null, reason: result.error.message, unpriced: built.unpriced, request: built.request };
+  }, [isCnc, cncAnalysis.analysis, selectedMaterial, secondaryProcesses, coatingColor, selectedTaps, quantity]);
+
+  const tierPrices = useMemo(() => {
+    if (!cncAnalysis.analysis || !pricing?.request) return [];
+    return getCncTierTable(cncAnalysis.analysis, { ...pricing.request, quantity: 1 });
+  }, [cncAnalysis.analysis, pricing?.request]);
+
+  const handleApplySuggestedTaps = useCallback(() => {
+    setSelectedTaps(tapCandidates.map((c) => ({ holeIndex: c.holeIndex, tapType: c.suggestedTapId })));
+  }, [tapCandidates]);
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === currentStep);
 
@@ -211,6 +249,10 @@ export function PartCreationWizard({
         return true;
       case 'quantity':
         return quantity >= 1;
+      case 'quote':
+        // Parts without an instant price can still be added (engineer-priced on RFQ),
+        // but not while the analysis is still running.
+        return !(isCnc && cncAnalysis.status === 'analyzing');
       default:
         return false;
     }
@@ -319,7 +361,7 @@ export function PartCreationWizard({
   };
 
   const handleSubmit = async () => {
-    if (!user || !db || !selectedService || !uploadedFile || !selectedMaterial) {
+    if (!user || !selectedService || !uploadedFile || !selectedMaterial) {
       toast({
         title: 'Error',
         description: 'Please complete all required fields',
@@ -337,64 +379,55 @@ export function PartCreationWizard({
     }
 
     setIsSubmitting(true);
-
     try {
-      const partData: Omit<MechanicalPart, 'id'> = {
-        projectId,
-        userId: user.uid,
+      // The server checks the project and file ownership, prices CNC parts from
+      // the stored analysis and saves the part — the browser never writes prices.
+      const created = await addPartToProject(projectId, {
         partName: partName.trim(),
         service: selectedService,
         cadFile: {
           fileName: uploadedFile.fileName,
-          fileUrl: uploadedFile.fileUrl,
+          fileKey: uploadedFile.fileUrl,
           fileSize: uploadedFile.fileSize,
-          uploadedAt: new Date().toISOString(),
         },
         material: selectedMaterial,
         secondaryProcesses,
         ...(coatingColor ? { coatingColor } : {}),
-        ...(selectedTaps.length > 0 ? { taps: selectedTaps } : {}),
+        taps: selectedTaps,
         ...(tappingNotes.trim() ? { tappingNotes: tappingNotes.trim() } : {}),
         ...(conversionResult?.boundingBox ? { dimensions: conversionResult.boundingBox } : {}),
         quantity,
         ...(discountTier ? { discountTier } : {}),
-        status: 'ready_for_quote',
-        analysis: conversionResult ? {
-          holes: conversionResult.holes || [],
-          bends: conversionResult.bends || [],
-          triangleCount: conversionResult.triangleCount || 0,
-          boundingBox: conversionResult.boundingBox,
-          detectedThickness: conversionResult.detectedThickness,
-          flatPattern: conversionResult.flatPattern,
-        } : undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        ...(cncAnalysis.analysisId ? { analysisId: cncAnalysis.analysisId } : {}),
+        ...(conversionResult
+          ? {
+              preview: {
+                holes: conversionResult.holes || [],
+                bends: conversionResult.bends || [],
+                triangleCount: conversionResult.triangleCount || 0,
+                boundingBox: conversionResult.boundingBox,
+                detectedThickness: conversionResult.detectedThickness,
+                flatPattern: conversionResult.flatPattern,
+              },
+            }
+          : {}),
+      });
 
-
-      const partRef = await addDocumentNonBlocking(collection(db, 'projectParts'), partData);
-
-      if (!partRef) {
-        throw new Error('No part reference returned from database');
+      if (!created.success) {
+        toast({ title: 'Could not add part', description: created.error.message, variant: 'destructive' });
+        return;
       }
 
-      // Update project with the new part
-      await updateDocumentNonBlocking(doc(db, 'projectRFQs', projectId), {
-        updatedAt: new Date().toISOString(),
-      });
-
-      const newPart: MechanicalPart = {
-        id: partRef.id,
-        ...partData,
-      };
-
+      const part = created.data;
       toast({
         title: 'Part Added Successfully',
-        description: `Added ${quantity} unit(s) to your project`,
+        description: part.instantQuote
+          ? `${quantity} pcs · ${inr(part.instantQuote.totalPrice)} instant price`
+          : `${quantity} pcs · our engineers will price this part`,
       });
 
-      onPartCreated(newPart);
-      handleClose();
+      onPartCreated(part);
+      handleClose(true);
     } catch (error) {
       console.error('Error creating part:', error);
       toast({
@@ -407,8 +440,8 @@ export function PartCreationWizard({
     }
   };
 
-  const handleClose = () => {
-    if (!isSubmitting) {
+  const handleClose = (force = false) => {
+    if (force || !isSubmitting) {
       // Reset state
       setCurrentStep('service');
       setPartName('');
@@ -419,6 +452,7 @@ export function PartCreationWizard({
       setSelectedMaterial(null);
       setSecondaryProcesses([]);
       setCoatingColor(null);
+      setSelectedTaps([]);
       setTappingNotes('');
       setQuantity(1);
       setDiscountTier(null);
@@ -506,6 +540,22 @@ export function PartCreationWizard({
             quantity={quantity}
             onQuantityChange={setQuantity}
             onDiscountTierChange={setDiscountTier}
+            tierPrices={tierPrices}
+            livePricePerPart={pricing?.quote?.pricePerPart ?? null}
+          />
+        );
+      case 'quote':
+        return (
+          <InstantQuoteStep
+            isCnc={isCnc}
+            analysisStatus={cncAnalysis.status}
+            analysisError={cncAnalysis.error}
+            onRetryAnalysis={cncAnalysis.retry}
+            quote={pricing?.quote ?? null}
+            unavailableReason={pricing?.reason ?? null}
+            unpricedProcesses={pricing?.unpriced ?? []}
+            quantity={quantity}
+            partName={partName}
           />
         );
       default:
@@ -583,7 +633,7 @@ export function PartCreationWizard({
         <Button
           variant="ghost"
           size="icon"
-          onClick={handleClose}
+          onClick={() => handleClose()}
           disabled={isSubmitting}
           className="ml-10 h-8 w-8 rounded-lg text-blue-100 hover:bg-slate-50 transition-colors"
         >
@@ -629,6 +679,7 @@ export function PartCreationWizard({
                     showBends={secondaryProcesses.includes('bending')}
                     hoveredHoleIndex={hoveredHoleIndex}
                     selectedHoleIndices={selectedIndices}
+                    tappableHoleIndices={secondaryProcesses.includes('tapping') ? tappableIndices : []}
                     boundingBox={conversionResult?.boundingBox}
                     serviceMode={
                       secondaryProcesses.includes('tapping') ? 'tapping' :
@@ -691,6 +742,29 @@ export function PartCreationWizard({
                   </div>
                 )}
               </div>
+
+              {/* Live instant price / costing status */}
+              {isCnc && (
+                <div className="absolute top-14 right-6 z-20">
+                  {cncAnalysis.status === 'analyzing' ? (
+                    <div className="px-3 py-2 bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg shadow-sm flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 text-[#2F5FA7] animate-spin" />
+                      <p className="text-[9px] font-black text-[#2F5FA7] uppercase tracking-widest">Costing analysis…</p>
+                    </div>
+                  ) : cncAnalysis.status === 'error' ? (
+                    <div className="px-3 py-2 bg-white/90 backdrop-blur-md border border-red-200 rounded-lg shadow-sm flex items-center gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                      <p className="text-[9px] font-black text-red-600 uppercase tracking-widest">Costing unavailable</p>
+                    </div>
+                  ) : pricing?.quote ? (
+                    <div className="px-4 py-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 text-right" data-testid="live-price">
+                      <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest">Live price · {quantity} pcs</p>
+                      <p className="text-lg font-black text-white leading-tight">{inr(pricing.quote.totalPrice)}</p>
+                      <p className="text-[9px] font-bold text-blue-100">{inr(pricing.quote.pricePerPart)} / part</p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
 
               {/* Industrial Overlays */}
             </div>
@@ -779,6 +853,8 @@ export function PartCreationWizard({
             onTappingNotesChange={setTappingNotes}
             onResetAll={handleResetTaps}
             onClose={() => setShowTappingSidebar(false)}
+            tapCandidates={tapCandidates}
+            onApplySuggested={handleApplySuggestedTaps}
           />
         )}
       </div>

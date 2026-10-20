@@ -38,19 +38,32 @@ service cloud.firestore {
     // ─────────────────────────────────────────
     // users/{userId}
     // ─────────────────────────────────────────
+    // Fields only the server (Admin SDK) or an admin may set. Changing `role`
+    // from the client would make anyone an admin (isAdmin() reads it).
+    function userProtectedFields() {
+      return ['id', 'email', 'role', 'status', 'emailVerified', 'isActive', 'isVerified',
+              'permissions', 'rating', 'createdAt', 'joinedAt'];
+    }
+
     match /users/{userId} {
-      // Public: read active vendor cards for landing page (unauthenticated ok)
-      // Authenticated: any logged-in user can read any profile
-      allow read: if (resource != null && 
-                      (resource.data.role == 'vendor' || resource.data.role == 'mechmaster') && 
+      // Public: active vendor cards (landing page, matching). Queries must filter on
+      // role + isActive. Everyone else: only your own profile, or admin.
+      allow read: if (resource != null &&
+                      resource.data.role in ['vendor', 'mechmaster'] &&
                       resource.data.isActive == true)
-                  || isAuthenticated();
+                  || isOwner(userId)
+                  || isAdmin();
 
-      // Users can create their own profile on registration
-      allow create: if isAuthenticated() && isOwner(userId);
+      // Profiles are provisioned by the server; a client may only create
+      // non-privileged fields on its own doc (e.g. a cart saved before provisioning).
+      allow create: if isOwner(userId) &&
+                    !request.resource.data.keys().hasAny(userProtectedFields());
 
-      // User updates own profile; admin can update anyone (e.g. verify vendor)
-      allow update: if isOwner(userId) || isAdmin();
+      // Users update their own non-privileged fields; admin can update anyone.
+      allow update: if isAdmin() || (
+                      isOwner(userId) &&
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(userProtectedFields())
+                    );
 
       // Only admin can delete
       allow delete: if isAdmin();
@@ -90,17 +103,48 @@ service cloud.firestore {
     // ─────────────────────────────────────────
     // projectRFQs/{projectId}
     // ─────────────────────────────────────────
+    // Price, payment, vendor-assignment and workflow fields are written by admins
+    // or server routes only. payment/create-order charges finalPrice/quotedPrice.
+    function projectProtectedFields() {
+      return ['userId', 'quotedPrice', 'finalPrice', 'leadTimeDays', 'paymentStatus',
+              'assignedVendorId', 'shortlistedVendorIds', 'invitedVendorIds', 'assignmentState',
+              'workflowStatus', 'acceptedAt', 'assignedAt', 'invitedAt', 'acceptedQuotationId',
+              'razorpayOrderId', 'paidAt', 'artifacts', 'timelineEvents',
+              'negotiationHistory', 'instantCostSnapshot', 'quoteRequestedAt'];
+    }
+
+    // RFQ-send (draft -> quote_requested) and negotiation (-> negotiation) now go
+    // through server routes. The only status move a customer still makes directly
+    // is accepting a quote.
+    function customerStatusChange(fromStatus, toStatus) {
+      return (fromStatus == 'quotation_sent' || fromStatus == 'negotiation') && toStatus == 'accepted';
+    }
+
     match /projectRFQs/{projectId} {
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         isAdmin()
       );
-      // User must set their own userId when creating
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
+
+      // Owner creates a draft (or a matching-flow submission) with no price/payment data.
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status in ['draft', 'submitted'] &&
+        !request.resource.data.keys().hasAny(['quotedPrice', 'finalPrice', 'leadTimeDays',
+          'paymentStatus', 'workflowStatus', 'assignmentState', 'acceptedAt', 'assignedAt',
+          'acceptedQuotationId', 'razorpayOrderId', 'paidAt']) &&
+        request.resource.data.get('assignedVendorId', null) == null;
+
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(projectProtectedFields()) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']) ||
+          customerStatusChange(resource.data.get('status', ''), request.resource.data.get('status', ''))
+        )
       );
+
       allow delete: if isAdmin() || (
         isAuthenticated() &&
         resource.data.userId == request.auth.uid &&
@@ -111,20 +155,47 @@ service cloud.firestore {
     // ─────────────────────────────────────────
     // projectParts/{partId}
     // ─────────────────────────────────────────
+    // Admin prices parts (unitCost); customers edit parts only while the project
+    // is still a draft, so quantities can't change after a price is agreed.
+    function partProtectedFields() {
+      return ['userId', 'projectId', 'unitCost', 'totalCost', 'price', 'quotedPrice',
+              'instantQuote', 'quoteStatus', 'quoteNote'];
+    }
+
+    function isOwnDraftProject(projectId) {
+      let project = get(/databases/$(database)/documents/projectRFQs/$(projectId)).data;
+      return project.userId == request.auth.uid && project.status == 'draft';
+    }
+
     match /projectParts/{partId} {
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         isAdmin()
       );
-      // User must set their own userId when creating
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
+
+      allow create: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        isOwnDraftProject(request.resource.data.projectId) &&
+        !request.resource.data.keys().hasAny(['unitCost', 'totalCost', 'price', 'quotedPrice',
+          'instantQuote', 'quoteStatus', 'quoteNote'])
       );
-      allow delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
+
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        isOwnDraftProject(resource.data.projectId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(partProtectedFields())
+      );
+
+      // Owner deletes parts of a draft project, or of a project already deleted
+      // (the dashboard removes a draft project and its parts together).
+      allow delete: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.userId == request.auth.uid && (
+          !exists(/databases/$(database)/documents/projectRFQs/$(resource.data.projectId)) ||
+          isOwnDraftProject(resource.data.projectId)
+        )
       );
     }
 
@@ -138,14 +209,17 @@ service cloud.firestore {
         isAdmin()
       );
 
-      // Only vendors or admins can create quotations
-      allow create: if isVendor() || isAdmin();
+      // Vendors create quotations as themselves; admins for anyone
+      allow create: if isAdmin() ||
+        (isVendor() && request.resource.data.vendorId == request.auth.uid);
 
-      allow update: if isAuthenticated() && (
-        // Customer accepts/rejects; vendor revises their own quote
-        resource.data.userId == request.auth.uid ||
-        resource.data.vendorId == request.auth.uid ||
-        isAdmin()
+      // Customers accept through /api/v1/projects/[id]/quotations/[id]/accept (server).
+      // A vendor may revise their own quote but not reassign it or mark it accepted.
+      allow update: if isAdmin() || (
+        isVendor() &&
+        resource.data.vendorId == request.auth.uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'vendorId', 'projectId', 'rfqId']) &&
+        request.resource.data.get('status', '') != 'accepted'
       );
 
       allow delete: if isAdmin();
@@ -233,11 +307,20 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────
+    // uploaded_files/{fileId}
+    // ─────────────────────────────────────────
+    match /uploaded_files/{fileId} {
+      // File ownership records — written only by the server when it authorises an
+      // upload; downloads trust them, so no client may read or write them.
+      allow read, write: if false;
+    }
+
+    // ─────────────────────────────────────────
     // consultationRequests/{requestId}
     // ─────────────────────────────────────────
     match /consultationRequests/{requestId} {
-      // Public submissions (unauthenticated contact form)
-      allow create: if true;
+      // Created only by POST /api/v1/consultation (validated, rate-limited)
+      allow create: if false;
 
       // Only admin reads and manages leads
       allow read, update, delete: if isAdmin();
@@ -247,8 +330,8 @@ service cloud.firestore {
     // contactQueries/{queryId}
     // ─────────────────────────────────────────
     match /contactQueries/{queryId} {
-      // Public submissions (unauthenticated contact form)
-      allow create: if true;
+      // Created only by POST /api/v1/contact (validated, rate-limited)
+      allow create: if false;
 
       // Only admin reads and manages contact queries
       allow read, update, delete: if isAdmin();
@@ -258,8 +341,8 @@ service cloud.firestore {
     // newsletter_subscribers/{docId}
     // ─────────────────────────────────────────
     match /newsletter_subscribers/{docId} {
-      // Public: anyone can subscribe (unauthenticated)
-      allow create: if true;
+      // Created only by POST /api/v1/newsletter (validated, rate-limited, idempotent)
+      allow create: if false;
 
       // Only admin can read and manage subscribers
       allow read, update, delete: if isAdmin();
@@ -318,8 +401,9 @@ service cloud.firestore {
       // Users can read their own orders; admin reads all
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
 
-      // User must set their own userId when creating
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Orders are created only by the server (/api/v1/order/create, shop checkout),
+      // after pricing from saved quotes / the product catalogue.
+      allow create: if false;
 
       // Only admin can update order status or delete
       allow update, delete: if isAdmin();

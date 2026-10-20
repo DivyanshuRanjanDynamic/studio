@@ -37,10 +37,30 @@ interface JobStatusResponse {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * The converter only accepts uploads carrying a short-lived ticket that MechHub
+ * issues to signed-in users (see /api/v1/cad/convert-ticket).
+ */
+async function getConvertTicket(): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/cad/convert-ticket', { method: 'POST' });
+  } catch {
+    throw new Error('Could not reach MechHub. Check your internet connection.');
+  }
+  const body = (await res.json().catch(() => ({}))) as { ticket?: string; error?: string };
+  if (!res.ok || !body.ticket) {
+    throw new Error(body.error ?? `Could not start the conversion (${res.status})`);
+  }
+  return body.ticket;
+}
+
 export async function convertStepFile(
   file: File,
   onStatusUpdate?: (status: string) => void
 ): Promise<ConversionResult> {
+  const ticket = await getConvertTicket();
+
   const form = new FormData();
   form.append('file', file);
 
@@ -49,6 +69,7 @@ export async function convertStepFile(
     res = await fetch(CONVERT_URL, {
       method: 'POST',
       body: form,
+      headers: { Authorization: `Bearer ${ticket}` },
       // No Content-Type header — browser sets it automatically with the
       // correct multipart boundary for FormData.
     });

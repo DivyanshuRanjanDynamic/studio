@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
+import { authenticateRequest, forbiddenResponse, checkVerification } from '@/lib/auth-middleware';
 import { logger } from '@/utils/logger';
-import { s3Client, S3_BUCKET } from '@/lib/s3-client';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { isVendorRole } from '@/lib/roles';
+import { s3Client } from '@/lib/s3-client';
+import { FileAccessService } from '@/services/file-access.service';
+import { bucketForFileKey } from '@/lib/file-buckets';
 
 /**
  * GET /api/v1/files/retrieve?fileKey=[key]
@@ -31,115 +31,38 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing fileKey parameter' }, { status: 400 });
     }
 
-    const { adminFirestore } = getFirebaseAdmin();
-    if (!adminFirestore) {
-      return NextResponse.json({ error: 'Database service unavailable' }, { status: 500 });
+    // 2. Authorize from server-recorded ownership
+    const decision = await FileAccessService.authorize(auth, fileKey);
+    if (!decision.success) {
+      return NextResponse.json({ error: 'Could not check file access' }, { status: 503 });
     }
-
-    // 2. Authorize file access (owner/admin/authorized vendor only)
-    const requesterIsAdmin = auth.role === 'admin';
-
-    let canAccess = requesterIsAdmin;
-
-    // Direct metadata ownership path
-    if (!canAccess) {
-      const filesSnapshot = await adminFirestore
-        .collection('uploaded_files')
-        .where('fileKey', '==', fileKey)
-        .limit(1)
-        .get();
-
-      if (!filesSnapshot.empty) {
-        const fileData = filesSnapshot.docs[0].data();
-        if (fileData.userId === auth.uid) {
-          canAccess = true;
-        }
-      }
-    }
-
-    // Project-part ownership / assignment fallback path
-    if (!canAccess) {
-      const partsSnapshot = await adminFirestore
-        .collection('projectParts')
-        .where('cadFile.fileUrl', '==', fileKey)
-        .limit(20)
-        .get();
-
-      const projectCache = new Map<string, any>();
-      for (const partDoc of partsSnapshot.docs) {
-        const partData = partDoc.data() as { userId?: string; projectId?: string };
-
-        if (partData.userId === auth.uid) {
-          canAccess = true;
-          break;
-        }
-
-        const projectId = partData.projectId;
-        if (!projectId) continue;
-
-        let projectData = projectCache.get(projectId);
-        if (!projectData) {
-          const projectSnap = await adminFirestore.collection('projectRFQs').doc(projectId).get();
-          if (!projectSnap.exists) continue;
-          projectData = projectSnap.data();
-          projectCache.set(projectId, projectData);
-        }
-
-        if (projectData?.userId === auth.uid) {
-          canAccess = true;
-          break;
-        }
-
-        if (
-          isVendorRole(auth.role) &&
-          (projectData?.assignedVendorId === auth.uid ||
-            (Array.isArray(projectData?.shortlistedVendorIds) &&
-              projectData.shortlistedVendorIds.includes(auth.uid)))
-        ) {
-          canAccess = true;
-          break;
-        }
-      }
-    }
-
-    if (!canAccess) {
+    if (!decision.data.allowed) {
       logger.warn({ event: 'API: Unauthorized file retrieval attempt', fileKey, authUid: auth.uid });
       return forbiddenResponse('You do not have access to this file');
     }
 
-    // 2. Select bucket (consistent with download API)
-    let bucket = process.env.AWS_S3_CAD_BUCKET || process.env.AWS_S3_BUCKET || S3_BUCKET;
-    if (fileKey.startsWith('rfq-designs/') && process.env.AWS_S3_BUCKET) {
-      bucket = process.env.AWS_S3_BUCKET;
-    }
-
     // 3. Fetch from S3
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: fileKey,
-    });
-
-    const s3Response = await s3Client.send(command);
+    const s3Response = await s3Client.send(
+      new GetObjectCommand({ Bucket: bucketForFileKey(fileKey), Key: fileKey })
+    );
 
     if (!s3Response.Body) {
       throw new Error('Empty body from S3');
     }
 
-    // 4. Stream response to client
-    // We treat the S3 body as a readable stream
+    // 4. Stream to the client. Private: this URL is the same for every user, so a
+    // shared cache (the CDN in front of App Hosting) must never store it.
+    const safeName = (fileKey.split('/').pop() || 'file').replace(/[^A-Za-z0-9._-]/g, '_');
     return new Response(s3Response.Body as ReadableStream, {
       headers: {
         'Content-Type': s3Response.ContentType || 'application/octet-stream',
-        'Cache-Control': 'public, max-age=3600',
-        'Content-Disposition': `attachment; filename="${fileKey.split('/').pop()}"`,
+        'Cache-Control': 'private, no-store',
+        'Content-Disposition': `attachment; filename="${safeName}"`,
+        'X-Content-Type-Options': 'nosniff',
       },
     });
-
   } catch (error: any) {
     logger.error({ event: 'API: Retrieval error', reqId, error: error.message });
-    return NextResponse.json(
-      { error: 'Failed to retrieve file from storage' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to retrieve file from storage' }, { status: 500 });
   }
 }

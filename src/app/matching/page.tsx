@@ -43,7 +43,12 @@ export default function MatchingPage() {
   // Filter for ACTIVE vendors only
   const vendorsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'users'), where('isActive', '==', true));
+    // Rules only expose active vendor profiles, so the query must say so.
+    return query(
+      collection(db, 'users'),
+      where('role', 'in', ['vendor', 'mechmaster']),
+      where('isActive', '==', true)
+    );
   }, [db]);
 
   const { data: dbVendors, isLoading: isVendorsLoading } = useCollection(vendorsQuery);

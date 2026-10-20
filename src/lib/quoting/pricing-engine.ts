@@ -12,12 +12,23 @@ import type {
   TurnaroundType,
   QuoteResult,
   QuoteBreakdown,
+  QuantityTier,
+  AnyQuoteResult,
+  CncAnalysis,
+  CncMachiningTime,
+  CncProcess,
+  CncQuoteBreakdown,
+  CncQuoteRequest,
+  CncQuoteResult,
+  CncShopRates,
 } from '@/types/quoting';
 import { type Result, ok, err } from '@/utils/result';
 import { AppError, ErrorCode } from '@/utils/errors';
 import { getMaterialById, getFinishRate, getTurnaroundOption, LASER_MACHINE } from './materials';
 import { calcQuantityMultiplier } from './quantity-tiers';
 import { runDFMChecks, hasBlockingIssues } from './dfm-checks';
+import { DEFAULT_CNC_SHOP_RATES, getCncMaterialData } from './cnc-materials';
+import { calcCncTappingCost } from './tapping';
 
 // ═══ Configuration constants ═══
 
@@ -124,14 +135,22 @@ export function calcFinishCost(
   finishType: FinishType,
   quantity: number
 ): number {
+  // Surface area = both faces (edge area negligible for sheet metal)
+  return calcFinishCostForArea(geometry.areaMm2 * 2, finishType, quantity);
+}
+
+/** Finish cost per part for a known wetted surface area. */
+export function calcFinishCostForArea(
+  surfaceAreaMm2: number,
+  finishType: FinishType,
+  quantity: number
+): number {
   const finish = getFinishRate(finishType);
 
   if (finishType === 'none') {
     return 0;
   }
 
-  // Surface area = both faces (edge area negligible for sheet metal)
-  const surfaceAreaMm2 = geometry.areaMm2 * 2;
   let costPerPart = Math.max(finish.minCost, surfaceAreaMm2 * finish.costPerMm2);
 
   // Batch discounts for finishing
@@ -286,4 +305,257 @@ export function generateQuote(
   };
 
   return ok(result);
+}
+
+// ═══ CNC Machining Branch ═══
+// Geometry → time happens in the CAD converter (/analyze-cnc); this branch
+// turns time + stock into money using the shop's own rates, so one analysis
+// prices every material, quantity and finish instantly.
+
+/** Share of the laser volume discount that applies to CNC cycle time. */
+const CNC_LEARNING_SHARE = 0.5;
+
+/** Stock cost per part: standard block/bar mass × price, plus waste. */
+export function calcCncMaterialCost(
+  analysis: CncAnalysis,
+  densityGCm3: number,
+  pricePerKg: number,
+  wastePct: number
+): number {
+  if (!analysis.stock) {
+    return 0;
+  }
+  const massKg = ((analysis.stock.volumeMm3 / 1000) * densityGCm3) / 1000;
+  return massKg * pricePerKg * (1 + wastePct);
+}
+
+/**
+ * Recurring machine cost per part: cycle + load/unload at the process rate.
+ * Turned parts bill secondary milling (flats, cross holes) at the VMC rate.
+ */
+export function calcCncMachiningCost(
+  times: CncMachiningTime,
+  handlingMin: number,
+  process: CncProcess,
+  rates: CncShopRates
+): number {
+  const rate = rates.machineRatePerHour;
+  if (process === 'cnc_turning') {
+    const latheMin = times.cycleMin - times.secondaryMillingMin + handlingMin;
+    return (
+      (latheMin / 60) * rate.cnc_turning +
+      (times.secondaryMillingMin / 60) * rate.cnc_machining_3axis
+    );
+  }
+  return ((times.cycleMin + handlingMin) / 60) * rate[process];
+}
+
+/**
+ * Cycle-time learning curve. Setup and programming are already amortised
+ * over the batch, so only half of the standard quantity discount applies.
+ */
+export function calcCncLearningFactor(quantity: number): number {
+  return 1 - CNC_LEARNING_SHARE * (1 - calcQuantityMultiplier(quantity));
+}
+
+/**
+ * Generates a CNC quote from a /analyze-cnc result.
+ * Returns Result<CncQuoteResult, AppError> — never throws.
+ */
+export function generateCncQuote(
+  analysis: CncAnalysis,
+  request: CncQuoteRequest,
+  rates: CncShopRates = DEFAULT_CNC_SHOP_RATES,
+  shopUtilization: number = 0.65
+): Result<CncQuoteResult, AppError> {
+  const { materialId, finishType, quantity, turnaround } = request;
+
+  // ── Validate material ──
+  const material = getMaterialById(materialId);
+  const cncData = getCncMaterialData(materialId);
+  if (!material || !cncData) {
+    return err(
+      new AppError({
+        code: ErrorCode.INVALID_MATERIAL,
+        message: `Material not available for CNC machining: ${materialId}`,
+        statusCode: 400,
+        context: { materialId },
+      })
+    );
+  }
+
+  // ── Validate finish ──
+  if (!material.availableFinishes.includes(finishType)) {
+    return err(
+      new AppError({
+        code: ErrorCode.INVALID_FINISH,
+        message: `Finish "${finishType}" not available for ${material.name}`,
+        statusCode: 400,
+        context: { materialId, finishType, available: material.availableFinishes },
+      })
+    );
+  }
+
+  // ── Validate quantity ──
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    return err(
+      new AppError({
+        code: ErrorCode.INVALID_QUANTITY,
+        message: `Quantity must be a positive whole number, got ${quantity}`,
+        statusCode: 400,
+        context: { quantity },
+      })
+    );
+  }
+
+  // ── Validate process override ──
+  // Stock is sized for the recommended process (bar for turning, block for
+  // milling), so only 3-axis ↔ 5-axis can be swapped without re-analysing.
+  const recommended = analysis.process.recommended;
+  const process = request.process ?? recommended;
+  if ((process === 'cnc_turning') !== (recommended === 'cnc_turning')) {
+    return err(
+      new AppError({
+        code: ErrorCode.INVALID_INPUT,
+        message: `Process "${process}" is not compatible with this part (analysed as ${recommended})`,
+        statusCode: 400,
+        context: { process, recommended },
+      })
+    );
+  }
+
+  // ── Validate analysis ──
+  if (!analysis.stock) {
+    return err(
+      new AppError({
+        code: ErrorCode.DFM_PART_TOO_LARGE,
+        message: 'Part exceeds standard stock sizes',
+        statusCode: 422,
+        context: { boundingBox: analysis.part.boundingBox },
+      })
+    );
+  }
+  const times = analysis.machiningTime[cncData.machinabilityGroup];
+  if (!times) {
+    return err(
+      new AppError({
+        code: ErrorCode.INVALID_INPUT,
+        message: `Analysis ${analysis.version} has no times for ${cncData.machinabilityGroup}`,
+        statusCode: 400,
+        context: { version: analysis.version, group: cncData.machinabilityGroup },
+      })
+    );
+  }
+
+  // ── Core cost components (per part) ──
+  const stockPrice =
+    analysis.stock.shape === 'round_bar' ? cncData.barPricePerKg : cncData.blockPricePerKg;
+  const materialCost = calcCncMaterialCost(
+    analysis,
+    material.densityGCm3,
+    stockPrice,
+    rates.materialWastePct
+  );
+  const learningFactor = calcCncLearningFactor(quantity);
+  const machiningCost =
+    calcCncMachiningCost(times, analysis.handlingTimePerPartMin, process, rates) * learningFactor;
+  const setupCost = ((analysis.setupTimeMin / 60) * rates.setupRatePerHour) / quantity;
+  const programmingCost =
+    ((analysis.programmingTimeMin / 60) * rates.programmingRatePerHour) / quantity;
+  const finishCost = calcFinishCostForArea(analysis.part.surfaceAreaMm2, finishType, quantity);
+
+  // ── Tapping: requested threads, checked against the analysed holes ──
+  const tapping = calcCncTappingCost(analysis, request.taps, cncData.machinabilityGroup, process, rates);
+  if (!tapping.success) {
+    return err(tapping.error);
+  }
+  const tappingCost = tapping.data.machineCostPerPart * learningFactor + tapping.data.wearCostPerPart;
+
+  const baseCostPerPart =
+    materialCost + machiningCost + setupCost + programmingCost + finishCost + tappingCost;
+
+  // ── Modifiers ──
+  const rushMultiplier = calcRushMultiplier(turnaround, shopUtilization);
+  let pricePerPart = baseCostPerPart * rushMultiplier * (1 + rates.marginPct);
+
+  // ── Minimum unit price ──
+  pricePerPart = Math.max(pricePerPart, MIN_UNIT_PRICE[process] ?? 400);
+
+  // ── Minimum order value ──
+  let totalPrice = pricePerPart * quantity;
+  if (totalPrice < MIN_ORDER_INR) {
+    totalPrice = MIN_ORDER_INR;
+    pricePerPart = MIN_ORDER_INR / quantity;
+  }
+
+  const turnaroundOption = getTurnaroundOption(turnaround);
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+
+  const breakdown: CncQuoteBreakdown = {
+    materialCost: round2(materialCost),
+    machiningCost: round2(machiningCost),
+    setupCost: round2(setupCost),
+    programmingCost: round2(programmingCost),
+    finishCost: round2(finishCost),
+    tappingCost: round2(tappingCost),
+    tappedHoles: tapping.data.holes,
+    cycleTimeMin: round2((times.cycleMin + tapping.data.minutesPerPart) * learningFactor),
+    quantityMultiplier: Math.round(learningFactor * 10000) / 10000,
+    rushMultiplier: Math.round(rushMultiplier * 10000) / 10000,
+    marginPct: rates.marginPct,
+  };
+
+  return ok({
+    pricePerPart: Math.round(pricePerPart),
+    totalPrice: Math.round(totalPrice),
+    leadTimeDays: turnaroundOption?.days ?? 3,
+    process,
+    breakdown,
+    dfmIssues: analysis.dfm,
+    hasBlockingIssues: hasBlockingIssues(analysis.dfm),
+    expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+    quoteRef: `MH-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+    parameters: { ...request, process },
+    analysis,
+  });
+}
+
+/** True for quotes produced by generateCncQuote (they carry the analysis). */
+export function isCncQuote(quote: AnyQuoteResult): quote is CncQuoteResult {
+  return 'analysis' in quote;
+}
+
+const CNC_TIER_QUANTITIES = [1, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
+
+/**
+ * Tier table for a CNC part. Setup and programming amortise over the batch,
+ * so each tier is re-priced rather than scaled from the single-unit price.
+ */
+export function getCncTierTable(
+  analysis: CncAnalysis,
+  request: CncQuoteRequest,
+  rates: CncShopRates = DEFAULT_CNC_SHOP_RATES
+): readonly QuantityTier[] {
+  const tiers: { quantity: number; pricePerPart: number; totalPrice: number }[] = [];
+  for (const quantity of CNC_TIER_QUANTITIES) {
+    const result = generateCncQuote(analysis, { ...request, quantity }, rates);
+    if (!result.success) {
+      return [];
+    }
+    tiers.push({
+      quantity,
+      pricePerPart: result.data.pricePerPart,
+      totalPrice: result.data.totalPrice,
+    });
+  }
+
+  const singleUnit = tiers[0].pricePerPart;
+  return tiers.map((t) => {
+    const multiplier = singleUnit > 0 ? t.pricePerPart / singleUnit : 1;
+    return {
+      ...t,
+      multiplier: Math.round(multiplier * 10000) / 10000,
+      savingsPercent: Math.max(0, Math.round((1 - multiplier) * 100)),
+    };
+  });
 }

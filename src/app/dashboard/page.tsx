@@ -849,6 +849,12 @@ function UserDashboardContent() {
               <PhoneCall className="w-4 h-4 mr-2 text-[#2F5FA7]" /> Book Free Consultation
             </Button>
             <Button
+              className="h-11 px-6 text-sm font-semibold bg-white hover:bg-blue-50 text-[#2F5FA7] border border-[#2F5FA7]/30 shadow-sm transition-all rounded-xl"
+              onClick={() => router.push('/quote/instant')}
+            >
+              <Zap className="w-4 h-4 mr-2" /> Instant Quote
+            </Button>
+            <Button
               className="h-11 px-6 text-sm font-semibold bg-blue-600 hover:bg-[#1E3A66] text-white shadow-sm transition-all border-none rounded-xl"
               onClick={() => setIsCreateProjectOpen(true)}
             >

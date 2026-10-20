@@ -16,7 +16,7 @@ import { UserRole } from '@/models/user.model';
 export async function POST(req: Request) {
   try {
     const ip = getClientIdentifier(req.headers);
-    const limiter = await rateLimit(`auth-session:${ip}`, 5, 60000); // 5 attempts per minute
+    const limiter = await rateLimit(`auth-session:${ip}`, 5, 60000, { onStoreError: 'allow' }); // 5 attempts per minute
 
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);
@@ -89,11 +89,12 @@ export async function POST(req: Request) {
 
     // ── Pre-Session Security Checks ──────────────────────────────────
 
-    // Block unverified password-based accounts from obtaining a long-lived session.
+    // Block unverified accounts from obtaining a long-lived session — for every sign-in
+    // method, not just passwords (custom-token sign-ins otherwise skipped this check).
     // EXCEPTION: Allow 'vendor_pending' users so they can see their "Under Review" status.
     const isPendingVendor = userRole === 'vendor_pending';
 
-    if (signInProvider === 'password' && !decodedToken.email_verified && !isPendingVendor) {
+    if (!decodedToken.email_verified && !isPendingVendor) {
       return NextResponse.json(
         { error: 'Email verification required before signing in.' },
         { status: 403 }

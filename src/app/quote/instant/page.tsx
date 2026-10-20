@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -21,14 +21,25 @@ import {
   Zap,
   Shield,
   ChevronDown,
+  Cog,
+  RotateCcw,
+  RefreshCw,
+  LogIn,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LandingNav } from '@/components/LandingNav';
+import { useUser } from '@/firebase';
 import { useFileUpload } from '@/hooks/use-file-upload';
 import { useInstantQuote } from '@/hooks/use-instant-quote';
+import { useCncQuote } from '@/hooks/use-cnc-quote';
 import { useQuoteCart } from '@/hooks/use-quote-cart';
-import type { DFMIssue, QuantityTier } from '@/types/quoting';
+import { useSavedQuote } from '@/hooks/use-saved-quote';
+import { isCncQuote } from '@/lib/quoting/pricing-engine';
+import { CNC_PROCESS_LABELS, formatCncStock } from '@/lib/quoting/cnc-materials';
+import { getFinishRate, getMaterialById, getTurnaroundOption } from '@/lib/quoting/materials';
+import type { SaveQuoteInput } from '@/services/quoteApi.service';
+import type { AnyQuoteResult, DFMIssue, QuantityTier, QuoteProcessMode } from '@/types/quoting';
 
 // ═══════════════════════════════════════════════════
 // Instant Quote Page — File Upload → Configure → Review
@@ -36,16 +47,119 @@ import type { DFMIssue, QuantityTier } from '@/types/quoting';
 
 type Step = 'upload' | 'configure' | 'review';
 
+const PROCESS_OPTIONS: ReadonlyArray<{
+  mode: QuoteProcessMode;
+  label: string;
+  hint: string;
+  Icon: typeof Zap;
+}> = [
+  { mode: 'laser', label: 'Laser Cutting', hint: 'Sheet parts · DXF / STEP', Icon: Zap },
+  { mode: 'cnc_milling', label: 'CNC Milling', hint: 'Prismatic parts · STEP', Icon: Cog },
+  { mode: 'cnc_turning', label: 'CNC Turning', hint: 'Round parts · STEP', Icon: RotateCcw },
+];
+
+const formatInr = (n: number): string =>
+  `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
+const formatTime = (ms: number): string =>
+  new Date(ms).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+const isSharedLoadPending = (shareRef: string | null, status: string): boolean =>
+  shareRef !== null && (status === 'loading' || status === 'error');
+
+/** Specification rows read from the quote itself, so shared quotes render too */
+function quoteSpecRows(q: AnyQuoteResult): ReadonlyArray<readonly [string, string]> {
+  const { materialId, finishType, quantity, turnaround } = q.parameters;
+  const processRows: ReadonlyArray<readonly [string, string]> = isCncQuote(q)
+    ? [
+        ['Process', CNC_PROCESS_LABELS[q.process]],
+        ['Stock', formatCncStock(q.analysis.stock)],
+        ['Setups', `${q.analysis.setups.count}`],
+        ['Cycle Time', `${q.breakdown.cycleTimeMin.toFixed(1)} min/part`],
+      ]
+    : [['Thickness', `${q.parameters.thicknessMm}mm`]];
+  return [
+    ['Material', getMaterialById(materialId)?.name ?? materialId],
+    ...processRows,
+    ['Finish', getFinishRate(finishType)?.label ?? 'None'],
+    ['Quantity', `${quantity} pcs`],
+    ['Turnaround', getTurnaroundOption(turnaround)?.label ?? turnaround],
+  ];
+}
+
 export default function InstantQuotePage() {
+  // useSearchParams needs a Suspense boundary for prerendering.
+  return (
+    <Suspense fallback={null}>
+      <InstantQuoteContent />
+    </Suspense>
+  );
+}
+
+function InstantQuoteContent() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>('upload');
+  const shareRef = useSearchParams().get('ref');
+  const [step, setStep] = useState<Step>(shareRef ? 'review' : 'upload');
   const [copied, setCopied] = useState(false);
+  const [processMode, setProcessMode] = useState<QuoteProcessMode>('laser');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks own all state (rules.md)
   const fileUpload = useFileUpload();
+  const activeFile = fileUpload.files.find((f) => f.id === fileUpload.activeFileId);
   const quote = useInstantQuote(fileUpload.activeGeometry);
+  const cnc = useCncQuote(fileUpload.activeRawFile, activeFile?.sha256Hash ?? null, processMode);
   const cart = useQuoteCart();
+  const saved = useSavedQuote(shareRef);
+
+  // Instant CNC / laser pricing is for registered users. Middleware already sends
+  // visitors without a session to /login; this covers stale sessions and 401s.
+  const { user, isUserLoading } = useUser();
+  const needsSignIn = (!isUserLoading && !user) || saved.needsSignIn;
+  const returnTo = encodeURIComponent(
+    shareRef ? `/quote/instant?ref=${shareRef}` : '/quote/instant'
+  );
+  const loginHref = `/login?tab=login&redirect=${returnTo}`;
+  const registerHref = `/login?redirect=${returnTo}`;
+
+  // Laser and CNC hooks share the config surface; pick the active one.
+  const isCnc = processMode !== 'laser';
+  const config = isCnc ? cnc : quote;
+  const activeQuote: AnyQuoteResult | null = isCnc ? cnc.quoteResult : quote.quoteResult;
+  const isCalculating = isCnc ? cnc.analysisStatus === 'analyzing' : quote.isCalculating;
+
+  const breakdownRows: ReadonlyArray<readonly [string, number]> = !activeQuote
+    ? []
+    : isCncQuote(activeQuote)
+      ? [
+          ['Material', activeQuote.breakdown.materialCost],
+          ['Machining', activeQuote.breakdown.machiningCost],
+          ['Setup', activeQuote.breakdown.setupCost],
+          ['Programming', activeQuote.breakdown.programmingCost],
+          ['Finish', activeQuote.breakdown.finishCost],
+        ]
+      : [
+          ['Material', activeQuote.breakdown.materialCost],
+          ['Cutting', activeQuote.breakdown.cutCost],
+          ['Setup', activeQuote.breakdown.setupCost],
+          ['Finish', activeQuote.breakdown.finishCost],
+        ];
+
+  // Review shows the server's quote of record, never the client-side estimate.
+  const reviewQuote = step === 'review' ? saved.quote : null;
+  const isShared = saved.source === 'shared';
+  const reviewFileName = isShared ? 'Shared quote' : (activeFile?.fileName ?? '');
+
+  // Tick while on Review so the quote flips to expired without a reload.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (step !== 'review') return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, [step]);
+  const isExpired = reviewQuote !== null && reviewQuote.expiresAt <= now;
+  const canOrder = reviewQuote !== null && !isExpired && !reviewQuote.hasBlockingIssues;
 
   const handleContinueToConfigure = (): void => {
     if (fileUpload.files.length > 0) {
@@ -53,15 +167,31 @@ export default function InstantQuotePage() {
     }
   };
 
-  const handleGetQuote = (): void => {
-    if (quote.quoteResult && !quote.hasBlockingIssues) {
+  // Persist through the matching route; the server re-prices and assigns the ref.
+  const handleGetQuote = async (): Promise<void> => {
+    if (!activeQuote || config.hasBlockingIssues || saved.status === 'saving') return;
+
+    let input: SaveQuoteInput;
+    let key: string;
+    if (isCnc) {
+      if (!cnc.analysisId) return;
+      input = { kind: 'cnc', analysisId: cnc.analysisId, request: cnc.state };
+      key = JSON.stringify(['cnc', cnc.analysisId, cnc.state]);
+    } else {
+      if (!fileUpload.activeGeometry) return;
+      input = { kind: 'laser', request: { ...quote.state, geometry: fileUpload.activeGeometry } };
+      key = JSON.stringify(['laser', activeFile?.sha256Hash, quote.state]);
+    }
+
+    const result = await saved.save(key, input);
+    if (result.success) {
       setStep('review');
     }
   };
 
   const handleCopyLink = (): void => {
-    if (quote.quoteResult) {
-      const url = `${window.location.origin}/quote/instant?ref=${quote.quoteResult.quoteRef}`;
+    if (reviewQuote) {
+      const url = `${window.location.origin}/quote/instant?ref=${reviewQuote.quoteRef}`;
       navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -69,20 +199,24 @@ export default function InstantQuotePage() {
   };
 
   const handleAddToCart = (): void => {
-    if (quote.quoteResult && activeFile) {
-      cart.addToCart(quote.quoteResult, activeFile.fileName);
-      // Optional: show a toast or message
+    if (reviewQuote && canOrder) {
+      cart.addToCart(reviewQuote, reviewFileName);
     }
   };
 
   const handleProceedToCheckout = (): void => {
-    if (quote.quoteResult && activeFile) {
-      cart.addToCart(quote.quoteResult, activeFile.fileName);
+    if (reviewQuote && canOrder) {
+      cart.addToCart(reviewQuote, reviewFileName);
       router.push('/checkout');
     }
   };
 
-  const activeFile = fileUpload.files.find((f) => f.id === fileUpload.activeFileId);
+  /** Leaves a shared link for a fresh quote (the shared file is not available here) */
+  const handleStartNewQuote = (): void => {
+    saved.clear();
+    setStep('upload');
+    router.replace('/quote/instant');
+  };
 
   const stepIndex = step === 'upload' ? 0 : step === 'configure' ? 1 : 2;
 
@@ -156,8 +290,38 @@ export default function InstantQuotePage() {
           </div>
         </div>
 
+        {/* ═══ SIGN-IN REQUIRED ═══ */}
+        {needsSignIn && (
+          <div className="max-w-xl mx-auto bg-white border border-slate-100 rounded-3xl p-10 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <LogIn className="w-8 h-8 text-[#2F5FA7]" />
+            </div>
+            <h3 className="text-xl uppercase tracking-tight font-bold text-slate-900 mb-2">
+              Sign in for instant pricing
+            </h3>
+            <p className="text-sm text-slate-500 mb-8">
+              CNC machining and laser cutting quotes are available to registered MechHub users.
+              {shareRef ? ` Sign in to view quote ${shareRef}.` : ''}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href={loginHref}
+                className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-[#1E3A66] text-white font-bold uppercase tracking-widest text-[11px] transition-all"
+              >
+                Sign In
+              </Link>
+              <Link
+                href={registerHref}
+                className="px-8 py-4 rounded-2xl border border-slate-200 bg-white text-[#2F5FA7] font-bold uppercase tracking-widest text-[11px] hover:border-[#2F5FA7]/50 transition-all"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* ═══ STEP 1: UPLOAD ═══ */}
-        {step === 'upload' && (
+        {!needsSignIn && step === 'upload' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-4xl mx-auto">
             <div
               className={`border-2 border-dashed rounded-3xl p-16 text-center bg-white transition-all cursor-pointer group shadow-2xl relative overflow-hidden ${
@@ -285,7 +449,7 @@ export default function InstantQuotePage() {
         )}
 
         {/* ═══ STEP 2: CONFIGURE ═══ */}
-        {step === 'configure' && (
+        {!needsSignIn && step === 'configure' && (
           <div className="animate-in fade-in slide-in-from-right-8 duration-700">
             {/* Active file indicator */}
             {activeFile && (
@@ -297,9 +461,15 @@ export default function InstantQuotePage() {
                   <div>
                     <span className="font-bold text-slate-900 block">{activeFile.fileName}</span>
                     <span className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">
-                      {activeFile.geometry
-                        ? `${activeFile.geometry.boundingBox.widthMm}×${activeFile.geometry.boundingBox.heightMm}mm · ${activeFile.geometry.holeCount} holes`
-                        : 'Analyzing...'}
+                      {isCnc
+                        ? cnc.analysis
+                          ? `${cnc.analysis.part.boundingBox.x}×${cnc.analysis.part.boundingBox.y}×${cnc.analysis.part.boundingBox.z}mm · ${cnc.analysis.features.holeCount} holes`
+                          : cnc.analysisStatus === 'analyzing'
+                            ? 'Analyzing...'
+                            : '—'
+                        : activeFile.geometry
+                          ? `${activeFile.geometry.boundingBox.widthMm}×${activeFile.geometry.boundingBox.heightMm}mm · ${activeFile.geometry.holeCount} holes`
+                          : 'Analyzing...'}
                     </span>
                   </div>
                 </div>
@@ -317,18 +487,134 @@ export default function InstantQuotePage() {
               <div className="lg:col-span-2 bg-white border border-slate-100 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                {/* Process */}
+                <div className="space-y-2 mt-4">
+                  <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
+                    Process
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {PROCESS_OPTIONS.map(({ mode, label, hint, Icon }) => (
+                      <button
+                        key={mode}
+                        onClick={() => setProcessMode(mode)}
+                        aria-pressed={processMode === mode}
+                        className={`px-4 py-3 rounded-2xl text-left transition-all border flex items-center gap-3 ${
+                          processMode === mode
+                            ? 'bg-blue-600 text-white border-[#2F5FA7] shadow-lg'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-[#2F5FA7]/50 hover:text-[#2F5FA7]'
+                        }`}
+                      >
+                        <Icon size={18} className="shrink-0" />
+                        <span>
+                          <span className="block text-[11px] font-bold uppercase tracking-widest">
+                            {label}
+                          </span>
+                          <span
+                            className={`block text-[10px] font-medium mt-0.5 ${
+                              processMode === mode ? 'text-blue-100' : 'text-slate-400'
+                            }`}
+                          >
+                            {hint}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CNC part analysis */}
+                {isCnc && (
+                  <div className="mt-6">
+                    {cnc.analysisStatus === 'analyzing' && (
+                      <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                        <Loader2 className="w-5 h-5 text-[#2F5FA7] animate-spin shrink-0" />
+                        <p className="text-xs font-bold text-[#2F5FA7]">
+                          Analysing part geometry — stock, setups and machining time…
+                        </p>
+                      </div>
+                    )}
+                    {cnc.analysisStatus === 'unsupported_file' && (
+                      <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-xs font-bold text-amber-700">
+                          CNC quotes need a STEP file (.step or .stp). Upload the 3D model of this
+                          part to price it for machining.
+                        </p>
+                      </div>
+                    )}
+                    {cnc.analysisStatus === 'error' && (
+                      <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-red-50 border border-red-200">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                          <p className="text-xs font-bold text-red-700">{cnc.error}</p>
+                        </div>
+                        <button
+                          onClick={cnc.retryAnalysis}
+                          className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:text-red-900 flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-red-200"
+                        >
+                          <RefreshCw size={12} /> Retry
+                        </button>
+                      </div>
+                    )}
+                    {cnc.analysis && (
+                      <div className="space-y-3">
+                        {cnc.processMismatch && (
+                          <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                            <Info className="w-5 h-5 text-[#2F5FA7] shrink-0 mt-0.5" />
+                            <p className="text-xs font-bold text-[#2F5FA7]">
+                              This part is best made by{' '}
+                              {CNC_PROCESS_LABELS[cnc.analysis.process.recommended]}, so it is
+                              priced for that process.
+                            </p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {[
+                            ['Recommended', CNC_PROCESS_LABELS[cnc.analysis.process.recommended]],
+                            ['Stock', formatCncStock(cnc.analysis.stock)],
+                            [
+                              'Setups',
+                              `${cnc.analysis.setups.count}${
+                                cnc.analysis.setups.directions.length > 0
+                                  ? ` (${cnc.analysis.setups.directions.join(', ')})`
+                                  : ''
+                              }`,
+                            ],
+                            [
+                              'Cycle Time',
+                              cnc.quoteResult
+                                ? `${cnc.quoteResult.breakdown.cycleTimeMin.toFixed(1)} min/part`
+                                : '—',
+                            ],
+                          ].map(([lbl, val]) => (
+                            <div
+                              key={lbl}
+                              className="p-3 rounded-2xl bg-slate-50 border border-slate-100"
+                            >
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-blue-100">
+                                {lbl}
+                              </p>
+                              <p className="text-xs font-bold text-slate-900 mt-1">{val}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                   {/* Material */}
                   <div className="space-y-2">
                     <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
                       Material
                     </label>
                     <select
-                      value={quote.state.materialId}
-                      onChange={(e) => quote.setMaterialId(e.target.value)}
+                      value={config.state.materialId}
+                      onChange={(e) => config.setMaterialId(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 focus:outline-none focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 hover:border-slate-300 appearance-none custom-select transition-all font-medium"
                     >
-                      {quote.materials.map((m) => (
+                      {config.materials.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name} ({m.alloy})
                         </option>
@@ -336,23 +622,25 @@ export default function InstantQuotePage() {
                     </select>
                   </div>
 
-                  {/* Thickness */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
-                      Thickness
-                    </label>
-                    <select
-                      value={quote.state.thicknessMm}
-                      onChange={(e) => quote.setThicknessMm(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 focus:outline-none focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 hover:border-slate-300 appearance-none custom-select transition-all font-medium"
-                    >
-                      {quote.availableThicknesses.map((t) => (
-                        <option key={t} value={t}>
-                          {t}mm
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Thickness — sheet parts only */}
+                  {!isCnc && (
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-bold text-blue-100 uppercase tracking-widest ml-1">
+                        Thickness
+                      </label>
+                      <select
+                        value={quote.state.thicknessMm}
+                        onChange={(e) => quote.setThicknessMm(Number(e.target.value))}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 focus:outline-none focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 hover:border-slate-300 appearance-none custom-select transition-all font-medium"
+                      >
+                        {quote.availableThicknesses.map((t) => (
+                          <option key={t} value={t}>
+                            {t}mm
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Finish */}
                   <div className="space-y-2">
@@ -360,11 +648,11 @@ export default function InstantQuotePage() {
                       Surface Finish
                     </label>
                     <select
-                      value={quote.state.finishType}
-                      onChange={(e) => quote.setFinishType(e.target.value as never)}
+                      value={config.state.finishType}
+                      onChange={(e) => config.setFinishType(e.target.value as never)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 focus:outline-none focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 hover:border-slate-300 appearance-none custom-select transition-all font-medium"
                     >
-                      {quote.availableFinishes.map((f) => (
+                      {config.availableFinishes.map((f) => (
                         <option key={f.type} value={f.type}>
                           {f.label}
                         </option>
@@ -382,13 +670,13 @@ export default function InstantQuotePage() {
                         type="number"
                         min={1}
                         max={10000}
-                        value={quote.state.quantity}
-                        onChange={(e) => quote.setQuantity(Number(e.target.value))}
+                        value={config.state.quantity}
+                        onChange={(e) => config.setQuantity(Number(e.target.value))}
                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 focus:outline-none focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 hover:border-slate-300 transition-all font-bold"
                       />
-                      {quote.savingsPercent > 0 && (
+                      {config.savingsPercent > 0 && (
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-lg font-bold uppercase tracking-widest flex items-center gap-1">
-                          <Zap size={10} /> {quote.savingsPercent}% off
+                          <Zap size={10} /> {config.savingsPercent}% off
                         </span>
                       )}
                     </div>
@@ -400,12 +688,12 @@ export default function InstantQuotePage() {
                       Turnaround
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {quote.turnaroundOptions.map((opt) => (
+                      {config.turnaroundOptions.map((opt) => (
                         <button
                           key={opt.type}
-                          onClick={() => quote.setTurnaround(opt.type)}
+                          onClick={() => config.setTurnaround(opt.type)}
                           className={`px-4 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border text-center ${
-                            quote.state.turnaround === opt.type
+                            config.state.turnaround === opt.type
                               ? 'bg-blue-600 text-white border-[#2F5FA7] shadow-lg'
                               : 'bg-white text-slate-600 border-slate-200 hover:border-[#2F5FA7]/50 hover:text-[#2F5FA7]'
                           }`}
@@ -415,7 +703,7 @@ export default function InstantQuotePage() {
                           </span>
                           <span
                             className={`block mt-1 ${
-                              quote.state.turnaround === opt.type
+                              config.state.turnaround === opt.type
                                 ? 'text-blue-200'
                                 : 'text-blue-100'
                             }`}
@@ -433,12 +721,12 @@ export default function InstantQuotePage() {
                 </div>
 
                 {/* DFM Feedback */}
-                {quote.dfmIssues.length > 0 && (
+                {config.dfmIssues.length > 0 && (
                   <div className="mt-8 space-y-3">
                     <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-500" /> DFM Feedback
                     </h4>
-                    {quote.dfmIssues.map((issue: DFMIssue, idx: number) => (
+                    {config.dfmIssues.map((issue: DFMIssue, idx: number) => (
                       <div
                         key={idx}
                         className={`p-4 rounded-2xl border ${
@@ -469,6 +757,16 @@ export default function InstantQuotePage() {
                   </div>
                 )}
 
+                {/* Save failure — stay on Configure so the customer can retry */}
+                {saved.status === 'error' && !isShared && saved.error && (
+                  <div className="mt-8 flex items-start gap-3 p-4 rounded-2xl bg-red-50 border border-red-200">
+                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs font-bold text-red-700">
+                      Couldn&apos;t save your quote: {saved.error}
+                    </p>
+                  </div>
+                )}
+
                 {/* CTA buttons */}
                 <div className="mt-10 pt-8 border-t border-slate-100 flex justify-between items-center">
                   <button
@@ -479,12 +777,21 @@ export default function InstantQuotePage() {
                   </button>
                   <button
                     onClick={handleGetQuote}
-                    disabled={!quote.quoteResult || quote.hasBlockingIssues || quote.isCalculating}
+                    disabled={
+                      !activeQuote ||
+                      config.hasBlockingIssues ||
+                      isCalculating ||
+                      saved.status === 'saving'
+                    }
                     className="bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 disabled:cursor-not-allowed shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-4 px-10 rounded-2xl transition-all flex items-center gap-2 transform active:scale-95"
                   >
-                    {quote.isCalculating ? (
+                    {isCalculating ? (
                       <>
                         <Loader2 size={16} className="animate-spin" /> Calculating...
+                      </>
+                    ) : saved.status === 'saving' ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" /> Saving Quote...
                       </>
                     ) : (
                       <>
@@ -503,28 +810,28 @@ export default function InstantQuotePage() {
                     Live Price
                   </h3>
 
-                  {quote.isCalculating ? (
+                  {isCalculating ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
                     </div>
-                  ) : quote.quoteResult ? (
+                  ) : activeQuote ? (
                     <div className="space-y-6">
                       <div>
                         <p className="text-4xl font-bold text-slate-900 tracking-tighter">
-                          ₹{quote.quoteResult.pricePerPart.toLocaleString('en-IN')}
+                          ₹{activeQuote.pricePerPart.toLocaleString('en-IN')}
                         </p>
                         <p className="text-[10px] text-blue-100 uppercase tracking-widest font-bold mt-1">
-                          per part
+                          {isCnc ? 'per part · estimate' : 'per part'}
                         </p>
                       </div>
 
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">
-                            Total ({quote.state.quantity} pcs)
+                            Total ({config.state.quantity} pcs)
                           </span>
                           <span className="text-xl font-bold text-slate-900">
-                            ₹{quote.quoteResult.totalPrice.toLocaleString('en-IN')}
+                            ₹{activeQuote.totalPrice.toLocaleString('en-IN')}
                           </span>
                         </div>
                       </div>
@@ -534,42 +841,42 @@ export default function InstantQuotePage() {
                         <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100">
                           Cost Breakdown
                         </h4>
-                        {[
-                          ['Material', quote.quoteResult.breakdown.materialCost],
-                          ['Cutting', quote.quoteResult.breakdown.cutCost],
-                          ['Setup', quote.quoteResult.breakdown.setupCost],
-                          ['Finish', quote.quoteResult.breakdown.finishCost],
-                        ].map(([label, cost]) => (
-                          <div key={label as string} className="flex justify-between text-xs">
+                        {breakdownRows.map(([label, cost]) => (
+                          <div key={label} className="flex justify-between text-xs">
                             <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px]">
                               {label}
                             </span>
                             <span className="text-slate-900 font-bold font-mono">
-                              ₹
-                              {(cost as number).toLocaleString('en-IN', {
-                                maximumFractionDigits: 0,
-                              })}
+                              {formatInr(cost)}
                             </span>
                           </div>
                         ))}
+                        {isCncQuote(activeQuote) && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-blue-100 font-bold uppercase tracking-widest text-[10px]">
+                              Cycle Time
+                            </span>
+                            <span className="text-slate-900 font-bold font-mono">
+                              {activeQuote.breakdown.cycleTimeMin.toFixed(1)} min
+                            </span>
+                          </div>
+                        )}
                         <div className="h-px bg-slate-100 my-2" />
                         <div className="flex justify-between text-xs">
                           <span className="text-[#2F5FA7] font-bold uppercase tracking-widest text-[10px]">
                             Qty Discount
                           </span>
                           <span className="text-emerald-600 font-bold">
-                            −
-                            {Math.round((1 - quote.quoteResult.breakdown.quantityMultiplier) * 100)}
-                            %
+                            −{config.savingsPercent}%
                           </span>
                         </div>
-                        {quote.quoteResult.breakdown.rushMultiplier !== 1 && (
+                        {activeQuote.breakdown.rushMultiplier !== 1 && (
                           <div className="flex justify-between text-xs">
                             <span className="text-[#2F5FA7] font-bold uppercase tracking-widest text-[10px]">
                               Rush Fee
                             </span>
                             <span className="text-amber-600 font-bold">
-                              +{Math.round((quote.quoteResult.breakdown.rushMultiplier - 1) * 100)}%
+                              +{Math.round((activeQuote.breakdown.rushMultiplier - 1) * 100)}%
                             </span>
                           </div>
                         )}
@@ -580,15 +887,22 @@ export default function InstantQuotePage() {
                         <Clock className="w-4 h-4 text-[#2F5FA7]" />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-[#2F5FA7]">
                           Est.{' '}
-                          {quote.quoteResult.leadTimeDays === 0
+                          {activeQuote.leadTimeDays === 0
                             ? 'Same Day'
-                            : `${quote.quoteResult.leadTimeDays} Day${quote.quoteResult.leadTimeDays > 1 ? 's' : ''}`}
+                            : `${activeQuote.leadTimeDays} Day${activeQuote.leadTimeDays > 1 ? 's' : ''}`}
                         </span>
                       </div>
+
+                      {isCnc && (
+                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                          Instant CNC prices are estimates from your part&apos;s geometry. Our
+                          engineers confirm the final price before machining starts.
+                        </p>
+                      )}
                     </div>
-                  ) : quote.error ? (
+                  ) : config.error ? (
                     <div className="p-4 rounded-2xl bg-red-50 border border-red-200">
-                      <p className="text-xs text-red-600 font-bold">{quote.error}</p>
+                      <p className="text-xs text-red-600 font-bold">{config.error}</p>
                     </div>
                   ) : (
                     <p className="text-xs text-blue-100 py-12 text-center">
@@ -598,35 +912,35 @@ export default function InstantQuotePage() {
                 </div>
 
                 {/* Tier Pricing Table */}
-                {quote.tierPricing.length > 0 && (
+                {config.tierPricing.length > 0 && (
                   <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm">
                     <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100 mb-4">
                       Tier Pricing
                     </h4>
                     <div className="space-y-2">
-                      {quote.tierPricing.slice(0, 6).map((tier: QuantityTier) => (
+                      {config.tierPricing.slice(0, 6).map((tier: QuantityTier) => (
                         <div
                           key={tier.quantity}
                           className={`flex justify-between items-center py-2 px-3 rounded-xl text-xs ${
-                            tier.quantity === quote.state.quantity
+                            tier.quantity === config.state.quantity
                               ? 'bg-blue-600 text-white'
                               : 'hover:bg-slate-50'
                           }`}
                         >
                           <span
-                            className={`font-bold ${tier.quantity === quote.state.quantity ? 'text-blue-100' : 'text-blue-100'} uppercase tracking-widest text-[10px]`}
+                            className={`font-bold ${tier.quantity === config.state.quantity ? 'text-blue-100' : 'text-blue-100'} uppercase tracking-widest text-[10px]`}
                           >
                             {tier.quantity} pc{tier.quantity > 1 ? 's' : ''}
                           </span>
                           <div className="flex items-center gap-3">
                             <span
-                              className={`font-bold font-mono ${tier.quantity === quote.state.quantity ? 'text-white' : 'text-slate-900'}`}
+                              className={`font-bold font-mono ${tier.quantity === config.state.quantity ? 'text-white' : 'text-slate-900'}`}
                             >
                               ₹{tier.pricePerPart.toLocaleString('en-IN')}
                             </span>
                             {tier.savingsPercent > 0 && (
                               <span
-                                className={`text-[9px] font-bold ${tier.quantity === quote.state.quantity ? 'text-blue-200' : 'text-emerald-500'}`}
+                                className={`text-[9px] font-bold ${tier.quantity === config.state.quantity ? 'text-blue-200' : 'text-emerald-500'}`}
                               >
                                 −{tier.savingsPercent}%
                               </span>
@@ -642,8 +956,41 @@ export default function InstantQuotePage() {
           </div>
         )}
 
+        {/* ═══ STEP 3: REVIEW — shared link loading / not found ═══ */}
+        {!needsSignIn && step === 'review' && !reviewQuote && isSharedLoadPending(shareRef, saved.status) && (
+          <div className="max-w-xl mx-auto bg-white border border-slate-100 rounded-3xl p-10 shadow-2xl text-center">
+            {saved.status === 'loading' ? (
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
+                <p className="text-xs font-bold uppercase tracking-widest text-[#2F5FA7]">
+                  Loading quote {shareRef}…
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+                <p className="text-sm font-bold text-slate-900">{saved.error}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={saved.retryShared}
+                    className="px-6 py-3 rounded-2xl border border-slate-200 bg-white text-[#2F5FA7] font-bold uppercase tracking-widest text-[10px] flex items-center gap-2"
+                  >
+                    <RefreshCw size={12} /> Retry
+                  </button>
+                  <button
+                    onClick={handleStartNewQuote}
+                    className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    Start a New Quote
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ═══ STEP 3: REVIEW ═══ */}
-        {step === 'review' && quote.quoteResult && (
+        {!needsSignIn && step === 'review' && reviewQuote && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-5xl mx-auto">
             {/* Main quote panel */}
             <div className="bg-white border border-slate-100 shadow-2xl rounded-3xl overflow-hidden relative">
@@ -654,7 +1001,11 @@ export default function InstantQuotePage() {
                     Your Quote
                   </h2>
                   <p className="text-[10px] text-blue-100 mt-1 uppercase tracking-[0.2em] font-bold">
-                    Valid for 15 minutes · {activeFile?.fileName}
+                    {isCncQuote(reviewQuote) ? 'Estimate · ' : ''}
+                    {isExpired
+                      ? `Expired at ${formatTime(reviewQuote.expiresAt)}`
+                      : `Valid until ${formatTime(reviewQuote.expiresAt)}`}{' '}
+                    · {reviewFileName}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm">
@@ -662,7 +1013,7 @@ export default function InstantQuotePage() {
                     Quote Ref
                   </span>
                   <span className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                    {quote.quoteResult.quoteRef}
+                    {reviewQuote.quoteRef}
                   </span>
                 </div>
               </div>
@@ -672,13 +1023,13 @@ export default function InstantQuotePage() {
                 <div className="flex-1 p-10 flex flex-col justify-center bg-white">
                   <div className="mb-2">
                     <span className="text-5xl md:text-7xl font-bold tracking-tighter text-slate-900 block">
-                      ₹{quote.quoteResult.totalPrice.toLocaleString('en-IN')}
+                      ₹{reviewQuote.totalPrice.toLocaleString('en-IN')}
                     </span>
                   </div>
                   <p className="text-[10px] text-blue-100 flex items-center gap-2 uppercase tracking-widest font-bold mt-4">
                     <CheckCircle className="w-4 h-4 text-emerald-500" /> Total for{' '}
-                    {quote.state.quantity} parts · ₹
-                    {quote.quoteResult.pricePerPart.toLocaleString('en-IN')}/part
+                    {reviewQuote.parameters.quantity} parts · ₹
+                    {reviewQuote.pricePerPart.toLocaleString('en-IN')}/part
                   </p>
                 </div>
 
@@ -688,24 +1039,7 @@ export default function InstantQuotePage() {
                     Specification
                   </h4>
                   <ul className="space-y-4">
-                    {[
-                      [
-                        'Material',
-                        quote.materials.find((m) => m.id === quote.state.materialId)?.name ?? '',
-                      ],
-                      ['Thickness', `${quote.state.thicknessMm}mm`],
-                      [
-                        'Finish',
-                        quote.availableFinishes.find((f) => f.type === quote.state.finishType)
-                          ?.label ?? 'None',
-                      ],
-                      ['Quantity', `${quote.state.quantity} pcs`],
-                      [
-                        'Turnaround',
-                        quote.turnaroundOptions.find((t) => t.type === quote.state.turnaround)
-                          ?.label ?? '',
-                      ],
-                    ].map(([lbl, val]) => (
+                    {quoteSpecRows(reviewQuote).map(([lbl, val]) => (
                       <li key={lbl} className="flex justify-between items-center">
                         <span className="text-[10px] font-bold tracking-widest uppercase text-blue-100">
                           {lbl}
@@ -724,7 +1058,7 @@ export default function InstantQuotePage() {
                     Per Part
                   </p>
                   <p className="text-3xl font-bold text-slate-900">
-                    ₹{quote.quoteResult.pricePerPart.toLocaleString('en-IN')}
+                    ₹{reviewQuote.pricePerPart.toLocaleString('en-IN')}
                   </p>
                 </div>
                 <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-slate-50 transition-colors">
@@ -732,7 +1066,7 @@ export default function InstantQuotePage() {
                     Quantity
                   </p>
                   <p className="text-3xl font-bold text-slate-900">
-                    {quote.state.quantity}{' '}
+                    {reviewQuote.parameters.quantity}{' '}
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-300 ml-1">
                       Units
                     </span>
@@ -744,16 +1078,38 @@ export default function InstantQuotePage() {
                     Lead Time
                   </p>
                   <p className="text-3xl font-bold text-slate-900 relative z-10 group-hover:text-white transition-colors">
-                    {quote.quoteResult.leadTimeDays === 0
-                      ? 'Same Day'
-                      : quote.quoteResult.leadTimeDays}{' '}
+                    {reviewQuote.leadTimeDays === 0 ? 'Same Day' : reviewQuote.leadTimeDays}{' '}
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-300 ml-1 group-hover:text-blue-200">
-                      {quote.quoteResult.leadTimeDays > 0 ? 'Days' : ''}
+                      {reviewQuote.leadTimeDays > 0 ? 'Days' : ''}
                     </span>
                   </p>
                 </div>
               </div>
             </div>
+
+            {(isExpired || reviewQuote.hasBlockingIssues) && (
+              <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-amber-50 border border-amber-200">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-amber-700">
+                    {reviewQuote.hasBlockingIssues
+                      ? 'This part has blocking manufacturability issues and cannot be ordered as quoted.'
+                      : isShared
+                        ? 'This quote has expired. Upload the part again to get a current price.'
+                        : 'This quote has expired. Refresh it to lock a current price.'}
+                  </p>
+                </div>
+                {isExpired && !isShared && (
+                  <button
+                    onClick={handleGetQuote}
+                    disabled={saved.status === 'saving' || !activeQuote}
+                    className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-amber-700 flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-amber-200 disabled:opacity-40"
+                  >
+                    <RefreshCw size={12} /> Refresh Price
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="bg-blue-600 border border-[#2F5FA7] p-10 rounded-3xl flex flex-col xl:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden group">
@@ -781,20 +1137,22 @@ export default function InstantQuotePage() {
                   {copied ? 'Copied!' : 'Share Quote'}
                 </button>
                 <button
-                  onClick={() => setStep('configure')}
+                  onClick={isShared ? handleStartNewQuote : () => setStep('configure')}
                   className="px-8 py-4 rounded-2xl border border-white/20 bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] hover:bg-white/20 transition-all"
                 >
-                  Edit Config
+                  {isShared ? 'New Quote' : 'Edit Config'}
                 </button>
                 <button
                   onClick={handleAddToCart}
-                  className="px-8 py-4 rounded-2xl border border-white/20 bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] hover:bg-white/20 transition-all flex items-center gap-2"
+                  disabled={!canOrder}
+                  className="px-8 py-4 rounded-2xl border border-white/20 bg-white/10 text-white font-bold uppercase tracking-widest text-[10px] hover:bg-white/20 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <UploadCloud size={14} /> Add to Cart ({cart.itemCount})
                 </button>
                 <button
                   onClick={handleProceedToCheckout}
-                  className="px-10 py-4 rounded-2xl bg-white text-[#2F5FA7] font-bold uppercase tracking-widest text-[10px] shadow-xl hover:shadow-2xl transition-all hover:scale-[1.05] active:scale-95 flex items-center gap-3"
+                  disabled={!canOrder}
+                  className="px-10 py-4 rounded-2xl bg-white text-[#2F5FA7] font-bold uppercase tracking-widest text-[10px] shadow-xl hover:shadow-2xl transition-all hover:scale-[1.05] active:scale-95 flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   Proceed to Checkout <ChevronRight size={14} />
                 </button>

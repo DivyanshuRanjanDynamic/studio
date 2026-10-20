@@ -35,6 +35,7 @@ import {
   Info,
 } from 'lucide-react';
 import { ExpertCTA } from './ExpertCTA';
+import { isFinishOfferedForCncMaterial } from '@/lib/quoting/wizard-pricing';
 
 export interface SecondaryProcessOption {
   id: SecondaryProcess;
@@ -52,7 +53,7 @@ export const SECONDARY_PROCESSES: SecondaryProcessOption[] = [
     description: 'Durable, eco-friendly coating in various colors',
     icon: <Paintbrush className="w-5 h-5" />,
     requiresColor: true,
-    applicableServices: ['sheet_metal_cutting', 'cnc_turning'],
+    applicableServices: ['sheet_metal_cutting', 'cnc_machining', 'cnc_turning'],
   },
   {
     id: 'anodizing',
@@ -60,35 +61,35 @@ export const SECONDARY_PROCESSES: SecondaryProcessOption[] = [
     description: 'Includes free media blasting',
     icon: <Sparkles className="w-5 h-5" />,
     requiresColor: true,
-    applicableServices: ['cnc_turning', 'sheet_metal_cutting'],
+    applicableServices: ['cnc_machining', 'cnc_turning', 'sheet_metal_cutting'],
   },
   {
     id: 'chrome_plating',
     name: 'Chrome Plating',
     description: 'Decorative and protective chrome finish',
     icon: <Chrome className="w-5 h-5" />,
-    applicableServices: ['cnc_turning'],
+    applicableServices: ['cnc_machining', 'cnc_turning'],
   },
   {
     id: 'sand_blasting',
     name: 'Sand Blasting',
     description: 'Surface texturing and cleaning',
     icon: <Wind className="w-5 h-5" />,
-    applicableServices: ['cnc_turning', '3d_printing'],
+    applicableServices: ['cnc_machining', 'cnc_turning', '3d_printing'],
   },
   {
     id: 'heat_treatment',
     name: 'Heat Treatment',
     description: 'Hardening or softening the material',
     icon: <Flame className="w-5 h-5" />,
-    applicableServices: ['cnc_turning', 'wire_edm'],
+    applicableServices: ['cnc_machining', 'cnc_turning', 'wire_edm'],
   },
   {
     id: 'nickel_plating',
     name: 'Nickel Plating',
     description: 'Wear and corrosion resistance',
     icon: <Zap className="w-5 h-5" />,
-    applicableServices: ['cnc_turning'],
+    applicableServices: ['cnc_machining', 'cnc_turning'],
   },
   {
     id: 'tapping',
@@ -207,6 +208,15 @@ export function SecondaryProcessSelection({
       }
       if (p.id === 'powder_coating' && selectedMaterial.canPowderCoat === false) return false;
       if (p.id === 'anodizing' && selectedMaterial.canAnodize === false) return false;
+
+      // CNC: only finishes the pricing catalogue supports for this material,
+      // so the instant quote never meets a finish it can't price.
+      if (
+        (selectedService === 'cnc_machining' || selectedService === 'cnc_turning') &&
+        !isFinishOfferedForCncMaterial(p.id, selectedMaterial.id)
+      ) {
+        return false;
+      }
     }
 
     return true;

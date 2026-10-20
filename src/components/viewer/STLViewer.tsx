@@ -154,15 +154,19 @@ function STLModel({
   );
 }
 
-function HoleOverlays({ holes, hoveredIndex, isTechnical, maxDimension, selectedIndices = [] }: { holes: HoleFeature[], hoveredIndex?: number, isTechnical?: boolean, maxDimension: number, selectedIndices?: number[] }) {
+function HoleOverlays({ holes, hoveredIndex, isTechnical, maxDimension, selectedIndices = [], tappableIndices = [] }: { holes: HoleFeature[], hoveredIndex?: number, isTechnical?: boolean, maxDimension: number, selectedIndices?: number[], tappableIndices?: number[] }) {
   return (
     <>
       {holes
-        .filter((hole) => (hole.radius * 2) < (maxDimension * 0.15)) // Dynamic Intelligent Filter: Skip blobs
         .map((hole, idx) => {
+          // Skip blobs (huge "holes" are usually bores/outer faces) — but keep the
+          // original index: hover/selection/tap ids refer to positions in `holes`.
+          if ((hole.radius * 2) >= (maxDimension * 0.15)) return null;
+
           const isHovered = hoveredIndex === idx;
           const isSelected = selectedIndices.includes(idx);
           const isActive = isHovered || isSelected;
+          const isTappable = tappableIndices.includes(idx);
 
           const cylinderDir = VEC3_UP;
           VEC3_TEMP.set(hole.normal.x, hole.normal.y, hole.normal.z);
@@ -172,6 +176,23 @@ function HoleOverlays({ holes, hoveredIndex, isTechnical, maxDimension, selected
           return (
             <group key={idx} position={[hole.center.x, hole.center.y, hole.center.z]} renderOrder={10}>
               <group quaternion={quaternion}>
+                {/* Tappable: every hole a standard tap fits glows amber in tapping mode */}
+                {isTappable && !isActive && (
+                  <mesh renderOrder={998}>
+                    <cylinderGeometry args={[hole.radius * 1.02, hole.radius * 1.02, hole.depth * 1.02, 32]} />
+                    <meshStandardMaterial
+                      color="#f59e0b"
+                      emissive="#f59e0b"
+                      emissiveIntensity={0.6}
+                      transparent
+                      opacity={0.75}
+                      side={THREE.DoubleSide}
+                      polygonOffset
+                      polygonOffsetFactor={-10}
+                    />
+                  </mesh>
+                )}
+
                 {/* Highlight: show when hovered OR when a tap is selected */}
                 {isActive && (
                   <>
@@ -434,6 +455,8 @@ interface STLViewerProps {
   hoveredHoleIndex?: number;
   hoveredBendIndex?: number;
   selectedHoleIndices?: number[];
+  /** Holes a standard tap fits — highlighted in tapping mode */
+  tappableHoleIndices?: number[];
   serviceMode?: 'none' | 'tapping' | 'bending' | 'countersink' | 'engraving';
   boundingBox?: { x: number, y: number, z: number };
 }
@@ -456,6 +479,7 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
     hoveredHoleIndex,
     hoveredBendIndex,
     selectedHoleIndices = [],
+    tappableHoleIndices = [],
     serviceMode = 'none',
     boundingBox
   }, ref) => {
@@ -548,7 +572,7 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
                   boundingBox?.y || 100,
                   boundingBox?.z || 100
                 );
-                return showHoles && <HoleOverlays holes={holes} hoveredIndex={hoveredHoleIndex} isTechnical={serviceMode !== 'none'} maxDimension={maxDim} selectedIndices={selectedHoleIndices} />;
+                return showHoles && <HoleOverlays holes={holes} hoveredIndex={hoveredHoleIndex} isTechnical={serviceMode !== 'none'} maxDimension={maxDim} selectedIndices={selectedHoleIndices} tappableIndices={tappableHoleIndices} />;
               })()}
               {showBends && (
                 <BendOverlays

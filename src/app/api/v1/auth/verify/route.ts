@@ -16,7 +16,7 @@ import crypto from 'crypto';
  */
 export async function GET(req: Request) {
   const ip = getClientIdentifier(req.headers);
-  const limiter = await rateLimit(`auth-verify-attempt:${ip}`, 5, 60000);
+  const limiter = await rateLimit(`auth-verify-attempt:${ip}`, 5, 60000, { onStoreError: 'allow' });
 
   if (!limiter.success) {
     return rateLimitResponse(limiter.reset);

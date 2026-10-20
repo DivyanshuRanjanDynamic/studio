@@ -1,8 +1,31 @@
+const IP_PATTERN = /^[0-9a-fA-F:.]{2,45}$/;
+
+/**
+ * The caller's IP for rate limiting — only from values our own infrastructure wrote.
+ *
+ * X-Forwarded-For is `<anything the client sent>, <client-ip>, <load-balancer-ip>`
+ * behind Google's load balancer (Firebase App Hosting), so the leftmost entries are
+ * attacker-controlled and the client is TRUSTED_PROXY_HOPS (default 2) from the right.
+ * Set TRUSTED_CLIENT_IP_HEADER (e.g. `x-fah-client-ip`) only once you've confirmed the
+ * platform overwrites that header. Returns 'unknown' rather than guessing.
+ */
 export function getClientIdentifier(headers: Headers): string {
-  const forwardedFor = headers.get('x-forwarded-for');
-  const realIp = headers.get('x-real-ip');
-  const candidate = (forwardedFor?.split(',')[0] || realIp || 'anonymous').trim();
-  return candidate.slice(0, 128) || 'anonymous';
+  const trustedHeader = process.env.TRUSTED_CLIENT_IP_HEADER?.trim().toLowerCase();
+  if (trustedHeader) {
+    const direct = headers.get(trustedHeader)?.trim();
+    if (direct && IP_PATTERN.test(direct)) return direct;
+  }
+
+  const hops = Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? '2', 10);
+  const chain = (headers.get('x-forwarded-for') ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (Number.isInteger(hops) && hops > 0 && chain.length >= hops) {
+    const candidate = chain[chain.length - hops];
+    if (IP_PATTERN.test(candidate)) return candidate;
+  }
+  return 'unknown';
 }
 
 export function normalizeEmail(value: unknown): string | null {

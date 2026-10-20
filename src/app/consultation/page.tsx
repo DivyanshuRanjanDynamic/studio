@@ -7,7 +7,7 @@ import { BackToHomeBar } from '@/components/BackToHomeBar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useFirestore, setDocumentNonBlocking, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Check, Loader2, FileText, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +63,6 @@ function ConsultationPageContent() {
 
   async function handleConsultationSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!db) return;
 
     const formData = new FormData(e.currentTarget);
     const phone = (formData.get('phone') as string) || '';
@@ -81,11 +80,8 @@ function ConsultationPageContent() {
 
     setFieldErrors({});
     setIsSubmitting(true);
-    const id = Math.random().toString(36).substring(2, 11);
 
     const requestData = {
-      id,
-      userId: user?.uid || null,
       name: formData.get('name') as string,
       phone,
       email: formData.get('email') as string,
@@ -95,27 +91,19 @@ function ConsultationPageContent() {
       process: prefilledProcess,
       quantity: prefilledQty,
       estimate: prefilledEstimate,
-      requestDate: new Date().toISOString(),
     };
 
-    const docRef = doc(db, 'consultationRequests', id);
-
     try {
-      setDocumentNonBlocking(docRef, requestData, { merge: true });
-
-      // Trigger admin notification via internal API
-      fetch('/api/v1/notifications/send', {
+      // Server route saves the request and emails the admin team.
+      const res = await fetch('/api/v1/consultation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'admin_consultation_booked',
-          customerName: requestData.name,
-          customerEmail: requestData.email,
-          customerPhone: requestData.phone,
-          message: requestData.message,
-          quoteRef: requestData.quoteRef || undefined,
-        }),
-      }).catch((err) => console.error('Failed to trigger consultation notification:', err));
+        body: JSON.stringify(requestData),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || `Request failed (${res.status})`);
+      }
 
       setIsSubmitted(true);
       toast({

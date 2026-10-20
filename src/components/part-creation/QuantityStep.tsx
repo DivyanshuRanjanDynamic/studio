@@ -11,7 +11,13 @@ interface QuantityStepProps {
   quantity: number;
   onQuantityChange: (quantity: number) => void;
   onDiscountTierChange: (tier: string) => void;
+  /** Real per-part prices at each quantity break (CNC instant pricing) */
+  tierPrices?: ReadonlyArray<{ quantity: number; pricePerPart: number; savingsPercent: number }>;
+  /** Live per-part price at the chosen quantity */
+  livePricePerPart?: number | null;
 }
+
+const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
 const QUANTITY_BREAKS = [
   { qty: 1, discount: 'Base Price' },
@@ -26,7 +32,10 @@ export function QuantityStep({
   quantity,
   onQuantityChange,
   onDiscountTierChange,
+  tierPrices,
+  livePricePerPart,
 }: QuantityStepProps) {
+  const hasRealTiers = !!tierPrices && tierPrices.length > 0;
   const [inputValue, setInputValue] = useState(quantity.toString());
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +115,7 @@ export function QuantityStep({
             </div>
           </div>
 
-          {quantity >= 5 && (
+          {!hasRealTiers && quantity >= 5 && (
             <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
               <TrendingDown className="w-4 h-4 text-emerald-600" />
               <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">
@@ -117,7 +126,43 @@ export function QuantityStep({
         </div>
       </Card>
 
+      {/* Real price per part at each break (instant pricing) */}
+      {hasRealTiers && (
+        <div className="space-y-3">
+          <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">Price per part by quantity</p>
+          <div className="grid grid-cols-3 gap-2">
+            {tierPrices!.slice(0, 6).map((tier) => {
+              const active = quantity >= tier.quantity;
+              return (
+                <button
+                  type="button"
+                  key={tier.quantity}
+                  onClick={() => {
+                    setInputValue(String(tier.quantity));
+                    onQuantityChange(tier.quantity);
+                  }}
+                  className={`text-center p-3 rounded-xl border transition-all ${
+                    active ? 'bg-blue-600 border-[#2F5FA7] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
+                >
+                  <p className="text-xs font-bold">{tier.quantity}+ pcs</p>
+                  <p className={`text-[11px] font-mono font-bold ${active ? 'text-white' : 'text-slate-900'}`}>
+                    {inr(tier.pricePerPart)}
+                  </p>
+                  {tier.savingsPercent > 0 && (
+                    <p className={`text-[9px] font-bold ${active ? 'text-blue-100' : 'text-emerald-600'}`}>
+                      −{tier.savingsPercent}%
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Quantity Breaks Info */}
+      {!hasRealTiers && (
       <div className="space-y-3">
         <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
           Volume Discount Tiers
@@ -146,6 +191,7 @@ export function QuantityStep({
           ))}
         </div>
       </div>
+      )}
 
       {/* Summary Card */}
       <Card className="bg-slate-900 border-slate-800 p-5">
@@ -162,7 +208,9 @@ export function QuantityStep({
             <span className="text-blue-100 uppercase tracking-wider font-bold">
               Est. Per Part:
             </span>
-            <span className="text-white font-bold font-mono">To be quoted</span>
+            <span className="text-white font-bold font-mono">
+              {livePricePerPart ? inr(livePricePerPart) : 'To be quoted'}
+            </span>
           </div>
           <div className="border-t border-slate-700 pt-2 mt-2">
             <div className="flex justify-between">

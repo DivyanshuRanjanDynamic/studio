@@ -1,4 +1,6 @@
 import { ManufacturingService } from '@/models/project.model';
+import { getActiveMaterials } from '@/lib/quoting/materials';
+import { getCncMaterialData } from '@/lib/quoting/cnc-materials';
 
 export interface MaterialOption {
   id: string;
@@ -11,6 +13,35 @@ export interface MaterialOption {
   canAnodize?: boolean;
   maxThicknessForBending?: number;
   notes?: string;
+}
+
+/** CNC materials grouped like the rest of the catalogue, from the pricing engine's data */
+function cncCategories(): { name: string; materials: MaterialOption[] }[] {
+  const groups: Array<[string, (group: string) => boolean]> = [
+    ['Aluminium', (g) => g === 'aluminium'],
+    ['Steel', (g) => g === 'mild_steel' || g === 'alloy_steel'],
+    ['Stainless Steel', (g) => g === 'stainless'],
+    ['Copper Alloys', (g) => g === 'brass' || g === 'copper'],
+  ];
+  const cnc = getActiveMaterials().flatMap((m) => {
+    const data = getCncMaterialData(m.id);
+    return data ? [{ material: m, group: data.machinabilityGroup }] : [];
+  });
+  return groups
+    .map(([name, inGroup]) => ({
+      name,
+      materials: cnc
+        .filter((c) => inGroup(c.group))
+        .map(({ material }) => ({
+          id: material.id,
+          name: material.name,
+          grade: material.alloy,
+          category: 'CNC Milling/Turning',
+          canAnodize: material.availableFinishes.some((f) => f.startsWith('anodize')),
+          canPowderCoat: material.availableFinishes.includes('powder_coat'),
+        })),
+    }))
+    .filter((category) => category.materials.length > 0);
 }
 
 export const MATERIAL_CATALOG: Record<
@@ -173,22 +204,9 @@ export const MATERIAL_CATALOG: Record<
       },
     ],
   },
-  cnc_machining: {
-    categories: [
-      {
-        name: 'Metals',
-        materials: [
-          {
-            id: 'al-6061-cnc',
-            name: 'Aluminium 6061',
-            grade: '6061',
-            category: 'CNC Milling/Turning',
-            notes: 'High strength, excellent machinability',
-          },
-        ],
-      },
-    ],
-  },
+  // Generated from the pricing catalogue, so every CNC material offered here
+  // can be priced instantly (ids are the pricing ids, e.g. 'al_6061').
+  cnc_machining: { categories: cncCategories() },
   cnc_turning: { categories: [] },
   wire_edm: { categories: [] },
 };

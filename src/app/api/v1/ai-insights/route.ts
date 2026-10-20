@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 
 const InsightSchema = z.object({
   material: z.string().min(1).max(100),
@@ -25,10 +26,17 @@ const InsightSchema = z.object({
 export async function POST(request: Request) {
   try {
     // 1. Rate Limiting (Limit to 5 requests per minute per IP)
-    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    const ip = getClientIdentifier(request.headers);
     const limiter = await rateLimit(`ai-insights:${ip}`, 5, 60000);
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);
+    }
+
+    // Spend ceiling: per-IP limits don't bound a distributed caller, this does.
+    const dailyCap = Number.parseInt(process.env.AI_INSIGHTS_DAILY_CAP ?? '1000', 10) || 1000;
+    const budget = await rateLimit('ai-insights:global', dailyCap, 24 * 60 * 60 * 1000);
+    if (!budget.success) {
+      return rateLimitResponse(budget.reset);
     }
 
     // 2. Input Validation & Sanitization

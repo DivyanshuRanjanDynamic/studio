@@ -3,6 +3,7 @@ import Razorpay from 'razorpay';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { getClientIdentifier } from '@/lib/auth-safety';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 
 const razorpay = new Razorpay({
@@ -36,8 +37,8 @@ const CheckoutSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     // 1. Rate Limiting
-    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-    const limiter = await rateLimit(`shop-checkout:${ip}`, 5, 60000);
+    const ip = getClientIdentifier(req.headers);
+    const limiter = await rateLimit(`shop-checkout:${ip}`, 5, 60000, { onStoreError: 'allow' });
     if (!limiter.success) {
       return rateLimitResponse(limiter.reset);
     }
