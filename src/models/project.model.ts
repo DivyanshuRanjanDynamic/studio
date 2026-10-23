@@ -1,5 +1,11 @@
 import { HoleFeature, BendFeature, BoundingBox, FlatPattern } from '@/types/viewer';
-import type { CncProcess, CncQuoteBreakdown, FinishType } from '@/types/quoting';
+import type {
+  CncProcess,
+  CncQuoteBreakdown,
+  FinishType,
+  PrintQuoteBreakdown,
+  SheetQuoteBreakdown,
+} from '@/types/quoting';
 
 /** Main manufacturing service types */
 export type ManufacturingService =
@@ -100,8 +106,8 @@ export interface TapSelection {
 }
 
 /** Mechanical part in a project */
-/** Snapshot of the server's CNC quote for one part (see POST /api/v1/projects/[id]/parts) */
-export interface PartInstantQuote {
+/** What every stored instant quote carries, whatever the service */
+interface PartInstantQuoteBase {
   readonly quoteRef: string;
   readonly analysisId: string;
   readonly currency: 'INR';
@@ -109,11 +115,8 @@ export interface PartInstantQuote {
   readonly totalPrice: number;
   readonly quantity: number;
   readonly leadTimeDays: number;
-  readonly process: CncProcess;
   readonly materialId: string;
   readonly finishType: FinishType;
-  readonly breakdown: CncQuoteBreakdown;
-  readonly stock: string;
   readonly hasBlockingIssues: boolean;
   readonly dfmIssues: ReadonlyArray<{ readonly code: string; readonly message: string; readonly blocking: boolean }>;
   /** Selected secondary processes the engine doesn't price (confirmed on RFQ) */
@@ -121,6 +124,32 @@ export interface PartInstantQuote {
   readonly pricedAt: string;
   /** Instant prices are estimates valid until the RFQ is reviewed */
   readonly expiresAt: number;
+}
+
+/** CNC snapshot — quotes stored before sheet/print existed have no `kind` */
+export interface CncPartInstantQuote extends PartInstantQuoteBase {
+  readonly kind?: 'cnc';
+  readonly process: CncProcess;
+  readonly breakdown: CncQuoteBreakdown;
+  readonly stock: string;
+}
+
+export interface SheetPartInstantQuote extends PartInstantQuoteBase {
+  readonly kind: 'sheet';
+  readonly thicknessMm: number;
+  readonly breakdown: SheetQuoteBreakdown;
+}
+
+export interface PrintPartInstantQuote extends PartInstantQuoteBase {
+  readonly kind: 'print';
+  readonly breakdown: PrintQuoteBreakdown;
+}
+
+/** Snapshot of the server's instant quote for one part (see POST /api/v1/projects/[id]/parts) */
+export type PartInstantQuote = CncPartInstantQuote | SheetPartInstantQuote | PrintPartInstantQuote;
+
+export function isCncPartQuote(q: PartInstantQuote): q is CncPartInstantQuote {
+  return q.kind === undefined || q.kind === 'cnc';
 }
 
 export interface MechanicalPart {

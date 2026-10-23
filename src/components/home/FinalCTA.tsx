@@ -1,118 +1,162 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Lock, Zap, MapPin, PackageCheck } from 'lucide-react';
-import { useUser } from '@/firebase';
+import Image from 'next/image';
+import { Asterisk } from 'lucide-react';
+import { Reveal } from './primitives';
 
-const badges = [
-  { icon: Lock, label: 'NDA Protected' },
-  { icon: Zap, label: '72hr Turnaround' },
-  { icon: MapPin, label: 'Made in India' },
-  { icon: PackageCheck, label: 'No Minimums' },
+const BADGES = ['NDA Protected', '72hr Turnaround', 'Made in India', 'No Minimums'];
+
+export function FinalCTA({ uploadHref }: { uploadHref: string }) {
+  return (
+    <section className="lp-grid-bg relative overflow-hidden bg-lp-primary px-4 py-32 text-center text-lp-primary-fg sm:px-5">
+      <Asterisk className="lp-spin-slow absolute -right-20 -top-20 size-96 opacity-10" strokeWidth={1} aria-hidden="true" />
+      <Reveal>
+        <h2 className="mx-auto max-w-3xl text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
+          Ready to Build <span className="font-lp-serif italic">Something Real?</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={100}>
+        <p className="mx-auto mt-6 max-w-md text-sm opacity-85">
+          Upload your design and get a quote in minutes. No minimums. No negotiation. Just fast, quality parts.
+        </p>
+      </Reveal>
+      <Reveal delay={200} className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link
+          href={uploadHref}
+          className="lp-label-mono inline-flex items-center gap-2 rounded-sm bg-lp-bg px-5 py-3 text-lp-fg transition-transform hover:scale-105"
+        >
+          → Upload Your Design
+        </Link>
+        <Link
+          href="/contact"
+          className="lp-label-mono inline-flex items-center gap-2 rounded-sm border border-lp-primary-fg px-5 py-3 transition-colors hover:bg-lp-primary-fg hover:text-lp-primary"
+        >
+          Talk to an Engineer
+        </Link>
+      </Reveal>
+      <div className="lp-label-mono mt-12 flex flex-wrap justify-center gap-6 opacity-80">
+        {BADGES.map((badge) => (
+          <span key={badge}>✓ {badge}</span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const FOOTER_COLUMNS = [
+  {
+    title: 'Company',
+    links: [
+      { label: 'About Us', href: '/about' },
+      { label: 'How It Works', href: '#process' },
+      { label: 'Contact', href: '/contact' },
+    ],
+  },
+  {
+    title: 'Build',
+    links: [
+      { label: 'Services', href: '/services' },
+      { label: 'Materials', href: '/materials' },
+      { label: 'Instant Quote', href: '/quote/instant' },
+      { label: 'Shop', href: '/shop' },
+      { label: 'Blog', href: '/blog' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy Policy', href: '/privacy-policy' },
+      { label: 'Terms of Service', href: '/terms-of-service' },
+      { label: 'Refund Policy', href: '/refund-policy' },
+      { label: 'NDA Policy', href: '/nda-policy' },
+    ],
+  },
 ];
 
-export function FinalCTA() {
-  const { user } = useUser();
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const subRef = useRef<HTMLParagraphElement>(null);
-  const btnsRef = useRef<HTMLDivElement>(null);
-  const badgesRef = useRef<HTMLDivElement>(null);
+const SOCIALS = [
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/company/mechhub-in/',
+    path: 'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z M2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/mechhub.in/',
+    path: 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z M17.5 6.5h.01 M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5z',
+  },
+];
 
-  const uploadHref = user
-    ? '/dashboard?tab=projects'
-    : '/login?tab=register&redirect=/dashboard?tab=projects';
-
-  useEffect(() => {
-    const elements = [headingRef.current, subRef.current, btnsRef.current, badgesRef.current];
-    const delays = [0, 0.1, 0.2, 0.4];
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('mh-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '-30px' }
-    );
-
-    elements.forEach((el, i) => {
-      if (el) {
-        (el as HTMLElement).style.transitionDelay = `${delays[i]}s`;
-        observer.observe(el);
-      }
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
+export function HomeFooter() {
   return (
-    <section
-      id="get-started"
-      className="py-24 md:py-32  border-t border-[#2a3a56] relative overflow-hidden text-white"
-    >
-      {/* Background Glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[700px] h-[700px]  rounded-full blur-[140px]" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto">
-
-          {/* Heading */}
-          <h2
-            ref={headingRef}
-            className="mh-h1 text-[#1b3357] font-semibold text-4xl md:text-5xl  mh-reveal drop-shadow-md"
-          >
-            Ready to Build{' '}
-            <span className="text-[#1b3357]">Something Real?</span>
-          </h2>
-
-          {/* Subheading */}
-          <p
-            ref={subRef}
-            className="text-[#1b3357] text-lg md:text-xl font-normal mt-6 max-w-xl mx-auto mh-reveal leading-relaxed"
-          >
-            Upload your design and get a quote in minutes.
-            No minimums. No negotiation. Just fast, quality parts.
-          </p>
-
-          {/* CTA buttons */}
-          <div
-            ref={btnsRef}
-            className="mt-10 flex flex-col sm:flex-row gap-4 justify-center mh-reveal"
-          >
-            <Link
-              href={uploadHref}
-              className="mh-btn-secondary-dark text-base hover:bg-blue-500 text-white px-8 py-3.5 justify-center"
-            >
-              Upload Your Design <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-8 py-3.5  hover:bg-blue-500 text-[#1b3357] border border-white/25 font-semibold text-base rounded-full shadow-md transition-all duration-300 justify-center"
-            >
-              Talk to an Engineer
-            </Link>
-          </div>
-
-          {/* Trust badges */}
-          <div
-            ref={badgesRef}
-            className="mt-14 flex flex-wrap justify-center gap-4 md:gap-6 mh-reveal"
-          >
-            {badges.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#2a3a56] text-[#16283e] text-xs font-semibold backdrop-blur-md shadow-sm">
-                <Icon size={14} className="text-[#0a0d11]" />
-                <span>{label}</span>
-              </div>
+    <footer className="bg-lp-ink px-4 pb-10 pt-16 text-lp-ink-fg sm:px-5">
+      <div className="mx-auto grid max-w-[1400px] gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div>
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/mechhub-logo-small.svg" alt="MechHub Logo" width={32} height={32} />
+            <span className="text-2xl tracking-tight">MechHub</span>
+          </Link>
+          <p className="mt-4 text-sm opacity-60">Real Parts . Real Engineers . Real Deadlines</p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {['NDA Signed', 'ISO-Ready', 'QC Inspected', 'On-Time Delivery'].map((badge) => (
+              <span key={badge} className="lp-label-mono border border-lp-ink-fg/15 px-2 py-1 opacity-60">
+                {badge}
+              </span>
             ))}
           </div>
         </div>
+        {FOOTER_COLUMNS.map((col) => (
+          <div key={col.title}>
+            <h4 className="lp-label-mono text-lp-primary">{col.title}</h4>
+            <ul className="mt-5 space-y-3 text-sm">
+              {col.links.map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="opacity-60 transition-opacity hover:opacity-100">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
-    </section>
+
+      <div className="lp-label-mono mx-auto mt-14 flex max-w-[1400px] flex-wrap items-center justify-between gap-4 border-t border-lp-ink-fg/10 pt-6">
+        <span className="flex items-center gap-1.5 opacity-70">
+          <Asterisk className="size-4 text-lp-primary" />
+          MechHub — Manufacturing Tomorrow Together
+        </span>
+        <span className="opacity-70">Built in India for Builders</span>
+      </div>
+      <div className="lp-label-mono mx-auto mt-4 flex max-w-[1400px] flex-wrap items-center justify-between gap-4 opacity-50">
+        <span>
+          © {new Date().getFullYear()} MechHub. All rights reserved. · A Unit of Synchubb Innovations Pvt Ltd
+        </span>
+        <span className="flex gap-3">
+          {SOCIALS.map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={s.label}
+              className="flex size-8 items-center justify-center border border-lp-ink-fg/20 transition-colors hover:border-lp-primary hover:text-lp-primary"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d={s.path} />
+              </svg>
+            </a>
+          ))}
+        </span>
+      </div>
+    </footer>
   );
 }

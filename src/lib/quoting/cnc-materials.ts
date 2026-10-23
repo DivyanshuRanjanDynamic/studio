@@ -5,17 +5,25 @@
 // ═══════════════════════════════════════════════════
 
 import type { CncMaterialData, CncProcess, CncShopRates, CncStock } from '@/types/quoting';
+import { stockPrice, type MaterialGrade } from './material-prices';
+
+/** Block and bar prices come from material-prices.ts, the shared price list */
+const machined = (machinabilityGroup: CncMaterialData['machinabilityGroup'], grade: MaterialGrade): CncMaterialData => ({
+  machinabilityGroup,
+  blockPricePerKg: stockPrice(grade, 'block'),
+  barPricePerKg: stockPrice(grade, 'bar'),
+});
 
 export const CNC_MATERIAL_DATA: Readonly<Record<string, CncMaterialData>> = {
-  al_6061: { machinabilityGroup: 'aluminium', blockPricePerKg: 380, barPricePerKg: 360 },
-  al_5052: { machinabilityGroup: 'aluminium', blockPricePerKg: 360, barPricePerKg: 350 },
-  ms_a36: { machinabilityGroup: 'mild_steel', blockPricePerKg: 85, barPricePerKg: 80 },
-  en8: { machinabilityGroup: 'mild_steel', blockPricePerKg: 105, barPricePerKg: 98 },
-  en24: { machinabilityGroup: 'alloy_steel', blockPricePerKg: 175, barPricePerKg: 165 },
-  ss_304: { machinabilityGroup: 'stainless', blockPricePerKg: 320, barPricePerKg: 300 },
-  ss_316: { machinabilityGroup: 'stainless', blockPricePerKg: 440, barPricePerKg: 420 },
-  brass: { machinabilityGroup: 'brass', blockPricePerKg: 720, barPricePerKg: 680 },
-  copper: { machinabilityGroup: 'copper', blockPricePerKg: 1050, barPricePerKg: 1000 },
+  al_6061: machined('aluminium', 'al_6061'),
+  al_5052: machined('aluminium', 'al_5052'),
+  ms_a36: machined('mild_steel', 'mild_steel'),
+  en8: machined('mild_steel', 'en8'),
+  en24: machined('alloy_steel', 'en24'),
+  ss_304: machined('stainless', 'ss_304'),
+  ss_316: machined('stainless', 'ss_316'),
+  brass: machined('brass', 'brass'),
+  copper: machined('copper', 'copper'),
 };
 
 export const DEFAULT_CNC_SHOP_RATES: CncShopRates = {

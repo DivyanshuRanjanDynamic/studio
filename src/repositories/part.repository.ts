@@ -32,6 +32,23 @@ export const PartRepository = {
     }
   },
 
+  /** Parts added with an instant price (capped; unordered, so no composite index) — pricing calibration reads these */
+  async getInstantPricedParts(limit = 2000): Promise<Result<MechanicalPart[], AppError>> {
+    try {
+      const { adminFirestore } = getFirebaseAdmin();
+      if (!adminFirestore) return err(internalError('Database is not configured'));
+      const snap = await adminFirestore
+        .collection('projectParts')
+        .where('quoteStatus', '==', 'instant')
+        .limit(limit)
+        .get();
+      return ok(snap.docs.map((d: { data: () => MechanicalPart }) => d.data() as MechanicalPart));
+    } catch (e: any) {
+      logger.error({ event: 'PartRepository: Failed to fetch instant-priced parts', error: e?.message });
+      return err(internalError('Failed to load priced parts'));
+    }
+  },
+
   /** Creates the part and touches the project's updatedAt in one batch */
   async createPart(part: MechanicalPart): Promise<Result<MechanicalPart, AppError>> {
     try {

@@ -109,7 +109,9 @@ export function FlatPatternViewer({
   return (
     <div
       ref={containerRef}
-      className={`relative bg-[#0f172a] rounded-xl overflow-hidden group select-none ${className}`}
+      // White canvas like the 3D viewer. The converter's SVG ships a dark
+      // background and faint hairline outlines, so restyle both here.
+      className={`relative bg-white rounded-xl overflow-hidden group select-none [&_svg]:!bg-transparent [&_svg_path]:[stroke:#475569] [&_svg_path]:[stroke-width:1.25px] [&_svg_path]:[vector-effect:non-scaling-stroke] ${className}`}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -152,13 +154,13 @@ export function FlatPatternViewer({
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) translate(-50%, -120%)`,
             }}
           >
-            <div className="bg-slate-900/92 border border-slate-700 px-2 py-1 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-lp-card border border-lp-border px-2 py-1 rounded-sm shadow-sm whitespace-nowrap animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center gap-2 text-[10px]">
-                <span className="font-mono font-semibold text-white">{line.angle.toFixed(1)}°</span>
-                <span className={`${line.direction === 'UP' ? 'text-blue-400' : 'text-orange-400'} font-medium`}>
+                <span className="font-lp-mono font-semibold text-lp-fg">{line.angle.toFixed(1)}°</span>
+                <span className={`${line.direction === 'UP' ? 'text-blue-600' : 'text-orange-600'} font-medium`}>
                   {line.direction}
                 </span>
-                <span className="font-mono text-blue-100">R{line.radius.toFixed(1)}</span>
+                <span className="font-lp-mono text-lp-muted-fg">R{line.radius.toFixed(1)}</span>
               </div>
             </div>
           </div>
@@ -216,11 +218,11 @@ export function FlatPatternViewer({
 
       {/* ── Bottom-Left: Bend Summary ── */}
       <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
-        <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 px-3 py-2 rounded-lg">
+        <div className="bg-lp-card/90 backdrop-blur-md border border-lp-border px-3 py-2 rounded-sm shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-4 h-0.5 bg-blue-500 rounded-full" />
-              <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
                 UP: {bendStats.upCount}
               </span>
             </div>
@@ -231,7 +233,7 @@ export function FlatPatternViewer({
                 width: 16,
                 backgroundColor: 'transparent'
               }} />
-              <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-orange-600 uppercase tracking-widest">
                 DOWN: {bendStats.downCount}
               </span>
             </div>
@@ -241,28 +243,28 @@ export function FlatPatternViewer({
 
       {/* ── Right: Zoom Controls ── */}
       <div className="absolute top-4 right-4 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 z-10">
-        <div className="flex flex-col bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-xl overflow-hidden">
+        <div className="flex flex-col bg-lp-card/90 backdrop-blur-md border border-lp-border rounded-sm shadow-sm overflow-hidden">
           <button
             onClick={handleZoomIn}
-            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors border-b border-slate-700/50"
+            className="px-3 py-2.5 hover:bg-lp-accent text-lp-muted-fg hover:text-lp-fg transition-colors border-b border-lp-border"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={handleZoomOut}
-            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors border-b border-slate-700/50"
+            className="px-3 py-2.5 hover:bg-lp-accent text-lp-muted-fg hover:text-lp-fg transition-colors border-b border-lp-border"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors border-b border-slate-700/50"
+            className="px-3 py-2.5 hover:bg-lp-accent text-lp-muted-fg hover:text-lp-fg transition-colors border-b border-lp-border"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setBendsVisible((v) => !v)}
-            className="px-3 py-2.5 hover:bg-slate-800 text-blue-100 hover:text-white transition-colors"
+            className="px-3 py-2.5 hover:bg-lp-accent text-lp-muted-fg hover:text-lp-fg transition-colors"
           >
             {bendsVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
           </button>
@@ -271,8 +273,8 @@ export function FlatPatternViewer({
 
       {/* ── Bottom-Right: Zoom Level ── */}
       <div className="absolute bottom-4 right-4 z-10">
-        <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/30 px-2.5 py-1 rounded-lg">
-          <span className="text-[9px] font-mono font-bold text-blue-200">
+        <div className="bg-lp-card/90 backdrop-blur-sm border border-lp-border px-2.5 py-1 rounded-sm shadow-sm">
+          <span className="text-[9px] font-lp-mono font-bold text-lp-muted-fg">
             {Math.round(zoom * 100)}%
           </span>
         </div>

@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { Analytics } from '@vercel/analytics/next';
 
 import { CartProvider } from '@/context/CartContext';
+import { QuoteCartProvider } from '@/context/QuoteCartContext';
+import { QuoteCartDrawer } from '@/components/QuoteCartDrawer';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +21,12 @@ export const metadata: Metadata = {
     google: 'YOUR_VERIFICATION_CODE_HERE', // TODO: User should replace this
   },
   icons: {
-    icon: '/mechhub.png',
-    shortcut: '/mechhub.png',
-    apple: '/mechhub.png',
+    icon: [
+      { url: '/mechhub-logo-small.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
 };
 
@@ -33,7 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+    // data-scroll-behavior lets Next.js turn smooth scrolling off during route changes
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -50,8 +56,11 @@ export default function RootLayout({
       >
         <FirebaseClientProvider>
           <CartProvider>
-            {children}
-            <Toaster />
+            <QuoteCartProvider>
+              {children}
+              <QuoteCartDrawer />
+              <Toaster />
+            </QuoteCartProvider>
           </CartProvider>
         </FirebaseClientProvider>
         <Analytics />

@@ -48,7 +48,7 @@ export function Footer() {
               </Link>
               <Button
                 variant="ghost"
-                onClick={() => router.push('/#services')}
+                onClick={() => router.push('/services')}
                 className="w-full sm:w-auto h-11 px-6 text-sm border border-white/20 text-white hover:bg-white/10 rounded-full font-bold"
                 suppressHydrationWarning
               >

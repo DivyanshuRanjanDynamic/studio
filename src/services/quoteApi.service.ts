@@ -3,13 +3,21 @@
 // The server re-prices every request; its result is the quote of record.
 // ═══════════════════════════════════════════════════
 
-import type { AnyQuoteResult, CncAnalysis, CncQuoteRequest, QuoteRequest } from '@/types/quoting';
+import type {
+  AnyQuoteResult,
+  CncAnalysis,
+  CncQuoteRequest,
+  PartAnalysisHandle,
+  SheetQuoteRequest,
+} from '@/types/quoting';
+import { printAnalysisSchema, sheetAnalysisSchema } from '@/lib/validation/quoting';
 import type { MechanicalPart } from '@/models/project.model';
 import { Result, ok, err } from '@/utils/result';
 import { AppError, ErrorCode } from '@/utils/errors';
+import { bearerHeader } from '@/lib/auth-header';
 
 export type SaveQuoteInput =
-  | { readonly kind: 'laser'; readonly request: QuoteRequest }
+  | { readonly kind: 'laser'; readonly analysisId: string; readonly request: SheetQuoteRequest }
   | { readonly kind: 'cnc'; readonly analysisId: string; readonly request: CncQuoteRequest };
 
 /** A CNC analysis stored server-side; quotes reference it by id */
@@ -34,7 +42,7 @@ async function postJson(
   try {
     res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await bearerHeader()) },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
@@ -159,6 +167,86 @@ export async function analyzeUploadedStep(
   return ok({ analysisId: handle.analysisId, analysis: handle.analysis });
 }
 
+/**
+ * POST /api/v1/quote/part/analyze — sheet-metal or 3D-print analysis of the
+ * caller's wizard upload, stored server-side and referenced by analysisId.
+ */
+export async function analyzeUploadedPart(
+  fileKey: string,
+  fileName: string,
+  kind: PartAnalysisHandle['kind']
+): Promise<Result<PartAnalysisHandle, AppError>> {
+  const context = { fileName, kind };
+  const analyzed = await postJson('/api/v1/quote/part/analyze', { fileKey, kind }, context, ANALYZE_CNC_TIMEOUT_MS);
+  if (!analyzed.success) return analyzed;
+
+  const handle = analyzed.data as { kind?: unknown; analysisId?: unknown; analysis?: unknown } | null;
+  const schema = kind === 'sheet' ? sheetAnalysisSchema : printAnalysisSchema;
+  const parsed = handle && handle.kind === kind && typeof handle.analysisId === 'string' ? schema.safeParse(handle.analysis) : null;
+  if (!parsed?.success || typeof handle?.analysisId !== 'string') {
+    return err(
+      new AppError({
+        code: ErrorCode.PARSE_FAILED,
+        message: 'CAD analysis returned an unexpected response',
+        statusCode: 502,
+        context,
+      })
+    );
+  }
+  return ok({ kind, analysisId: handle.analysisId, analysis: parsed.data } as PartAnalysisHandle);
+}
+
+export type SheetAnalysisHandle = Extract<PartAnalysisHandle, { kind: 'sheet' }>;
+
+/**
+ * Laser (sheet) analysis for the instant quote page, without the browser ever
+ * calling the converter: 1. presigned S3 upload through MechHub, 2. PUT the
+ * STEP/DXF file, 3. MechHub's server has the converter analyse it and stores it.
+ */
+export async function analyzeSheetPart(file: File): Promise<Result<SheetAnalysisHandle, AppError>> {
+  const context = { fileName: file.name };
+  const contentType = 'application/octet-stream';
+
+  const intent = await postJson(
+    '/api/v1/files/upload-intent',
+    { fileName: file.name, fileSize: file.size, contentType },
+    context
+  );
+  if (!intent.success) return intent;
+  const { uploadUrl, fileKey } = (intent.data ?? {}) as { uploadUrl?: string; fileKey?: string };
+  if (!uploadUrl || !fileKey) {
+    return err(
+      new AppError({
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Could not prepare the file upload',
+        statusCode: 502,
+        context,
+      })
+    );
+  }
+
+  let put: Response;
+  try {
+    // Content-Type must match what the URL was signed with.
+    put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType }, body: file });
+  } catch {
+    put = new Response(null, { status: 503 });
+  }
+  if (!put.ok) {
+    return err(
+      new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Could not upload your file. Check your connection and try again.',
+        statusCode: 503,
+        context: { ...context, status: put.status },
+      })
+    );
+  }
+
+  const analyzed = await analyzeUploadedPart(fileKey, file.name, 'sheet');
+  return analyzed.success ? ok(analyzed.data as SheetAnalysisHandle) : analyzed;
+}
+
 /** POST /api/v1/projects/[id]/parts — the server prices CNC parts and stores the part */
 export async function addPartToProject(
   projectId: string,
@@ -199,7 +287,7 @@ async function requestQuote(
 ): Promise<Result<AnyQuoteResult, AppError>> {
   let res: Response;
   try {
-    res = await fetch(url, init);
+    res = await fetch(url, { ...init, headers: { ...(init.headers as Record<string, string>), ...(await bearerHeader()) } });
   } catch {
     return err(
       new AppError({
@@ -249,10 +337,8 @@ async function requestQuote(
 
 /** POST /api/v1/quote (laser) or /api/v1/quote/cnc — price server-side and save */
 export function saveQuote(input: SaveQuoteInput): Promise<Result<AnyQuoteResult, AppError>> {
-  const [url, payload] =
-    input.kind === 'laser'
-      ? ['/api/v1/quote', input.request]
-      : ['/api/v1/quote/cnc', { analysisId: input.analysisId, request: input.request }];
+  const url = input.kind === 'laser' ? '/api/v1/quote' : '/api/v1/quote/cnc';
+  const payload = { analysisId: input.analysisId, request: input.request };
 
   return requestQuote(
     url,

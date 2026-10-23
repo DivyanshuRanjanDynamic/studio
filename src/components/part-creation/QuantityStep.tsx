@@ -71,30 +71,30 @@ export function QuantityStep({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-bold uppercase tracking-wide text-slate-900 mb-2">
-          Quantity & Review
+      <div className="mb-6">
+        <h3 className="text-2xl text-lp-fg mb-1">
+          Quantity & <span className="font-lp-serif italic text-lp-primary">review</span>
         </h3>
-        <p className="text-xs uppercase tracking-widest font-bold text-blue-200">
-          Specify the quantity and review your part configuration
+        <p className="lp-label-mono text-lp-muted-fg">
+          Specify quantity and review your configuration
         </p>
       </div>
 
       {/* Quantity Input */}
-      <Card className="bg-blue-50 border-[#2F5FA7]/20 p-6">
+      <Card className="bg-lp-accent border-lp-border p-6 rounded-sm">
         <div className="space-y-4">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-              <Hash className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-sm bg-lp-primary flex items-center justify-center">
+              <Hash className="w-5 h-5 text-lp-primary-fg" />
             </div>
             <div>
               <Label
                 htmlFor="quantity"
-                className="text-[10px] uppercase text-[#2F5FA7] font-bold tracking-widest"
+                className="lp-label-mono text-lp-primary"
               >
                 Required Quantity
               </Label>
-              <p className="text-[10px] text-blue-200 uppercase tracking-wider font-bold">
+              <p className="text-xs text-lp-muted-fg mt-0.5">
                 No minimum quantity required
               </p>
             </div>
@@ -108,15 +108,15 @@ export function QuantityStep({
               value={inputValue}
               onChange={handleInputChange}
               onBlur={handleBlur}
-              className="h-14 text-2xl font-bold text-center uppercase tracking-wider text-slate-900 bg-white border-slate-200"
+              className="h-14 text-2xl font-bold text-center text-lp-fg bg-lp-card border-lp-border font-lp-mono"
             />
             <div className="text-center">
-              <p className="text-xs text-blue-100 uppercase tracking-wider font-bold">PCS</p>
+              <p className="lp-label-mono text-lp-muted-fg">PCS</p>
             </div>
           </div>
 
           {!hasRealTiers && quantity >= 5 && (
-            <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-sm">
               <TrendingDown className="w-4 h-4 text-emerald-600" />
               <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">
                 Quantity Discount Applied: {getCurrentDiscount()}
@@ -129,7 +129,7 @@ export function QuantityStep({
       {/* Real price per part at each break (instant pricing) */}
       {hasRealTiers && (
         <div className="space-y-3">
-          <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">Price per part by quantity</p>
+          <p className="lp-label-mono text-lp-muted-fg">Price per part by quantity</p>
           <div className="grid grid-cols-3 gap-2">
             {tierPrices!.slice(0, 6).map((tier) => {
               const active = quantity >= tier.quantity;
@@ -141,16 +141,16 @@ export function QuantityStep({
                     setInputValue(String(tier.quantity));
                     onQuantityChange(tier.quantity);
                   }}
-                  className={`text-center p-3 rounded-xl border transition-all ${
-                    active ? 'bg-blue-600 border-[#2F5FA7] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  className={`text-center p-3 rounded-sm border transition-all ${
+                    active ? 'bg-lp-primary border-lp-primary text-lp-primary-fg' : 'bg-lp-card border-lp-border text-lp-fg'
                   }`}
                 >
                   <p className="text-xs font-bold">{tier.quantity}+ pcs</p>
-                  <p className={`text-[11px] font-mono font-bold ${active ? 'text-white' : 'text-slate-900'}`}>
+                  <p className={`text-[11px] font-lp-mono font-bold ${active ? 'text-lp-primary-fg' : 'text-lp-fg'}`}>
                     {inr(tier.pricePerPart)}
                   </p>
                   {tier.savingsPercent > 0 && (
-                    <p className={`text-[9px] font-bold ${active ? 'text-blue-100' : 'text-emerald-600'}`}>
+                    <p className={`text-[9px] font-bold ${active ? 'text-lp-primary-fg/70' : 'text-emerald-600'}`}>
                       −{tier.savingsPercent}%
                     </p>
                   )}
@@ -164,26 +164,26 @@ export function QuantityStep({
       {/* Quantity Breaks Info */}
       {!hasRealTiers && (
       <div className="space-y-3">
-        <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
+        <p className="lp-label-mono text-lp-muted-fg">
           Volume Discount Tiers
         </p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {QUANTITY_BREAKS.map((breakPoint) => (
             <div
               key={breakPoint.qty}
-              className={`text-center p-3 rounded-xl border transition-all ${
+              className={`text-center p-3 rounded-sm border transition-all ${
                 quantity >= breakPoint.qty
-                  ? 'bg-blue-600 border-[#2F5FA7] text-white'
-                  : 'bg-slate-50 border-slate-200 text-blue-200'
+                  ? 'bg-lp-primary border-lp-primary text-lp-primary-fg'
+                  : 'bg-lp-card border-lp-border text-lp-muted-fg'
               }`}
             >
               <p
-                className={`text-xs font-bold ${quantity >= breakPoint.qty ? 'text-white' : 'text-slate-900'}`}
+                className={`text-xs font-bold ${quantity >= breakPoint.qty ? 'text-lp-primary-fg' : 'text-lp-fg'}`}
               >
                 {breakPoint.qty}+
               </p>
               <p
-                className={`text-[9px] uppercase tracking-wider font-bold ${quantity >= breakPoint.qty ? 'text-blue-100' : 'text-blue-100'}`}
+                className={`text-[9px] uppercase tracking-wider font-bold ${quantity >= breakPoint.qty ? 'text-lp-primary-fg/70' : 'text-lp-muted-fg'}`}
               >
                 {breakPoint.discount}
               </p>
@@ -194,30 +194,30 @@ export function QuantityStep({
       )}
 
       {/* Summary Card */}
-      <Card className="bg-slate-900 border-slate-800 p-5">
+      <Card className="bg-lp-ink border-lp-ink p-5 rounded-sm">
         <div className="flex items-center gap-3 mb-3">
-          <Calculator className="w-5 h-5 text-[#2F5FA7]" />
-          <p className="text-xs text-white uppercase tracking-wider font-bold">Order Summary</p>
+          <Calculator className="w-5 h-5 text-lp-primary" />
+          <p className="lp-label-mono text-lp-ink-fg">Order Summary</p>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between text-[10px]">
-            <span className="text-blue-100 uppercase tracking-wider font-bold">Quantity:</span>
-            <span className="text-white font-bold font-mono">{quantity} PCS</span>
+            <span className="text-lp-ink-fg/70 uppercase tracking-wider font-bold">Quantity:</span>
+            <span className="text-lp-ink-fg font-bold font-lp-mono">{quantity} PCS</span>
           </div>
           <div className="flex justify-between text-[10px]">
-            <span className="text-blue-100 uppercase tracking-wider font-bold">
+            <span className="text-lp-ink-fg/70 uppercase tracking-wider font-bold">
               Est. Per Part:
             </span>
-            <span className="text-white font-bold font-mono">
+            <span className="text-lp-ink-fg font-bold font-lp-mono">
               {livePricePerPart ? inr(livePricePerPart) : 'To be quoted'}
             </span>
           </div>
-          <div className="border-t border-slate-700 pt-2 mt-2">
+          <div className="border-t border-lp-ink-fg/20 pt-2 mt-2">
             <div className="flex justify-between">
-              <span className="text-blue-100 text-[10px] uppercase tracking-wider font-bold">
+              <span className="text-lp-ink-fg/70 text-[10px] uppercase tracking-wider font-bold">
                 Status:
               </span>
-              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[8px] uppercase tracking-wider font-bold">
+              <Badge className="bg-lp-primary/20 text-lp-primary border-lp-primary/30 text-[8px] uppercase tracking-wider font-bold">
                 Ready to Add
               </Badge>
             </div>

@@ -2,6 +2,9 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # Always keep one instance warm: no cold starts after idle periods, and a
+  # crash or deploy never leaves zero instances serving.
+  minInstances: 1
+  # Scale out under load. The app is stateless (sessions, rate limits, quotes and
+  # pricing settings live in Firestore), so any instance can serve any request.
+  maxInstances: 4

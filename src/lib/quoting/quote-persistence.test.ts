@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generateCncQuote, generateQuote } from './pricing-engine';
+import { generateCncQuote } from './pricing-engine';
+import { legacyLaserQuote } from './__fixtures__/legacy-laser-quote';
 import { bracketAnalysis } from './__fixtures__/cnc-analysis';
 import { ok, err } from '@/utils/result';
 import { ErrorCode, internalError, notFoundError } from '@/utils/errors';
-import type { AnyQuoteResult, CncQuoteRequest, ParsedGeometry, QuoteRequest } from '@/types/quoting';
+import type { AnyQuoteResult, CncQuoteRequest, SheetAnalysis, SheetQuoteRequest } from '@/types/quoting';
 
 // Firestore is never touched — every repository is an in-memory mock.
 const saveQuote = vi.fn();
@@ -19,31 +20,43 @@ vi.mock('@/repositories/order.repository', () => ({
   OrderRepository: { saveOrder: (...args: unknown[]) => saveOrder(...args) },
 }));
 vi.mock('@/repositories/project.repository', () => ({ ProjectRepository: {} }));
+const getCalibrationConfig = vi.fn();
+vi.mock('@/repositories/pricing-calibration.repository', () => ({
+  PricingCalibrationRepository: { getConfig: (...args: unknown[]) => getCalibrationConfig(...args) },
+}));
+const getOwnedSheetAnalysis = vi.fn();
+vi.mock('@/services/part-analysis.service', () => ({
+  PartAnalysisService: { getOwnedSheetAnalysis: (...args: unknown[]) => getOwnedSheetAnalysis(...args) },
+}));
 
 // ═══════════════════════════════════════════════════
 // Quote persistence: refs, share lookup, checkout re-validation, client API
 // ═══════════════════════════════════════════════════
 
-const geometry: ParsedGeometry = {
-  cutLengthMm: 600,
-  areaMm2: 10000,
-  boundingBox: { widthMm: 100, heightMm: 100, aspectRatio: 1 },
-  holeCount: 2,
-  complexityScore: 2,
-  nodeCount: 20,
-  minFeatureSizeMm: 5,
-  minSlotWidthMm: 5,
-  edgeToHoleDistanceMm: 5,
-  hasOpenPaths: false,
+/** 200 × 100 × 2 mm plate with 4 × Ø4.2 holes, as the converter measured it */
+const sheetAnalysis: SheetAnalysis = {
+  version: 'sheet-1',
+  units: 'mm',
+  thicknessMm: 2,
+  volumeMm3: 39889.2,
+  surfaceAreaMm2: 41194.8,
+  flatAreaMm2: 19944.6,
+  cutLengthMm: 652.8,
+  pierces: 5,
+  holes: [{ diameterMm: 4.2, count: 4 }],
+  bends: [],
+  boundingBox: { x: 200, y: 100, z: 2 },
+  isFlat: true,
+  bodyCount: 1,
+  analysisMs: 40,
 };
 
-const laserRequest: QuoteRequest = {
-  materialId: 'ms_a36',
+const laserRequest: SheetQuoteRequest = {
+  materialId: 'ms-crca',
   thicknessMm: 2,
   finishType: 'none',
   quantity: 5,
   turnaround: 'standard_3d',
-  geometry,
 };
 
 const cncRequest: CncQuoteRequest = {
@@ -53,10 +66,9 @@ const cncRequest: CncQuoteRequest = {
   turnaround: 'standard_3d',
 };
 
+/** A stored laser quote in the pre-converter format; share links and checkout must keep handling them */
 function laserQuote(overrides: Partial<AnyQuoteResult> = {}): AnyQuoteResult {
-  const q = generateQuote('ms_a36', 2, 'none', 5, 'standard_3d', geometry);
-  if (!q.success) throw new Error('fixture laser quote failed');
-  return { ...q.data, quoteRef: 'MH-ABCDEFGH23', ...overrides } as AnyQuoteResult;
+  return { ...legacyLaserQuote(), ...overrides } as AnyQuoteResult;
 }
 
 function cncQuote(): AnyQuoteResult {
@@ -89,6 +101,9 @@ beforeEach(() => {
   saveQuote.mockReset();
   getQuoteByRef.mockReset();
   saveOrder.mockReset();
+  getOwnedSheetAnalysis.mockReset();
+  getCalibrationConfig.mockReset();
+  getCalibrationConfig.mockResolvedValue({ multipliers: {} });
 });
 
 describe('QuotingService refs and share lookup', () => {
@@ -96,8 +111,8 @@ describe('QuotingService refs and share lookup', () => {
     saveQuote.mockImplementation(async (q: { quoteRef: string }) => ok(q.quoteRef));
     const { QuotingService, QUOTE_REF_PATTERN } = await import('@/services/quoting.service');
 
-    const a = await QuotingService.processQuoteRequest(laserRequest);
-    const b = await QuotingService.processQuoteRequest(laserRequest);
+    const a = await QuotingService.processSheetQuoteRequest(sheetAnalysis, laserRequest);
+    const b = await QuotingService.processSheetQuoteRequest(sheetAnalysis, laserRequest);
     const c = await QuotingService.processCncQuoteRequest(bracketAnalysis, cncRequest);
 
     if (!a.success || !b.success || !c.success) throw new Error('quotes failed');
@@ -112,8 +127,59 @@ describe('QuotingService refs and share lookup', () => {
     saveQuote.mockResolvedValue(err(internalError('db down')));
     const { QuotingService } = await import('@/services/quoting.service');
 
-    const result = await QuotingService.processQuoteRequest(laserRequest);
+    const result = await QuotingService.processSheetQuoteRequest(sheetAnalysis, laserRequest);
     expect(result.success).toBe(false);
+  });
+
+  it('saves laser and CNC quotes with the admin-applied correction, material before service', async () => {
+    saveQuote.mockImplementation(async (q: { quoteRef: string }) => ok(q.quoteRef));
+    const { QuotingService } = await import('@/services/quoting.service');
+
+    const plain = await QuotingService.processSheetQuoteRequest(sheetAnalysis, laserRequest);
+    getCalibrationConfig.mockResolvedValue({ multipliers: { sheet: 1.2, 'sheet · ms-crca': 1.1, cnc: 0.9 } });
+    const corrected = await QuotingService.processSheetQuoteRequest(sheetAnalysis, laserRequest);
+    const cnc = await QuotingService.processCncQuoteRequest(bracketAnalysis, cncRequest);
+    if (!plain.success || !corrected.success || !cnc.success) throw new Error('quotes failed');
+
+    expect(corrected.data.totalPrice).toBe(Math.round(plain.data.totalPrice * 1.1));
+    expect(corrected.data.breakdown.calibrationMultiplier).toBe(1.1);
+    expect(cnc.data.breakdown.calibrationMultiplier).toBe(0.9);
+    // What is saved is what the customer is charged
+    expect(saveQuote).toHaveBeenCalledWith(corrected.data, undefined);
+  });
+
+  it('prices Rush quotes at the admin-set shop load', async () => {
+    saveQuote.mockImplementation(async (q: { quoteRef: string }) => ok(q.quoteRef));
+    const { QuotingService } = await import('@/services/quoting.service');
+    const rush = { ...laserRequest, quantity: 100, turnaround: 'rush_1d' as const };
+
+    const calm = await QuotingService.processSheetQuoteRequest(sheetAnalysis, rush);
+    getCalibrationConfig.mockResolvedValue({ multipliers: {}, shopLoad: 1 });
+    const busy = await QuotingService.processSheetQuoteRequest(sheetAnalysis, rush);
+    if (!calm.success || !busy.success) throw new Error('quotes failed');
+
+    expect(calm.data.breakdown.rushMultiplier).toBe(1.75);
+    expect(busy.data.breakdown.rushMultiplier).toBe(2.275);
+    expect(busy.data.totalPrice).toBeGreaterThan(calm.data.totalPrice);
+  });
+
+  it("prices laser quotes from the caller's stored analysis only", async () => {
+    saveQuote.mockImplementation(async (q: { quoteRef: string }) => ok(q.quoteRef));
+    getOwnedSheetAnalysis.mockResolvedValue(ok(sheetAnalysis));
+    const { QuotingService } = await import('@/services/quoting.service');
+
+    const priced = await QuotingService.processStoredSheetQuoteRequest('sma_0123456789abcdef', laserRequest, 'user_1');
+    expect(getOwnedSheetAnalysis).toHaveBeenCalledWith('user_1', 'sma_0123456789abcdef');
+    if (!priced.success) throw new Error('laser quote failed');
+    expect(priced.data.kind).toBe('sheet');
+    expect(priced.data.analysis.cutLengthMm).toBe(652.8);
+    expect(saveQuote).toHaveBeenCalledWith(priced.data, 'user_1');
+
+    getOwnedSheetAnalysis.mockResolvedValue(err(notFoundError('Part analysis', 'sma_foreign')));
+    saveQuote.mockClear();
+    const foreign = await QuotingService.processStoredSheetQuoteRequest('sma_foreign', laserRequest, 'user_2');
+    expect(foreign.success === false && foreign.error.code).toBe(ErrorCode.NOT_FOUND);
+    expect(saveQuote).not.toHaveBeenCalled();
   });
 
   it('returns shared quotes without the owner id', async () => {
@@ -249,12 +315,14 @@ describe('quoteApi.service', () => {
     expect(JSON.parse(init.body)).toEqual({ analysisId: 'cnca_0123456789abcdef', request: cncRequest });
   });
 
-  it('posts laser quotes to the laser route', async () => {
+  it('posts laser quotes to the laser route as { analysisId, request } — never geometry', async () => {
     fetchMock.mockResolvedValue(json(200, laserQuote()));
     const { saveQuote: save } = await import('@/services/quoteApi.service');
 
-    await save({ kind: 'laser', request: laserRequest });
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/quote');
+    await save({ kind: 'laser', analysisId: 'sma_0123456789abcdef', request: laserRequest });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/v1/quote');
+    expect(JSON.parse(init.body)).toEqual({ analysisId: 'sma_0123456789abcdef', request: laserRequest });
   });
 
   it('maps share-route errors and network failures to Results', async () => {

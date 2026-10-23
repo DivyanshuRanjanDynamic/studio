@@ -3,27 +3,24 @@
 import { useState, useMemo } from 'react';
 import { allPosts } from 'contentlayer/generated';
 import { compareDesc } from 'date-fns';
-import { Search, SlidersHorizontal, ArrowRight, X } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { BlogLayout } from '@/components/BlogLayout';
 import { BlogCard } from '@/components/BlogCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BackToHomeBar } from '@/components/BackToHomeBar';
+import { Reveal, Tag } from '@/components/home/primitives';
 
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  // Get all unique tags
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     allPosts.forEach((post) => post.tags?.forEach((tag) => tags.add(tag)));
     return Array.from(tags).sort();
   }, []);
 
-  // Filter and Sort Posts
   const posts = useMemo(() => {
     let filtered = allPosts
       .filter((post) => post.published)
@@ -46,82 +43,81 @@ export default function BlogPage() {
   return (
     <BlogLayout>
       <div className="space-y-12">
-        <BackToHomeBar className="pt-0 pb-0 px-0" />
-        {/* Blog Hero */}
-        <div className="text-center max-w-3xl mx-auto space-y-6 mb-16">
-          <Badge className="bg-[#E8F1FF] text-[#2F5FA7] border-[#2F5FA7]/20 px-3 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
-            Manufacturing Insights
-          </Badge>
-          <h1 className="text-center font-bold tracking-normal text-balance leading-snug text-3xl md:text-4xl lg:text-[56px] text-[#1E3A66] mb-8">
-            MechHub <span className="text-[#2F5FA7]">Chronicles</span>
-          </h1>
-          <p className="text-[#64748B] text-lg leading-relaxed font-medium">
-            Expert insights into CNC milling/turning, additive manufacturing, and the future of
-            industrial engineering.
-          </p>
+        {/* Hero */}
+        <div className="pt-10 pb-6">
+          <Reveal>
+            <Tag>Manufacturing Insights</Tag>
+          </Reveal>
+          <Reveal delay={80}>
+            <h1 className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
+              MechHub <span className="font-lp-serif italic">Chronicles</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={140}>
+            <p className="mt-4 max-w-xl text-sm text-lp-muted-fg">
+              Expert insights into CNC milling/turning, additive manufacturing, and the future of
+              industrial engineering.
+            </p>
+          </Reveal>
         </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 items-center sticky top-24 z-20 bg-white/90 backdrop-blur-xl p-4 rounded-2xl border border-slate-100 shadow-xl">
-          <div className="relative w-full sm:flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-100" />
-            <Input
-              type="text"
-              placeholder="Search articles, technical guides..."
-              className="pl-10 h-11 bg-slate-50 border-slate-200 text-[#1E3A66] rounded-xl placeholder:text-blue-100 focus:ring-[#2F5FA7]/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <Reveal delay={180}>
+          <div className="flex flex-col sm:flex-row gap-4 items-center sticky top-24 z-20 bg-lp-bg/90 backdrop-blur-xl p-4 border border-lp-border">
+            <div className="relative w-full sm:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-lp-muted-fg" />
+              <Input
+                type="text"
+                placeholder="Search articles, technical guides..."
+                className="pl-10 h-12 bg-lp-card border-lp-border text-lp-fg rounded-sm placeholder:text-lp-muted-fg/40 focus:ring-lp-primary/20 focus:border-lp-primary"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-          <div className="relative w-full sm:w-auto shrink-0">
-            <select
-              value={selectedTag || ''}
-              onChange={(e) => setSelectedTag(e.target.value || null)}
-              className="appearance-none w-full sm:w-52 h-11 pl-4 pr-10 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-[#1E3A66] cursor-pointer transition-all hover:bg-slate-100 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2F5FA7]/20 focus:border-[#2F5FA7]/30"
-            >
-              <option value="" className="bg-white text-[#1E3A66]">
-                All Topics
-              </option>
-              {allTags.map((tag) => (
-                <option key={tag} value={tag} className="bg-white text-[#1E3A66]">
-                  {tag} ({allPosts.filter((p) => p.published && p.tags?.includes(tag)).length})
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-              <svg
-                className="w-4 h-4 text-blue-100"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+            <div className="relative w-full sm:w-auto shrink-0">
+              <select
+                value={selectedTag || ''}
+                onChange={(e) => setSelectedTag(e.target.value || null)}
+                className="appearance-none w-full sm:w-52 h-12 pl-4 pr-10 bg-lp-card border border-lp-border text-sm text-lp-fg cursor-pointer transition-all hover:border-lp-fg focus:outline-none focus:ring-2 focus:ring-lp-primary/20 focus:border-lp-primary rounded-sm"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+                <option value="">All Topics</option>
+                {allTags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag} ({allPosts.filter((p) => p.published && p.tags?.includes(tag)).length})
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                <svg className="size-4 text-lp-muted-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* Posts Grid */}
         {posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post, i) => (
-              <BlogCard key={post._id} post={post} index={i} />
+              <Reveal key={post._id} delay={i * 40}>
+                <BlogCard post={post} index={i} />
+              </Reveal>
             ))}
           </div>
         ) : (
           <div className="py-20 text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white border border-slate-100 mb-4 shadow-sm">
-              <Search className="w-8 h-8 text-slate-300" />
+            <div className="inline-flex items-center justify-center size-16 bg-lp-accent border border-lp-border mb-4">
+              <Search className="size-8 text-lp-muted-fg" />
             </div>
-            <h3 className="text-xl font-bold text-[#1E3A66]">No articles found</h3>
-            <p className="text-[#64748B] font-medium">
-              Try adjusting your search or filters to find what you're looking for.
+            <h3 className="text-xl font-medium tracking-tight">No articles found</h3>
+            <p className="text-lp-muted-fg text-sm">
+              Try adjusting your search or filters to find what you&apos;re looking for.
             </p>
             <Button
               variant="outline"
-              className="mt-4 border-slate-200 text-blue-200 hover:text-[#2F5FA7] rounded-full"
+              className="mt-4 border-lp-border text-lp-muted-fg hover:text-lp-fg rounded-sm"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedTag(null);
@@ -132,31 +128,31 @@ export default function BlogPage() {
           </div>
         )}
 
-        {/* Newsletter / CTA Section */}
-        <div className="mt-32 relative rounded-3xl overflow-hidden border border-blue-50 bg-[#1E3A66] p-12 text-center shadow-2xl">
-          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl font-bold text-white tracking-tight leading-tight">
-              Get the latest manufacturing tech news <br /> delivered to your inbox.
-            </h2>
-            <p className="text-blue-100/60 font-medium">
-              Join 5,000+ engineers receiving bi-weekly deep dives into hardware innovation.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Input
-                className="h-12 bg-white/10 border-white/10 rounded-xl text-white placeholder:text-white/40"
-                placeholder="engineering@company.com"
-              />
-              <Button className="h-12 px-8 bg-white hover:bg-blue-50 text-[#1E3A66] rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg">
-                Subscribe <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
+        {/* Newsletter CTA */}
+        <Reveal>
+          <div className="mt-20 lp-grid-bg bg-lp-ink p-12 text-lp-ink-fg text-center">
+            <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+              <h2 className="text-3xl font-medium tracking-tight leading-tight">
+                Get the latest manufacturing tech news <br /> delivered to your <span className="font-lp-serif italic opacity-70">inbox.</span>
+              </h2>
+              <p className="text-sm opacity-50">
+                Join 5,000+ engineers receiving bi-weekly deep dives into hardware innovation.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Input
+                  className="h-12 bg-lp-ink-fg/10 border-lp-ink-fg/10 text-lp-ink-fg placeholder:text-lp-ink-fg/40 rounded-sm"
+                  placeholder="engineering@company.com"
+                />
+                <Button className="lp-label-mono h-12 px-8 bg-lp-ink-fg text-lp-ink hover:bg-lp-ink-fg/90 rounded-sm">
+                  Subscribe <ArrowRight className="ml-2 size-4" />
+                </Button>
+              </div>
+              <p className="lp-label-mono opacity-40">
+                Zero spam. Only precision content.
+              </p>
             </div>
-            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
-              Zero spam. Only precision content.
-            </p>
           </div>
-          {/* Subtle glow */}
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/5 rounded-full blur-[100px]" />
-        </div>
+        </Reveal>
       </div>
     </BlogLayout>
   );

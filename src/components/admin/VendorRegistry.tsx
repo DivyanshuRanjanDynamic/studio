@@ -1,126 +1,152 @@
-import React from 'react';
+'use client';
+
+import React, { useMemo } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Plus, ShieldCheck, Star, MapPin, Edit3, Trash2 } from 'lucide-react';
+import { Edit3, MapPin, Plus, ShieldCheck, Star, Trash2 } from 'lucide-react';
+import { Message, PageHeader } from './admin-ui';
 
 interface VendorRegistryProps {
   vendors: any[];
+  rfqs?: any[];
   onAddVendor: () => void;
   onEditVendor: (vendor: any) => void;
   onDeleteVendor?: (vendor: any) => void;
 }
 
+const DONE_STATUSES = ['completed', 'delivered', 'shipped'];
+
 export const VendorRegistry: React.FC<VendorRegistryProps> = ({
   vendors,
+  rfqs = [],
   onAddVendor,
   onEditVendor,
   onDeleteVendor,
 }) => {
+  const jobs = useMemo(() => {
+    const byVendor: Record<string, { done: number; active: number }> = {};
+    for (const r of rfqs) {
+      if (!r.assignedVendorId) continue;
+      const entry = (byVendor[r.assignedVendorId] ||= { done: 0, active: 0 });
+      if (DONE_STATUSES.includes(r.status)) entry.done += 1;
+      else if (!['cancelled', 'rejected'].includes(r.status)) entry.active += 1;
+    }
+    return byVendor;
+  }, [rfqs]);
+  const maxActive = Math.max(1, ...Object.values(jobs).map((j) => j.active));
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
-          MechMaster Registry
-        </h1>
-        <div className="flex items-center gap-2">
-          <Button onClick={onAddVendor} className="gap-2" size="sm">
-            <Plus className="w-4 h-4" /> Add MechMaster
-          </Button>
+    <div>
+      <PageHeader
+        tag={`${vendors?.length || 0} partners`}
+        before="The"
+        accent="MechMaster"
+        after="Network"
+        description="Verified shops building parts for MechHub customers."
+        action={
+          <button type="button" onClick={onAddVendor} className="adm-btn adm-btn-primary h-11">
+            <Plus className="size-3.5" /> Add MechMaster
+          </button>
+        }
+      />
+
+      {!vendors?.length ? (
+        <div className="adm-panel adm-fade-up mt-10 py-20">
+          <Message>No vendors registered yet</Message>
         </div>
-      </div>
-      <Card className="bg-card border-slate-200 overflow-x-auto">
-        <Table className="min-w-[700px]">
-          <TableHeader>
-            <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="text-blue-200">Company</TableHead>
-              <TableHead className="text-blue-200">Capabilities</TableHead>
-              <TableHead className="text-blue-200">Rating</TableHead>
-              <TableHead className="text-blue-200">Location</TableHead>
-              <TableHead className="text-blue-200">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {vendors?.map((v) => (
-              <TableRow key={v.id} className="border-b border-slate-100">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded overflow-hidden bg-slate-100">
-                      <Image
-                        src={v.imageUrl || '/mechhub.png'}
-                        alt={v.fullName || 'Vendor Logo'}
-                        fill
-                        className="object-cover"
+      ) : (
+        <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {vendors.map((v, i) => {
+            const j = jobs[v.id] || { done: 0, active: 0 };
+            return (
+              <div
+                key={v.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onEditVendor(v)}
+                onKeyDown={(e) => e.key === 'Enter' && onEditVendor(v)}
+                className="adm-card adm-fade-up group relative cursor-pointer p-6 text-left"
+                style={{ animationDelay: `${300 + i * 70}ms` }}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {v.imageUrl && (
+                      <div className="relative size-11 shrink-0 overflow-hidden border border-lp-border bg-lp-muted">
+                        <Image src={v.imageUrl} alt={v.fullName || 'Vendor logo'} fill className="object-cover" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="adm-row-title flex items-center gap-2 truncate text-[22px] leading-tight tracking-tight">
+                        {v.teamName || v.fullName}
+                        {v.isVerified && <ShieldCheck className="size-4 shrink-0 text-lp-primary" />}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-lp-muted-fg">
+                        <MapPin className="size-3" /> {v.location || '—'}
+                        {v.teamName && v.fullName && <span>· {v.fullName}</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 font-lp-mono text-xs">
+                    <Star className="size-3.5 fill-lp-primary text-lp-primary" /> {v.rating ?? '—'}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {v.specializations?.map((s: string) => (
+                    <span key={s} className="adm-chip adm-chip-blue">
+                      {s}
+                    </span>
+                  ))}
+                  {!v.isActive && <span className="adm-chip adm-chip-muted">Inactive</span>}
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <div className="adm-tile">
+                    <p className="adm-mono text-lp-muted-fg">Jobs done</p>
+                    <p className="mt-1 text-[22px] tracking-tight tabular-nums">{j.done}</p>
+                  </div>
+                  <div className="adm-tile">
+                    <p className="adm-mono text-lp-muted-fg">Active jobs</p>
+                    <p className="mt-1 text-[22px] tracking-tight tabular-nums">{j.active}</p>
+                    <div className="mt-2 h-[3px] bg-lp-border">
+                      <div
+                        className="adm-bar h-full bg-lp-primary"
+                        style={{ width: `${(j.active / maxActive) * 100}%`, animationDelay: `${500 + i * 80}ms` }}
                       />
                     </div>
-                    <div>
-                      <div className="font-bold text-slate-900 flex items-center gap-1">
-                        {v.fullName}
-                        {v.isVerified && <ShieldCheck className="w-3 h-3 text-secondary" />}
-                      </div>
-                      <div className="text-[10px] text-blue-200">{v.teamName}</div>
-                    </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1 max-w-[200px]">
-                    {v.specializations?.map((s: string, i: number) => (
-                      <Badge
-                        key={i}
-                        variant="secondary"
-                        className="text-[10px] uppercase border-blue-200 bg-blue-50 text-[#1E3A66] hover:bg-blue-100 transition-colors"
-                      >
-                        {s}
-                      </Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1 text-yellow-500 font-bold text-xs">
-                    <Star className="w-3 h-3 fill-yellow-500" /> {v.rating}
-                  </div>
-                </TableCell>
-                <TableCell className="text-xs text-slate-700">
-                  <MapPin className="w-3.5 h-3.5 inline mr-1.5 text-blue-100" />
-                  {v.location}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-blue-200 hover:text-blue-600"
-                      onClick={() => onEditVendor(v)}
+                </div>
+
+                <div className="absolute bottom-4 right-4 flex gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    aria-label={`Edit ${v.teamName || v.fullName}`}
+                    className="flex size-8 items-center justify-center border border-lp-border bg-white transition-colors hover:border-lp-primary hover:text-lp-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditVendor(v);
+                    }}
+                  >
+                    <Edit3 className="size-3.5" />
+                  </button>
+                  {onDeleteVendor && (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${v.teamName || v.fullName}`}
+                      className="flex size-8 items-center justify-center border border-lp-border bg-white transition-colors hover:border-[oklch(58%_0.22_27)] hover:text-[oklch(58%_0.22_27)]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteVendor(v);
+                      }}
                     >
-                      <Edit3 className="w-4 h-4" />
-                    </Button>
-                    {onDeleteVendor && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-blue-200 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => onDeleteVendor(v)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

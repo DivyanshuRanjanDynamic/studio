@@ -6,18 +6,18 @@
 // ═══════════════════════════════════════════════════
 
 import { useState, useCallback, useRef } from 'react';
-import type { UploadedFile, ParsedGeometry, FileStatus } from '@/types/quoting';
+import type { UploadedFile, FileStatus } from '@/types/quoting';
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
-const ACCEPTED_EXTENSIONS = ['.dxf', '.step', '.stp', '.stl'];
+// Laser prices STEP or DXF, CNC prices STEP; the converter measures the file itself.
+const ACCEPTED_EXTENSIONS = ['.dxf', '.step', '.stp'];
 
 export interface UseFileUploadReturn {
   files: readonly UploadedFile[];
   isDragging: boolean;
   activeFileId: string | null;
-  activeGeometry: ParsedGeometry | null;
-  /** Original File for the active upload — needed by /analyze-cnc */
+  /** Original File for the active upload — the converter analyses it server-side */
   activeRawFile: File | null;
   // Actions
   handleFileDrop: (e: React.DragEvent) => void;
@@ -39,42 +39,6 @@ async function hashFile(file: File): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Generates simulated geometry from file metadata.
- * In production, this would come from the Python parsing backend.
- */
-function generateSimulatedGeometry(fileName: string, fileSizeBytes: number): ParsedGeometry {
-  // Deterministic "random" based on filename hash
-  const seed = fileName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const pseudoRandom = (offset: number): number =>
-    (((seed + offset) * 9301 + 49297) % 233280) / 233280;
-
-  const width = 50 + pseudoRandom(1) * 400; // 50–450mm
-  const height = 50 + pseudoRandom(2) * 400; // 50–450mm
-  const cutLength = (width + height) * 2 + pseudoRandom(3) * 500;
-  const area = width * height * (0.3 + pseudoRandom(4) * 0.5);
-  const holeCount = Math.floor(pseudoRandom(5) * 12);
-  const nodeCount = 4 + Math.floor(pseudoRandom(6) * 200);
-  const complexity = Math.min(10, nodeCount / 20);
-
-  return {
-    cutLengthMm: Math.round(cutLength),
-    areaMm2: Math.round(area),
-    boundingBox: {
-      widthMm: Math.round(width),
-      heightMm: Math.round(height),
-      aspectRatio: Math.round((width / height) * 100) / 100,
-    },
-    holeCount,
-    complexityScore: Math.round(complexity * 10) / 10,
-    nodeCount,
-    minFeatureSizeMm: 1.5 + pseudoRandom(7) * 5,
-    minSlotWidthMm: 2.0 + pseudoRandom(8) * 5,
-    edgeToHoleDistanceMm: 2.0 + pseudoRandom(9) * 8,
-    hasOpenPaths: false,
-  };
 }
 
 export function useFileUpload(): UseFileUploadReturn {
@@ -112,15 +76,12 @@ export function useFileUpload(): UseFileUploadReturn {
         }
 
         const id = `file_${++fileIdCounter.current}_${Date.now()}`;
-        const geometry = generateSimulatedGeometry(file.name, file.size);
-
         const uploadedFile: UploadedFile = {
           id,
           fileName: file.name,
           fileSizeBytes: file.size,
           sha256Hash: hash,
           status: 'ready' as FileStatus,
-          geometry,
           dfmIssues: [],
           uploadProgress: 100,
         };
@@ -178,14 +139,12 @@ export function useFileUpload(): UseFileUploadReturn {
     setActiveFileId(id);
   }, []);
 
-  const activeGeometry = files.find((f) => f.id === activeFileId)?.geometry ?? null;
   const activeRawFile = activeFileId ? (rawFiles.current.get(activeFileId) ?? null) : null;
 
   return {
     files,
     isDragging,
     activeFileId,
-    activeGeometry,
     activeRawFile,
     handleFileDrop,
     handleFileSelect,

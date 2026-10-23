@@ -11,7 +11,8 @@ import {
   updateDocumentNonBlocking,
 } from '@/firebase';
 import { doc, query, collection, where, deleteDoc } from 'firebase/firestore';
-import { LandingNav } from '@/components/LandingNav';
+import { V2Shell } from '@/components/V2Shell';
+import { landingFontVars } from '@/components/home/fonts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,17 +98,17 @@ const STATUS_MAP: Record<ProjectRFQStatus, { label: string; color: string; descr
 {
   draft: {
     label: 'DRAFT',
-    color: 'bg-slate-100 text-slate-600 border-slate-200',
+    color: 'bg-lp-accent text-lp-muted-fg border-lp-border',
     description: 'Add parts to your project',
   },
   quote_requested: {
     label: 'QUOTE REQUESTED',
-    color: 'bg-blue-50 text-blue-700 border-blue-100',
+    color: 'bg-lp-accent text-blue-700 border-lp-border',
     description: 'Your order is being reviewed',
   },
   submitted: {
     label: 'SUBMITTED',
-    color: 'bg-blue-50 text-blue-700 border-blue-100',
+    color: 'bg-lp-accent text-blue-700 border-lp-border',
     description: 'Your order has been submitted',
   },
   under_review: {
@@ -168,11 +169,11 @@ const STATUS_MAP: Record<ProjectRFQStatus, { label: string; color: string; descr
 };
 
 const SERVICE_ICONS: Record<ManufacturingService, React.ReactNode> = {
-  cnc_machining: <Layers className="w-5 h-5 text-[#2F5FA7]" />,
-  sheet_metal_cutting: <Zap className="w-5 h-5 text-[#2F5FA7]" />,
-  '3d_printing': <Box className="w-5 h-5 text-[#2F5FA7]" />,
-  wire_edm: <Zap className="w-5 h-5 text-[#2F5FA7]" />,
-  cnc_turning: <RotateCcw className="w-5 h-5 text-[#2F5FA7]" />,
+  cnc_machining: <Layers className="w-5 h-5 text-lp-primary" />,
+  sheet_metal_cutting: <Zap className="w-5 h-5 text-lp-primary" />,
+  '3d_printing': <Box className="w-5 h-5 text-lp-primary" />,
+  wire_edm: <Zap className="w-5 h-5 text-lp-primary" />,
+  cnc_turning: <RotateCcw className="w-5 h-5 text-lp-primary" />,
 };
 
 function NegotiationDialog({
@@ -186,9 +187,9 @@ function NegotiationDialog({
   const [proposedPrice, setProposedPrice] = useState(currentPrice.toString());
 
   return (
-    <DialogContent className="sm:max-w-md bg-white">
+    <DialogContent className={`lp-root ${landingFontVars} sm:max-w-md bg-lp-card`}>
       <DialogHeader>
-        <DialogTitle className="uppercase tracking-widest text-xs font-bold text-slate-900">
+        <DialogTitle className="uppercase tracking-widest text-xs font-bold text-lp-fg">
           Negotiate Quotation
         </DialogTitle>
         <DialogDescription className="text-[10px] uppercase tracking-widest font-bold">
@@ -204,7 +205,7 @@ function NegotiationDialog({
             type="number"
             value={proposedPrice}
             onChange={(e) => setProposedPrice(e.target.value)}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
         <div className="space-y-2">
@@ -215,14 +216,14 @@ function NegotiationDialog({
             placeholder="e.g. Can we finalize at this price due to bulk requirement?"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="min-h-[100px] border-slate-200"
+            className="min-h-[100px] border-lp-border"
           />
         </div>
       </div>
       <DialogFooter>
         <Button
           onClick={() => onSend(message, proposedPrice ? parseInt(proposedPrice) : undefined)}
-          className="bg-[#2F5FA7] hover:bg-[#1E3A66] text-white font-bold uppercase tracking-widest text-[10px] h-10 px-6"
+          className="bg-lp-primary hover:bg-lp-primary/80 text-white font-bold uppercase tracking-widest text-[10px] h-10 px-6"
         >
           Send Counter-Offer
         </Button>
@@ -307,9 +308,9 @@ function AddressDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-lg bg-white">
+    <DialogContent className={`lp-root ${landingFontVars} sm:max-w-lg bg-lp-card`}>
       <DialogHeader>
-        <DialogTitle className="uppercase tracking-widest text-xs font-bold text-slate-900">
+        <DialogTitle className="uppercase tracking-widest text-xs font-bold text-lp-fg">
           Delivery Address
         </DialogTitle>
         <DialogDescription className="text-[10px] uppercase tracking-widest font-bold">
@@ -322,7 +323,7 @@ function AddressDialog({
           <Input
             value={address.fullName}
             onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
         <div className="space-y-2">
@@ -330,7 +331,7 @@ function AddressDialog({
           <Input
             value={address.phone}
             onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
         <div className="md:col-span-2 space-y-2">
@@ -338,7 +339,7 @@ function AddressDialog({
           <Input
             value={address.addressLine1}
             onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
         <div className="space-y-2">
@@ -346,7 +347,7 @@ function AddressDialog({
           <Input
             value={address.city}
             onChange={(e) => setAddress({ ...address, city: e.target.value })}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
         <div className="space-y-2">
@@ -354,7 +355,7 @@ function AddressDialog({
           <Input
             value={address.state}
             onChange={(e) => setAddress({ ...address, state: e.target.value })}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
         <div className="space-y-2">
@@ -362,11 +363,11 @@ function AddressDialog({
           <Input
             value={address.pincode}
             onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
-            className="h-10 border-slate-200"
+            className="h-10 border-lp-border"
           />
         </div>
 
-        <div className="md:col-span-2 pt-2 border-t border-slate-100">
+        <div className="md:col-span-2 pt-2 border-t border-lp-border">
           <div className="flex items-center space-x-2">
             <Checkbox
               id="gst"
@@ -392,7 +393,7 @@ function AddressDialog({
                 value={address.companyName}
                 onChange={(e) => setAddress({ ...address, companyName: e.target.value })}
                 placeholder="Business Name"
-                className="h-10 border-slate-200"
+                className="h-10 border-lp-border"
               />
             </div>
             <div className="space-y-2">
@@ -401,7 +402,7 @@ function AddressDialog({
                 value={address.gstNumber}
                 onChange={(e) => setAddress({ ...address, gstNumber: e.target.value })}
                 placeholder="22AAAAA0000A1Z5"
-                className="h-10 border-slate-200"
+                className="h-10 border-lp-border"
               />
             </div>
           </>
@@ -418,7 +419,7 @@ function AddressDialog({
         <Button
           disabled={isLoading || !address.addressLine1 || !address.fullName}
           onClick={handleConfirm}
-          className="bg-[#2F5FA7] hover:bg-[#1E3A66] text-white font-bold uppercase tracking-widest text-[10px] h-11 px-8"
+          className="bg-lp-primary hover:bg-lp-primary/80 text-white font-bold uppercase tracking-widest text-[10px] h-11 px-8"
         >
           {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm & Proceed to Pay'}
         </Button>
@@ -840,8 +841,8 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   // Only show full-page loader on INITIAL load (no cached data exists yet)
   if (isUserLoading || (isProjectLoading && !project)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-lp-bg">
+        <Loader2 className="w-8 h-8 text-lp-primary animate-spin" />
       </div>
     );
   }
@@ -849,16 +850,16 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   // Only show error if we truly have NO data (not even cached) AND loading is done
   if (!user || (!project && !isProjectLoading && !cachedProjectRef.current)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <div className="min-h-screen flex items-center justify-center bg-lp-bg">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">
+          <p className="text-lp-muted-fg font-bold uppercase tracking-widest text-xs">
             Project not found or access denied.
           </p>
           <Button
             variant="link"
             onClick={() => router.push('/dashboard')}
-            className="mt-4 text-[#2F5FA7] font-bold uppercase tracking-widest text-[10px]"
+            className="mt-4 text-lp-primary font-bold uppercase tracking-widest text-[10px]"
           >
             Back to Dashboard
           </Button>
@@ -870,8 +871,8 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   // NEVER return null — use cached data as ultimate fallback
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-lp-bg">
+        <Loader2 className="w-8 h-8 text-lp-primary animate-spin" />
       </div>
     );
   }
@@ -884,17 +885,16 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const basePrice = project.finalPrice || project.quotedPrice || partsSubtotal || 0;
 
   return (
-    <div className="min-h-screen pt-24 pb-12 bg-[#F8FAFC] font-sans text-slate-600 relative">
+    <V2Shell noFooter>
+      <div className="pb-12 relative">
       {/* Background */}
       <div
-        className="absolute inset-0 bg-white/50"
+        className="absolute inset-0 bg-lp-bg/50"
         style={{
-          backgroundImage: 'radial-gradient(#2F5FA710 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(oklch(0.55 0.05 250 / 0.06) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
         }}
       />
-
-      <LandingNav />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
@@ -902,7 +902,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           <Button
             variant="ghost"
             onClick={() => router.push('/dashboard')}
-            className="mb-4 -ml-2 text-slate-500 hover:text-[#2F5FA7]"
+            className="mb-4 -ml-2 text-lp-muted-fg hover:text-lp-primary"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
@@ -911,7 +911,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 md:gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-3 mb-3 md:mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight uppercase text-slate-900 leading-tight">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight uppercase text-lp-fg leading-tight">
                   {project.projectName}
                 </h1>
                 <Badge
@@ -921,9 +921,9 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                   {statusInfo.label}
                 </Badge>
               </div>
-              <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+              <p className="text-lp-muted-fg text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                 <span className="shrink-0">Project RFQ</span>
-                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                <span className="w-1 h-1 rounded-full bg-lp-muted-fg" />
                 <span>
                   Created{' '}
                   {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'N/A'}
@@ -934,7 +934,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             {project.status === 'draft' && (
               <Button
                 onClick={() => setIsPartWizardOpen(true)}
-                className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
+                className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-lp-primary hover:bg-lp-primary/80 text-white shadow-sm transition-all border-none"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Part
@@ -947,17 +947,17 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           {/* Left Column - Parts List */}
           <div className="lg:col-span-2 space-y-6">
             <Tabs defaultValue="parts" className="space-y-6">
-              <TabsList className="bg-white border border-slate-200 p-1 rounded-xl shadow-sm w-full flex overflow-x-auto no-scrollbar justify-start md:justify-center">
+              <TabsList className="bg-lp-card border border-lp-border p-1 rounded-sm shadow-sm w-full flex overflow-x-auto no-scrollbar justify-start md:justify-center">
                 <TabsTrigger
                   value="parts"
-                  className="px-4 md:px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[100px] flex-shrink-0"
+                  className="px-4 md:px-6 data-[state=active]:bg-lp-accent/50 data-[state=active]:text-lp-primary data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[100px] flex-shrink-0"
                 >
                   <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
                   Parts ({projectParts.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="details"
-                  className="px-4 md:px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[100px] flex-shrink-0"
+                  className="px-4 md:px-6 data-[state=active]:bg-lp-accent/50 data-[state=active]:text-lp-primary data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[100px] flex-shrink-0"
                 >
                   <FileText className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
                   Details
@@ -967,7 +967,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                   (project.negotiationHistory && project.negotiationHistory.length > 0)) && (
                     <TabsTrigger
                       value="negotiation"
-                      className="px-4 md:px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[120px] flex-shrink-0"
+                      className="px-4 md:px-6 data-[state=active]:bg-lp-accent/50 data-[state=active]:text-lp-primary data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[120px] flex-shrink-0"
                     >
                       <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
                       Negotiation
@@ -978,7 +978,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
               <TabsContent value="parts" className="space-y-4">
                 {isPartsLoading && projectParts.length === 0 ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#2F5FA7]" />
+                    <Loader2 className="w-8 h-8 animate-spin text-lp-primary" />
                   </div>
                 ) : projectParts.length > 0 ? (
                   <div className="space-y-4">
@@ -986,52 +986,52 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                       <Card
                         key={part.id}
                         id={`part-${part.id}`}
-                        className={`bg-white overflow-hidden transition-all duration-700 ${highlightId === part.id ? 'border-[#2F5FA7] ring-2 ring-blue-100 shadow-xl' : 'border-slate-200 shadow-sm'}`}
+                        className={`bg-lp-card overflow-hidden transition-all duration-700 ${highlightId === part.id ? 'border-lp-primary ring-2 ring-lp-primary/20 shadow-sm' : 'border-lp-border shadow-sm'}`}
                       >
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0">
+                                <div className="w-12 h-12 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border shrink-0">
                                   {SERVICE_ICONS[part.service] || (
-                                    <Box className="w-5 h-5 text-[#2F5FA7]" />
+                                    <Box className="w-5 h-5 text-lp-primary" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-bold text-slate-900 uppercase tracking-wide text-sm truncate">
+                                    <p className="font-bold text-lp-fg uppercase tracking-wide text-sm truncate">
                                       {part.partName || `Part ${index + 1}`}
                                     </p>
-                                    <Badge className="bg-blue-50 text-[#2F5FA7] border border-blue-100 text-[8px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 shrink-0">
+                                    <Badge className="bg-lp-accent text-lp-primary border border-lp-border text-[8px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 shrink-0">
                                       {SERVICE_DISPLAY_NAMES[part.service] || part.service}
                                     </Badge>
                                   </div>
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 pt-3 border-t border-slate-50">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 pt-3 border-t border-lp-border">
                                     <div className="flex items-center gap-2">
-                                      <Layers className="w-3.5 h-3.5 text-[#2F5FA7]/70" />
-                                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-900">
+                                      <Layers className="w-3.5 h-3.5 text-lp-primary/70" />
+                                      <span className="text-[10px] uppercase tracking-wider font-bold text-lp-fg">
                                         {part.material.name}
                                       </span>
                                       {part.material.grade && (
-                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                        <span className="text-[9px] text-lp-muted-fg font-bold uppercase tracking-wider">
                                           ({part.material.grade})
                                         </span>
                                       )}
                                     </div>
 
                                     <div className="flex items-center gap-2">
-                                      <Hash className="w-3.5 h-3.5 text-[#2F5FA7]/70" />
-                                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
-                                        Qty: <span className="text-slate-900">{part.quantity}</span>
+                                      <Hash className="w-3.5 h-3.5 text-lp-primary/70" />
+                                      <span className="text-[10px] uppercase tracking-wider font-bold text-lp-muted-fg">
+                                        Qty: <span className="text-lp-fg">{part.quantity}</span>
                                       </span>
                                     </div>
                                     {part.material.thickness && (
                                       <div className="flex items-center gap-2">
-                                        <Layers className="w-3.5 h-3.5 text-[#2F5FA7]/70" />
-                                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                                        <Layers className="w-3.5 h-3.5 text-lp-primary/70" />
+                                        <span className="text-[10px] uppercase tracking-wider font-bold text-lp-muted-fg">
                                           Thickness:{' '}
-                                          <span className="text-slate-900">
+                                          <span className="text-lp-fg">
                                             {part.material.thickness} mm
                                           </span>
                                         </span>
@@ -1040,27 +1040,27 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                                   </div>
 
                                   {/* CAD File Section */}
-                                  <div className="mt-3 pt-3 border-t border-slate-100">
+                                  <div className="mt-3 pt-3 border-t border-lp-border">
                                     <div
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleDownload(part.cadFile.fileUrl, part.cadFile.fileName);
                                       }}
-                                      className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-blue-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-all group/file cursor-pointer"
+                                      className="flex items-center gap-3 p-3 bg-lp-accent hover:bg-lp-accent/80 rounded-lg border border-lp-border hover:border-lp-primary/30 transition-all group/file cursor-pointer"
                                     >
-                                      <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center border border-blue-200 group-hover/file:bg-[#2F5FA7] transition-colors">
-                                        <FileText className="w-4 h-4 text-[#2F5FA7] group-hover/file:text-white transition-colors" />
+                                      <div className="w-9 h-9 rounded-lg bg-lp-accent flex items-center justify-center border border-lp-border group-hover/file:bg-lp-primary/80 transition-colors">
+                                        <FileText className="w-4 h-4 text-lp-primary group-hover/file:text-white transition-colors" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-[10px] font-bold text-slate-900 uppercase tracking-wide truncate">
+                                        <p className="text-[10px] font-bold text-lp-fg uppercase tracking-wide truncate">
                                           {part.cadFile.fileName}
                                         </p>
-                                        <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold mt-0.5">
+                                        <p className="text-[9px] text-lp-muted-fg uppercase tracking-wider font-bold mt-0.5">
                                           {formatFileSize(part.cadFile.fileSize)} • Uploaded{' '}
                                           {new Date(part.cadFile.uploadedAt).toLocaleDateString()}
                                         </p>
                                       </div>
-                                      <Download className="w-4 h-4 text-slate-300 group-hover/file:text-[#2F5FA7] transition-colors" />
+                                      <Download className="w-4 h-4 text-lp-muted-fg group-hover/file:text-lp-primary/80 transition-colors" />
                                     </div>
                                     {part.secondaryProcesses &&
                                       part.secondaryProcesses.length > 0 && (
@@ -1068,20 +1068,20 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                                           {part.secondaryProcesses.map((proc) => (
                                             <div
                                               key={proc}
-                                              className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/50"
+                                              className="flex items-center gap-1 bg-lp-accent px-2 py-0.5 rounded-md border border-lp-border/50"
                                             >
                                               {SECONDARY_PROCESS_ICONS[proc] || (
                                                 <Check className="w-2.5 h-2.5" />
                                               )}
-                                              <span className="text-[9px] text-slate-600">
+                                              <span className="text-[9px] text-lp-muted-fg">
                                                 {proc.replace(/_/g, ' ')}
                                               </span>
                                             </div>
                                           ))}
                                           {part.coatingColor && (
-                                            <div className="flex items-center gap-1.5 ml-1 border-l border-slate-200 pl-3">
+                                            <div className="flex items-center gap-1.5 ml-1 border-l border-lp-border pl-3">
                                               <div
-                                                className="w-2.5 h-2.5 rounded-full border border-slate-200 shadow-sm"
+                                                className="w-2.5 h-2.5 rounded-full border border-lp-border shadow-sm"
                                                 style={{
                                                   backgroundColor:
                                                     part.coatingColor === 'custom'
@@ -1089,7 +1089,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                                                       : part.coatingColor,
                                                 }}
                                               />
-                                              <span className="text-slate-500">
+                                              <span className="text-lp-muted-fg">
                                                 {part.coatingColor} finish
                                               </span>
                                             </div>
@@ -1109,7 +1109,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                                   e.stopPropagation();
                                   setPendingPartDeleteId(part.id);
                                 }}
-                                className="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                                className="text-lp-muted-fg hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                                 title="Delete part"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1124,7 +1124,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                       <Button
                         variant="outline"
                         onClick={() => setIsPartWizardOpen(true)}
-                        className="w-full h-12 tracking-widest uppercase text-[10px] font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
+                        className="w-full h-12 tracking-widest uppercase text-[10px] font-bold border-lp-border text-lp-fg hover:bg-lp-accent/80"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Another Part
@@ -1132,18 +1132,18 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     )}
                   </div>
                 ) : (
-                  <Card className="bg-white border-slate-200 border-dashed">
+                  <Card className="bg-lp-card border-lp-border border-dashed">
                     <CardContent className="p-12 text-center">
-                      <Package className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                      <p className="text-slate-500 font-bold uppercase tracking-wide text-sm mb-2">
+                      <Package className="w-12 h-12 mx-auto text-lp-muted-fg mb-4" />
+                      <p className="text-lp-muted-fg font-bold uppercase tracking-wide text-sm mb-2">
                         No Parts Added Yet
                       </p>
-                      <p className="text-slate-400 text-xs uppercase tracking-wider font-bold mb-4">
+                      <p className="text-lp-muted-fg text-xs uppercase tracking-wider font-bold mb-4">
                         Add your first manufacturing part to get started
                       </p>
                       <Button
                         onClick={() => setIsPartWizardOpen(true)}
-                        className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-[#2F5FA7] hover:bg-[#1E3A66] text-white"
+                        className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-lp-primary hover:bg-lp-primary/80 text-white"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add First Part
@@ -1158,13 +1158,13 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     <ProjectCostSummary
                       parts={projectParts}
                       agreedSubtotal={project.finalPrice || project.quotedPrice || null}
-                      className="bg-white border-slate-200 shadow-sm"
+                      className="bg-lp-card border-lp-border shadow-sm"
                     />
                     <Button
                       variant="outline"
                       onClick={handleDownloadQuotation}
                       disabled={isDownloadingQuote}
-                      className="w-full h-11 tracking-widest uppercase text-[10px] font-bold border-slate-200 text-[#2F5FA7] hover:bg-blue-50"
+                      className="w-full h-11 tracking-widest uppercase text-[10px] font-bold border-lp-border text-lp-primary hover:bg-lp-accent/80"
                     >
                       {isDownloadingQuote ? (
                         <>
@@ -1182,22 +1182,22 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
               <TabsContent value="details" className="space-y-4">
                 {/* Project Information */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-lp-card border-lp-border">
                   <CardHeader>
-                    <CardTitle className="text-sm font-bold uppercase tracking-wide text-slate-900">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wide text-lp-fg">
                       Project Information
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-[10px] uppercase tracking-wider font-bold">
                       <div>
-                        <span className="text-slate-400">Project ID:</span>
-                        <p className="text-slate-900 font-mono mt-1 text-[9px]">
+                        <span className="text-lp-muted-fg">Project ID:</span>
+                        <p className="text-lp-fg font-lp-mono mt-1 text-[9px]">
                           {projectId.slice(0, 12)}...
                         </p>
                       </div>
                       <div>
-                        <span className="text-slate-400">Status:</span>
+                        <span className="text-lp-muted-fg">Status:</span>
                         <div className="mt-1">
                           <Badge
                             className={`${statusInfo.color} text-[8px] uppercase tracking-widest font-bold px-2 py-0 h-5`}
@@ -1207,21 +1207,21 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                         </div>
                       </div>
                       <div>
-                        <span className="text-slate-400">Created:</span>
-                        <p className="text-slate-900 mt-1">
+                        <span className="text-lp-muted-fg">Created:</span>
+                        <p className="text-lp-fg mt-1">
                           {new Date(project.createdAt).toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <span className="text-slate-400">Total Parts:</span>
-                        <p className="text-slate-900 mt-1">{projectParts.length}</p>
+                        <span className="text-lp-muted-fg">Total Parts:</span>
+                        <p className="text-lp-fg mt-1">{projectParts.length}</p>
                       </div>
                       {project.deliveryLocation && (
                         <div className="col-span-2">
-                          <span className="text-slate-400 flex items-center gap-1">
+                          <span className="text-lp-muted-fg flex items-center gap-1">
                             <MapPin className="w-3 h-3" /> Delivery Location:
                           </span>
-                          <p className="text-slate-900 mt-1">{project.deliveryLocation}</p>
+                          <p className="text-lp-fg mt-1">{project.deliveryLocation}</p>
                         </div>
                       )}
                     </div>
@@ -1230,10 +1230,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
                 {/* Uploaded Files */}
                 {projectParts.length > 0 && (
-                  <Card className="bg-white border-slate-200">
+                  <Card className="bg-lp-card border-lp-border">
                     <CardHeader>
-                      <CardTitle className="text-sm font-bold uppercase tracking-wide text-slate-900 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#2F5FA7]" />
+                      <CardTitle className="text-sm font-bold uppercase tracking-wide text-lp-fg flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-lp-primary" />
                         Uploaded CAD Files ({projectParts.length})
                       </CardTitle>
                     </CardHeader>
@@ -1244,21 +1244,21 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                           onClick={() =>
                             handleDownload(part.cadFile.fileUrl, part.cadFile.fileName)
                           }
-                          className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-blue-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-all group/file cursor-pointer"
+                          className="flex items-center gap-3 p-3 bg-lp-accent hover:bg-lp-accent/80 rounded-lg border border-lp-border hover:border-lp-primary/30 transition-all group/file cursor-pointer"
                         >
-                          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center border border-blue-200 group-hover/file:bg-[#2F5FA7] transition-colors">
-                            <FileText className="w-4 h-4 text-[#2F5FA7] group-hover/file:text-white transition-colors" />
+                          <div className="w-9 h-9 rounded-lg bg-lp-accent flex items-center justify-center border border-lp-border group-hover/file:bg-lp-primary/80 transition-colors">
+                            <FileText className="w-4 h-4 text-lp-primary group-hover/file:text-white transition-colors" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold text-slate-900 uppercase tracking-wide truncate">
+                            <p className="text-[10px] font-bold text-lp-fg uppercase tracking-wide truncate">
                               {part.cadFile.fileName}
                             </p>
-                            <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold mt-0.5">
+                            <p className="text-[9px] text-lp-muted-fg uppercase tracking-wider font-bold mt-0.5">
                               {part.partName || 'Part'} • {formatFileSize(part.cadFile.fileSize)} •{' '}
                               {new Date(part.cadFile.uploadedAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <ExternalLink className="w-4 h-4 text-slate-300 group-hover/file:text-[#2F5FA7] transition-colors flex-shrink-0" />
+                          <ExternalLink className="w-4 h-4 text-lp-muted-fg group-hover/file:text-lp-primary/80 transition-colors flex-shrink-0" />
                         </div>
                       ))}
                     </CardContent>
@@ -1267,10 +1267,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
                 {/* Per-Part Specification Breakdown */}
                 {projectParts.length > 0 && (
-                  <Card className="bg-white border-slate-200">
+                  <Card className="bg-lp-card border-lp-border">
                     <CardHeader>
-                      <CardTitle className="text-sm font-bold uppercase tracking-wide text-slate-900 flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-[#2F5FA7]" />
+                      <CardTitle className="text-sm font-bold uppercase tracking-wide text-lp-fg flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-lp-primary" />
                         Part Specifications
                       </CardTitle>
                     </CardHeader>
@@ -1278,42 +1278,42 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                       {projectParts.map((part: MechanicalPart, index: number) => (
                         <div
                           key={part.id}
-                          className="p-4 bg-slate-50 rounded-xl border border-slate-100"
+                          className="p-4 bg-lp-accent rounded-sm border border-lp-border"
                         >
                           <div className="flex items-center gap-2 mb-3">
-                            <p className="font-bold text-slate-900 uppercase tracking-wide text-xs">
+                            <p className="font-bold text-lp-fg uppercase tracking-wide text-xs">
                               {part.partName || `Part ${index + 1}`}
                             </p>
-                            <Badge className="bg-blue-50 text-[#2F5FA7] border border-blue-100 text-[7px] uppercase tracking-wider font-bold px-1.5 py-0 h-4">
+                            <Badge className="bg-lp-accent text-lp-primary border border-lp-border text-[7px] uppercase tracking-wider font-bold px-1.5 py-0 h-4">
                               {part.service.replace(/_/g, ' ')}
                             </Badge>
                           </div>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[10px] uppercase tracking-wider font-bold">
                             <div>
-                              <span className="text-slate-400">Material:</span>{' '}
-                              <span className="text-slate-900">
+                              <span className="text-lp-muted-fg">Material:</span>{' '}
+                              <span className="text-lp-fg">
                                 {part.material.name}{' '}
                                 {part.material.grade && `(${part.material.grade})`}
                               </span>
                             </div>
                             <div>
-                              <span className="text-slate-400">Quantity:</span>{' '}
-                              <span className="text-slate-900">{part.quantity} PCS</span>
+                              <span className="text-lp-muted-fg">Quantity:</span>{' '}
+                              <span className="text-lp-fg">{part.quantity} PCS</span>
                             </div>
                             {part.material.thickness && (
                               <div>
-                                <span className="text-slate-400">Thickness:</span>{' '}
-                                <span className="text-slate-900">{part.material.thickness} mm</span>
+                                <span className="text-lp-muted-fg">Thickness:</span>{' '}
+                                <span className="text-lp-fg">{part.material.thickness} mm</span>
                               </div>
                             )}
                             <div>
-                              <span className="text-slate-400">CAD File:</span>{' '}
-                              <span className="text-slate-900">{part.cadFile.fileName}</span>
+                              <span className="text-lp-muted-fg">CAD File:</span>{' '}
+                              <span className="text-lp-fg">{part.cadFile.fileName}</span>
                             </div>
                             {part.secondaryProcesses.length > 0 && (
                               <div className="col-span-2">
-                                <span className="text-slate-400">Secondary:</span>{' '}
-                                <span className="text-slate-900">
+                                <span className="text-lp-muted-fg">Secondary:</span>{' '}
+                                <span className="text-lp-fg">
                                   {part.secondaryProcesses
                                     .map((p) => p.replace(/_/g, ' '))
                                     .join(', ')}
@@ -1322,20 +1322,20 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                             )}
                             {part.coatingColor && (
                               <div className="flex items-center gap-1.5">
-                                <span className="text-slate-400">Finish Color:</span>{' '}
+                                <span className="text-lp-muted-fg">Finish Color:</span>{' '}
                                 <div
-                                  className="w-2.5 h-2.5 rounded-full border border-slate-200"
+                                  className="w-2.5 h-2.5 rounded-full border border-lp-border"
                                   style={{
                                     backgroundColor:
                                       part.coatingColor === 'custom' ? '#ccc' : part.coatingColor,
                                   }}
                                 />{' '}
-                                <span className="text-slate-900">{part.coatingColor}</span>
+                                <span className="text-lp-fg">{part.coatingColor}</span>
                               </div>
                             )}
                             {part.discountTier && (
                               <div>
-                                <span className="text-slate-400">Discount Tier:</span>{' '}
+                                <span className="text-lp-muted-fg">Discount Tier:</span>{' '}
                                 <span className="text-emerald-600">{part.discountTier}</span>
                               </div>
                             )}
@@ -1348,15 +1348,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
               </TabsContent>
 
               <TabsContent value="negotiation" className="space-y-4">
-                <Card className="bg-white border-slate-200 overflow-hidden shadow-sm">
-                  <CardHeader className="border-b border-slate-50">
-                    <CardTitle className="text-sm font-bold uppercase tracking-wide text-slate-900 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-[#2F5FA7]" />
+                <Card className="bg-lp-card border-lp-border overflow-hidden shadow-sm">
+                  <CardHeader className="border-b border-lp-border">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wide text-lp-fg flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-lp-primary" />
                       Negotiation History
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="max-h-[400px] overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+                    <div className="max-h-[400px] overflow-y-auto p-6 space-y-4 bg-lp-accent/30">
                       {project.negotiationHistory && project.negotiationHistory.length > 0 ? (
                         project.negotiationHistory.map((msg: any, idx: number) => (
                           <div
@@ -1364,19 +1364,19 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                             className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} mb-4 last:mb-0`}
                           >
                             <div
-                              className={`max-w-[90%] md:max-w-[85%] rounded-2xl px-4 md:px-5 py-3 text-xs md:text-sm shadow-sm ${msg.role === 'user' ? 'bg-[#2F5FA7] text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}
+                              className={`max-w-[90%] md:max-w-[85%] rounded-sm px-4 md:px-5 py-3 text-xs md:text-sm shadow-sm ${msg.role === 'user' ? 'bg-lp-primary text-white rounded-tr-none' : 'bg-lp-card border border-lp-border text-lp-fg rounded-tl-none'}`}
                             >
                               <p className="leading-relaxed">{msg.message}</p>
                               {msg.proposedPrice && (
                                 <div
-                                  className={`mt-2 pt-2 border-t text-[10px] font-bold uppercase tracking-wider ${msg.role === 'user' ? 'border-white/10 text-blue-100' : 'border-slate-100 text-[#2F5FA7]'}`}
+                                  className={`mt-2 pt-2 border-t text-[10px] font-bold uppercase tracking-wider ${msg.role === 'user' ? 'border-white/10 text-lp-muted-fg' : 'border-lp-border text-lp-primary'}`}
                                 >
                                   {msg.role === 'user' ? 'Your Counter-Offer:' : 'Admin Proposed:'}{' '}
                                   ₹{msg.proposedPrice.toLocaleString()}
                                 </div>
                               )}
                             </div>
-                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 px-1">
+                            <span className="text-[8px] font-bold text-lp-muted-fg uppercase tracking-widest mt-1.5 px-1">
                               {msg.role === 'user' ? 'You' : 'MechHub Admin'} •{' '}
                               {new Date(msg.timestamp).toLocaleTimeString([], {
                                 hour: '2-digit',
@@ -1386,7 +1386,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                           </div>
                         ))
                       ) : (
-                        <div className="py-20 text-center text-slate-400">
+                        <div className="py-20 text-center text-lp-muted-fg">
                           <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
                           <p className="text-[10px] uppercase font-bold tracking-widest">
                             No conversation history yet
@@ -1400,18 +1400,18 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
                     {/* Direct Reply Action in Tab */}
                     {project.status === 'quotation_sent' && (
-                      <div className="p-6 bg-white border-t border-slate-100 flex flex-col items-center gap-4">
+                      <div className="p-6 bg-lp-card border-t border-lp-border flex flex-col items-center gap-4">
                         <div className="text-center space-y-1">
-                          <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">
+                          <p className="text-[10px] font-bold text-lp-fg uppercase tracking-widest">
                             Ready to continue the conversation?
                           </p>
-                          <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">
+                          <p className="text-[9px] text-lp-muted-fg uppercase tracking-widest font-bold">
                             You can send another counter-offer or a message to the Admin
                           </p>
                         </div>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button className="bg-[#2F5FA7] hover:bg-[#1E3A66] text-white font-bold uppercase tracking-widest text-[10px] h-11 px-8 shadow-md">
+                            <Button className="bg-lp-primary hover:bg-lp-primary/80 text-white font-bold uppercase tracking-widest text-[10px] h-11 px-8 shadow-sm">
                               <MessageSquare className="w-4 h-4 mr-2" />
                               Reply with Counter-Offer
                             </Button>
@@ -1429,26 +1429,26 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           {/* Right Column - Actions */}
           <div className="lg:col-span-1 space-y-6">
             {/* Status Card */}
-            <Card className="bg-white border-slate-200 shadow-xl overflow-hidden">
+            <Card className="bg-lp-card border-lp-border shadow-sm overflow-hidden">
               <div
                 className={`p-5 ${statusInfo.color.split(' ')[0]} border-b ${statusInfo.color.split(' ').slice(-1)[0]}`}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'bg-white/20' : 'bg-white'}`}
+                    className={`w-10 h-10 rounded-sm flex items-center justify-center ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'bg-white/20' : 'bg-lp-card'}`}
                   >
                     <Clock
-                      className={`w-5 h-5 ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'text-white' : 'text-[#2F5FA7]'}`}
+                      className={`w-5 h-5 ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'text-white' : 'text-lp-primary'}`}
                     />
                   </div>
                   <div>
                     <p
-                      className={`text-[10px] uppercase tracking-widest font-bold ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'text-white/80' : 'text-slate-500'}`}
+                      className={`text-[10px] uppercase tracking-widest font-bold ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'text-white/80' : 'text-lp-muted-fg'}`}
                     >
                       Current Status
                     </p>
                     <p
-                      className={`font-bold uppercase tracking-wide text-sm ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'text-white' : 'text-slate-900'}`}
+                      className={`font-bold uppercase tracking-wide text-sm ${statusInfo.color.includes('bg-blue-600') || statusInfo.color.includes('bg-green-600') ? 'text-white' : 'text-lp-fg'}`}
                     >
                       {statusInfo.label}
                     </p>
@@ -1456,7 +1456,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 </div>
               </div>
               <CardContent className="p-5">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold leading-relaxed">
+                <p className="text-[10px] text-lp-muted-fg uppercase tracking-wider font-bold leading-relaxed">
                   {statusInfo.description}
                 </p>
               </CardContent>
@@ -1464,15 +1464,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
             {/* Request Quote Action */}
             {project.status === 'draft' && projectParts.length > 0 && (
-              <Card className="bg-[#2F5FA7] border-[#2F5FA7] text-white shadow-xl overflow-hidden">
+              <Card className="bg-lp-primary border-lp-primary text-white shadow-sm overflow-hidden">
                 <CardContent className="p-5 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-sm bg-white/20 flex items-center justify-center">
                       <Send className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <p className="font-bold uppercase tracking-wide text-sm">Ready to Quote</p>
-                      <p className="text-[10px] text-blue-100 uppercase tracking-wider font-bold">
+                      <p className="text-[10px] text-lp-muted-fg uppercase tracking-wider font-bold">
                         {projectParts.length} part(s) added
                       </p>
                     </div>
@@ -1481,7 +1481,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                   <Button
                     onClick={handleRequestQuote}
                     disabled={isRequestingQuote}
-                    className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-white hover:bg-blue-50 text-[#2F5FA7] rounded-xl shadow-lg transition-all border-none"
+                    className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-white hover:bg-lp-accent/80 text-lp-primary rounded-sm shadow-sm transition-all border-none"
                   >
                     {isRequestingQuote ? (
                       <>
@@ -1496,7 +1496,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     )}
                   </Button>
 
-                  <p className="text-[10px] text-blue-100 uppercase tracking-wider font-bold text-center">
+                  <p className="text-[10px] text-lp-muted-fg uppercase tracking-wider font-bold text-center">
                     You will receive your quotation shortly
                   </p>
                 </CardContent>
@@ -1504,10 +1504,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'quotation_sent' && (
-              <Card className="bg-emerald-50 border-emerald-200 shadow-xl overflow-hidden">
+              <Card className="bg-emerald-50 border-emerald-200 shadow-sm overflow-hidden">
                 <CardHeader className="bg-emerald-600 text-white p-5 border-none">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-sm bg-white/20 flex items-center justify-center">
                       <DollarSign className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -1522,13 +1522,13 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 </CardHeader>
                 <CardContent className="p-5 space-y-4">
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-slate-500">
+                    <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-lp-muted-fg">
                       <span>Total Price</span>
-                      <span className="text-slate-900">₹{basePrice.toLocaleString()}</span>
+                      <span className="text-lp-fg">₹{basePrice.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-slate-500">
+                    <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-lp-muted-fg">
                       <span>Lead Time</span>
-                      <span className="text-slate-900">{project.leadTimeDays} Days</span>
+                      <span className="text-lp-fg">{project.leadTimeDays} Days</span>
                     </div>
                   </div>
 
@@ -1544,7 +1544,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
-                          className="w-full h-11 border-slate-200 text-slate-600 font-bold uppercase tracking-widest text-[10px]"
+                          className="w-full h-11 border-lp-border text-lp-muted-fg font-bold uppercase tracking-widest text-[10px]"
                         >
                           Negotiate Price
                         </Button>
@@ -1557,15 +1557,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'accepted' && (
-              <Card className="bg-[#1E3A66] border-[#1E3A66] shadow-xl overflow-hidden text-white">
+              <Card className="bg-lp-ink border-lp-ink shadow-sm overflow-hidden text-white">
                 <CardHeader className="p-5 border-b border-white/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center">
                       <CreditCard className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <p className="font-bold uppercase tracking-wide text-sm">Order Accepted</p>
-                      <p className="text-[10px] text-blue-200 uppercase tracking-wider font-bold">
+                      <p className="text-[10px] text-lp-muted-fg uppercase tracking-wider font-bold">
                         Awaiting 50% Advance Payment
                       </p>
                     </div>
@@ -1578,29 +1578,29 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
                       return (
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] text-blue-200 uppercase font-bold tracking-widest leading-none">
+                          <div className="flex justify-between text-[10px] text-lp-muted-fg uppercase font-bold tracking-widest leading-none">
                             <span>Quotation Subtotal</span>
                             <span className="text-white">
                               INR {finances.subtotal.toLocaleString('en-IN')}
                             </span>
                           </div>
-                          <div className="flex justify-between text-[10px] text-blue-200 uppercase font-bold tracking-widest leading-none">
+                          <div className="flex justify-between text-[10px] text-lp-muted-fg uppercase font-bold tracking-widest leading-none">
                             <span>GST (18%)</span>
                             <span className="text-white">
                               INR {finances.gst.toLocaleString('en-IN')}
                             </span>
                           </div>
-                          <div className="flex justify-between text-[10px] text-blue-200 uppercase font-bold tracking-widest leading-none">
+                          <div className="flex justify-between text-[10px] text-lp-muted-fg uppercase font-bold tracking-widest leading-none">
                             <span>Shipping (Ground)</span>
                             <span className="text-white">
                               INR {finances.shipping.toLocaleString('en-IN')}
                             </span>
                           </div>
                           <div className="pt-2 mt-1 border-t border-white/10 flex justify-between items-center">
-                            <span className="text-[10px] text-blue-200 uppercase font-bold tracking-widest">
+                            <span className="text-[10px] text-lp-muted-fg uppercase font-bold tracking-widest">
                               Total Order Value
                             </span>
-                            <span className="text-white font-mono text-sm font-bold">
+                            <span className="text-white font-lp-mono text-sm font-bold">
                               INR {finances.total.toLocaleString('en-IN')}
                             </span>
                           </div>
@@ -1608,14 +1608,14 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                             <span className="text-[10px] text-white uppercase font-bold tracking-widest">
                               Advance Payable (50%)
                             </span>
-                            <span className="text-white font-mono text-base font-bold underline decoration-blue-500 underline-offset-4">
+                            <span className="text-white font-lp-mono text-base font-bold underline decoration-lp-primary underline-offset-4">
                               INR {finances.advance.toLocaleString('en-IN')}
                             </span>
                           </div>
                         </div>
                       );
                     })()}
-                    <p className="text-[9px] text-blue-100 uppercase font-bold leading-relaxed pt-2 opacity-70 italic">
+                    <p className="text-[9px] text-lp-muted-fg uppercase font-bold leading-relaxed pt-2 opacity-70 italic">
                       Note: Production will commence immediately after the advance payment is
                       verified.
                     </p>
@@ -1625,7 +1625,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     <DialogTrigger asChild>
                       <Button
                         disabled={isPaying}
-                        className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-white hover:bg-blue-50 text-[#1E3A66] rounded-xl shadow-lg transition-all border-none"
+                        className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-white hover:bg-lp-accent/80 text-lp-ink rounded-sm shadow-sm transition-all border-none"
                       >
                         {isPaying ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1646,10 +1646,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'in_production' && (
-              <Card className="bg-orange-50 border-orange-200 shadow-lg">
+              <Card className="bg-orange-50 border-orange-200 shadow-sm">
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-sm bg-orange-500 flex items-center justify-center">
                       <Factory className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -1669,14 +1669,14 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'shipped' && (
-              <Card className="bg-blue-50 border-blue-200 shadow-xl overflow-hidden">
-                <CardHeader className="bg-blue-600 text-white p-5 border-none">
+              <Card className="bg-lp-accent border-lp-border shadow-sm overflow-hidden">
+                <CardHeader className="bg-lp-primary text-white p-5 border-none">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-sm bg-white/20 flex items-center justify-center">
                       <Truck className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-blue-100">
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-lp-muted-fg">
                         Manufacturing Complete
                       </p>
                       <p className="font-bold uppercase tracking-wide text-lg">Parts Shipped</p>
@@ -1684,37 +1684,37 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                   </div>
                 </CardHeader>
                 <CardContent className="p-5 space-y-4">
-                  <div className="p-4 bg-white/70 rounded-lg border border-blue-100 space-y-3">
+                  <div className="p-4 bg-white/70 rounded-lg border border-lp-border space-y-3">
                     {(() => {
                       const finances = calculateProjectFinances(basePrice);
 
                       return (
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] text-blue-800 uppercase font-bold tracking-widest leading-none">
+                          <div className="flex justify-between text-[10px] text-lp-primary uppercase font-bold tracking-widest leading-none">
                             <span>Quotation Subtotal</span>
                             <span>INR {finances.subtotal.toLocaleString('en-IN')}</span>
                           </div>
-                          <div className="flex justify-between text-[10px] text-blue-800 uppercase font-bold tracking-widest leading-none">
+                          <div className="flex justify-between text-[10px] text-lp-primary uppercase font-bold tracking-widest leading-none">
                             <span>GST (18%)</span>
                             <span>INR {finances.gst.toLocaleString('en-IN')}</span>
                           </div>
-                          <div className="flex justify-between text-[10px] text-blue-800 uppercase font-bold tracking-widest leading-none">
+                          <div className="flex justify-between text-[10px] text-lp-primary uppercase font-bold tracking-widest leading-none">
                             <span>Shipping (Ground)</span>
                             <span>INR {finances.shipping.toLocaleString('en-IN')}</span>
                           </div>
-                          <div className="pt-2 mt-1 border-t border-blue-200 flex justify-between items-center">
-                            <span className="text-[10px] text-blue-800 uppercase font-bold tracking-widest">
+                          <div className="pt-2 mt-1 border-t border-lp-border flex justify-between items-center">
+                            <span className="text-[10px] text-lp-primary uppercase font-bold tracking-widest">
                               Total Order Value
                             </span>
-                            <span className="font-mono text-sm font-bold text-[#1E3A66]">
+                            <span className="font-lp-mono text-sm font-bold text-lp-ink">
                               INR {finances.total.toLocaleString('en-IN')}
                             </span>
                           </div>
-                          <div className="p-3 bg-white/50 rounded-lg border border-blue-200 flex justify-between items-center mt-2">
-                            <span className="text-[10px] text-[#1E3A66] uppercase font-bold tracking-widest">
+                          <div className="p-3 bg-white/50 rounded-lg border border-lp-border flex justify-between items-center mt-2">
+                            <span className="text-[10px] text-lp-ink uppercase font-bold tracking-widest">
                               Final Balance (50%)
                             </span>
-                            <span className="text-[#1E3A66] font-mono text-base font-bold underline decoration-blue-500 underline-offset-4">
+                            <span className="text-lp-ink font-lp-mono text-base font-bold underline decoration-lp-primary underline-offset-4">
                               INR {finances.balance.toLocaleString('en-IN')}
                             </span>
                           </div>
@@ -1727,7 +1727,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     <DialogTrigger asChild>
                       <Button
                         disabled={isPaying}
-                        className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg transition-all border-none"
+                        className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-lp-primary hover:bg-lp-primary/80 text-white rounded-sm shadow-sm transition-all border-none"
                       >
                         {isPaying ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1748,7 +1748,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'delivered' && (
-              <Card className="bg-emerald-600 border-emerald-600 shadow-xl text-white">
+              <Card className="bg-emerald-600 border-emerald-600 shadow-sm text-white">
                 <CardContent className="p-6 text-center space-y-4">
                   <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
                     <CheckCircle2 className="w-10 h-10 text-white" />
@@ -1771,19 +1771,19 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'negotiation' && (
-              <Card className="bg-orange-50 border-orange-200 shadow-lg">
+              <Card className="bg-orange-50 border-orange-200 shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-sm bg-orange-100 flex items-center justify-center shrink-0">
                       <MessageSquare className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-slate-900 uppercase tracking-wide text-sm">
+                        <p className="font-bold text-lp-fg uppercase tracking-wide text-sm">
                           Negotiation In Progress
                         </p>
                       </div>
-                      <p className="text-[10px] text-slate-600 uppercase tracking-wider font-bold leading-relaxed">
+                      <p className="text-[10px] text-lp-muted-fg uppercase tracking-wider font-bold leading-relaxed">
                         Your counter-offer is currently under review by our manufacturing team. We
                         will get back to you shortly.
                       </p>
@@ -1794,17 +1794,17 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             )}
 
             {project.status === 'quote_requested' && (
-              <Card className="bg-blue-50 border-blue-200 shadow-lg">
+              <Card className="bg-lp-accent border-lp-border shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                      <Clock className="w-5 h-5 text-[#2F5FA7] animate-pulse" />
+                    <div className="w-10 h-10 rounded-sm bg-lp-accent flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5 text-lp-primary animate-pulse" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-slate-900 uppercase tracking-wide text-sm mb-1">
+                      <p className="font-bold text-lp-fg uppercase tracking-wide text-sm mb-1">
                         Quote Requested
                       </p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold leading-relaxed">
+                      <p className="text-[10px] text-lp-muted-fg uppercase tracking-wider font-bold leading-relaxed">
                         Your order is being reviewed. You will receive your quotation shortly.
                       </p>
                     </div>
@@ -1822,9 +1822,9 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           if (!open) setPendingPartDeleteId(null);
         }}
       >
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent className={`lp-root ${landingFontVars} bg-lp-card`}>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-slate-900 font-bold uppercase tracking-widest text-xs">Delete Part?</AlertDialogTitle>
+            <AlertDialogTitle className="text-lp-fg font-bold uppercase tracking-widest text-xs">Delete Part?</AlertDialogTitle>
             <AlertDialogDescription className="text-[10px] uppercase tracking-widest font-bold">
               This will remove the part from your draft project.
             </AlertDialogDescription>
@@ -1851,6 +1851,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         projectId={projectId}
         onPartCreated={handlePartCreated}
       />
-    </div>
+      </div>
+    </V2Shell>
   );
 }

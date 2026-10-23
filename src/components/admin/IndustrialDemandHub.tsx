@@ -1,16 +1,8 @@
+'use client';
+
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { Chip, PageHeader, Panel, StatRow, TableMessage, Td, Th, THead, fmtDate } from './admin-ui';
 
 interface IndustrialDemandHubProps {
   restockRequests: any[];
@@ -23,7 +15,6 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
   isLoading,
   onUpdateInventory,
 }) => {
-  // Logic from the original file to group restock requests by product
   const groupedRequests = React.useMemo(() => {
     if (!restockRequests) return [];
 
@@ -41,7 +32,6 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
       if (new Date(curr.requestedAt) > new Date(acc[curr.productId].lastDate)) {
         acc[curr.productId].lastDate = curr.requestedAt;
       }
-      // Collect unique buyers
       if (!acc[curr.productId].buyers.some((b: any) => b.email === curr.userEmail)) {
         acc[curr.productId].buyers.push({
           email: curr.userEmail,
@@ -57,143 +47,97 @@ export const IndustrialDemandHub: React.FC<IndustrialDemandHubProps> = ({
       .map(([prodId, data]: any) => ({ prodId, ...data }));
   }, [restockRequests]);
 
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold text-[#1E3A66]">
-            Industrial Demand Hub
-          </h1>
-          <p className="text-[10px] text-blue-200 uppercase tracking-[0.2em] font-black mt-1">
-            Algorithm-driven prioritization based on buyer interest flags.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <div className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl">
-            <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest">
-              Active Flags
-            </p>
-            <p className="text-xl font-mono font-bold text-blue-700">
-              {restockRequests?.length || 0}
-            </p>
-          </div>
-          <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-xl">
-            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">
-              High Probability
-            </p>
-            <p className="text-xl font-mono font-bold text-emerald-700">
-              {restockRequests?.filter((r: any) => r.status === 'pending').length || 0}
-            </p>
-          </div>
-        </div>
-      </div>
+  const maxCount = groupedRequests[0]?.count || 1;
+  const pending = restockRequests?.filter((r: any) => r.status === 'pending').length || 0;
+  const buyerCount = new Set((restockRequests || []).map((r: any) => r.userEmail).filter(Boolean)).size;
 
-      <Card className="border-slate-200 overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader className="bg-slate-50/50">
-            <TableRow className="border-slate-200">
-              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">
-                Component Profile
-              </TableHead>
-              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">
-                Request Volume
-              </TableHead>
-              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">
-                Interested Buyers
-              </TableHead>
-              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">
-                Last Activity
-              </TableHead>
-              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">
-                Priority Score
-              </TableHead>
-              <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-right">
-                Operations
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+  return (
+    <div>
+      <PageHeader
+        tag={`${restockRequests?.length || 0} signals`}
+        before="Demand"
+        accent="Hub"
+        description="Restock requests from buyers — spot what to stock next."
+      />
+
+      <StatRow
+        stats={[
+          { label: 'Active flags', value: restockRequests?.length || 0 },
+          { label: 'Pending', value: pending },
+          { label: 'Top item', value: groupedRequests[0]?.name || '—' },
+          { label: 'Interested buyers', value: buyerCount },
+        ]}
+      />
+
+      <Panel className="overflow-x-auto">
+        <table className="w-full min-w-[900px]">
+          <THead>
+            <Th>Item</Th>
+            <Th>Requests</Th>
+            <Th>Interested buyers</Th>
+            <Th>Last activity</Th>
+            <Th>Priority</Th>
+            <Th className="text-right">
+              <span className="sr-only">Action</span>
+            </Th>
+          </THead>
+          <tbody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
-                </TableCell>
-              </TableRow>
+              <TableMessage colSpan={6} loading>
+                Loading demand signals
+              </TableMessage>
             ) : groupedRequests.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-24">
-                  <div className="flex flex-col items-center gap-3">
-                    <TrendingUp className="w-8 h-8 text-slate-200" />
-                    <p className="text-xs text-blue-100 font-bold uppercase tracking-widest">
-                      No market signals captured.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <TableMessage colSpan={6}>No market signals captured yet</TableMessage>
             ) : (
-              groupedRequests.map((data: any) => (
-                <TableRow
-                  key={data.prodId}
-                  className="hover:bg-slate-50/30 transition-colors border-slate-100 group"
-                >
-                  <TableCell className="py-4">
-                    <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {data.name}
-                    </div>
-                    <div className="text-[10px] font-mono text-blue-100 uppercase tracking-tighter mt-0.5">
-                      {data.sku}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <Badge className="bg-blue-50 text-blue-600 border-blue-100 font-black text-xs px-2 py-0">
-                      {data.count} Leads
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="max-w-[180px] space-y-1">
-                      {data.buyers.slice(0, 2).map((b: any, i: number) => (
+              groupedRequests.map((data: any, i: number) => (
+                <tr key={data.prodId} className="adm-row border-b border-lp-border last:border-b-0">
+                  <Td>
+                    <p className="adm-row-title text-sm">{data.name}</p>
+                    <p className="font-lp-mono text-[10px] text-lp-muted-fg">{data.sku}</p>
+                  </Td>
+                  <Td>
+                    <div className="flex items-center gap-3">
+                      <div className="h-1 w-36 bg-lp-border">
                         <div
-                          key={i}
-                          className="text-[9px] text-slate-600 flex items-center gap-1 group/item"
-                        >
-                          <span className="w-1 h-1 rounded-full bg-blue-400" />
-                          <span className="truncate">{b.email}</span>
-                        </div>
+                          className="adm-bar h-full bg-lp-primary"
+                          style={{ width: `${(data.count / maxCount) * 100}%`, animationDelay: `${500 + i * 80}ms` }}
+                        />
+                      </div>
+                      <span className="font-lp-mono text-xs tabular-nums">{data.count}</span>
+                    </div>
+                  </Td>
+                  <Td>
+                    <div className="max-w-[220px] space-y-0.5 text-xs">
+                      {data.buyers.slice(0, 2).map((b: any, idx: number) => (
+                        <p key={idx} className="truncate">
+                          {b.email}
+                        </p>
                       ))}
                       {data.buyers.length > 2 && (
-                        <div className="text-[8px] text-blue-500 font-bold uppercase tracking-tighter">
-                          + {data.buyers.length - 2} more interested
-                        </div>
+                        <p className="adm-mono text-lp-primary">+{data.buyers.length - 2} more</p>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell className="py-4 text-[11px] text-blue-200 font-medium">
-                    {new Date(data.lastDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <Badge
-                      className={`text-[9px] font-black uppercase tracking-widest border-none ${data.count > 3 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}
-                    >
-                      {data.count > 3 ? 'Critical' : 'Growing Demand'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-[10px] font-black uppercase tracking-widest text-[#2F5FA7] hover:bg-blue-50 rounded-lg group"
+                  </Td>
+                  <Td className="font-lp-mono text-xs">{fmtDate(data.lastDate)}</Td>
+                  <Td>
+                    <Chip tone={data.count > 3 ? 'red' : 'amber'}>{data.count > 3 ? '▲ Critical' : '▲ Growing'}</Chip>
+                  </Td>
+                  <Td className="text-right">
+                    <button
+                      type="button"
                       onClick={onUpdateInventory}
+                      className="group/up adm-mono inline-flex items-center gap-2 transition-colors hover:text-lp-primary"
                     >
-                      Update Inventory{' '}
-                      <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                      Update stock
+                      <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover/up:rotate-45" />
+                    </button>
+                  </Td>
+                </tr>
               ))
             )}
-          </TableBody>
-        </Table>
-      </Card>
+          </tbody>
+        </table>
+      </Panel>
     </div>
   );
 };

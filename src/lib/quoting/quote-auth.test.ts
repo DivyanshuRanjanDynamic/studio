@@ -4,7 +4,7 @@ import { ok } from '@/utils/result';
 
 // Instant CNC / laser pricing is for registered users — no Firestore, no real auth.
 const authenticateRequest = vi.fn();
-const processQuoteRequest = vi.fn();
+const processStoredSheetQuoteRequest = vi.fn();
 const processCncQuoteRequest = vi.fn();
 const getQuote = vi.fn();
 vi.mock('@/lib/auth-middleware', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/lib/auth-middleware', () => ({
 }));
 vi.mock('@/services/quoting.service', () => ({
   QuotingService: {
-    processQuoteRequest: (...args: unknown[]) => processQuoteRequest(...args),
+    processStoredSheetQuoteRequest: (...args: unknown[]) => processStoredSheetQuoteRequest(...args),
     processCncQuoteRequest: (...args: unknown[]) => processCncQuoteRequest(...args),
     getQuote: (...args: unknown[]) => getQuote(...args),
   },
@@ -21,30 +21,14 @@ vi.mock('@/services/quoting.service', () => ({
 const post = (path: string, body: unknown) =>
   new NextRequest(`http://localhost${path}`, { method: 'POST', body: JSON.stringify(body) });
 
-const geometry = {
-  cutLengthMm: 600,
-  areaMm2: 10000,
-  boundingBox: { widthMm: 100, heightMm: 100, aspectRatio: 1 },
-  holeCount: 2,
-  complexityScore: 2,
-  nodeCount: 20,
-  minFeatureSizeMm: 5,
-  minSlotWidthMm: 5,
-  edgeToHoleDistanceMm: 5,
-  hasOpenPaths: false,
-};
 const laserBody = {
-  materialId: 'ms_a36',
-  thicknessMm: 2,
-  finishType: 'none',
-  quantity: 1,
-  turnaround: 'standard_3d',
-  geometry,
+  analysisId: 'sma_0123456789abcdef',
+  request: { materialId: 'ms-crca', thicknessMm: 2, finishType: 'none', quantity: 1, turnaround: 'standard_3d' },
 };
 
 beforeEach(() => {
   authenticateRequest.mockReset();
-  processQuoteRequest.mockReset();
+  processStoredSheetQuoteRequest.mockReset();
   processCncQuoteRequest.mockReset();
   getQuote.mockReset();
 });
@@ -65,7 +49,7 @@ describe('QuoteController requires a registered user', () => {
       expect(res.status).toBe(401);
       expect(await res.json()).toMatchObject({ code: 'UNAUTHORIZED' });
     }
-    expect(processQuoteRequest).not.toHaveBeenCalled();
+    expect(processStoredSheetQuoteRequest).not.toHaveBeenCalled();
     expect(processCncQuoteRequest).not.toHaveBeenCalled();
     expect(getQuote).not.toHaveBeenCalled();
   });
@@ -76,16 +60,33 @@ describe('QuoteController requires a registered user', () => {
 
     const res = await QuoteController.createQuote(post('/api/v1/quote', laserBody));
     expect(res.status).toBe(403);
-    expect(processQuoteRequest).not.toHaveBeenCalled();
+    expect(processStoredSheetQuoteRequest).not.toHaveBeenCalled();
   });
 
   it('saves the quote against the signed-in user', async () => {
     authenticateRequest.mockResolvedValue({ success: true, uid: 'user_42', role: 'customer', status: 'active' });
-    processQuoteRequest.mockResolvedValue(ok({ quoteRef: 'MH-ABCDEFGH23', totalPrice: 100 }));
+    processStoredSheetQuoteRequest.mockResolvedValue(ok({ quoteRef: 'MH-ABCDEFGH23', totalPrice: 100 }));
     const { QuoteController } = await import('@/controllers/quote.controller');
 
     const res = await QuoteController.createQuote(post('/api/v1/quote', laserBody));
     expect(res.status).toBe(200);
-    expect(processQuoteRequest).toHaveBeenCalledWith(expect.objectContaining({ materialId: 'ms_a36' }), 'user_42');
+    expect(processStoredSheetQuoteRequest).toHaveBeenCalledWith(
+      'sma_0123456789abcdef',
+      expect.objectContaining({ materialId: 'ms-crca', thicknessMm: 2 }),
+      'user_42'
+    );
+  });
+
+  it('refuses laser quotes priced from client-supplied geometry', async () => {
+    authenticateRequest.mockResolvedValue({ success: true, uid: 'user_42', role: 'customer', status: 'active' });
+    const { QuoteController } = await import('@/controllers/quote.controller');
+
+    const legacy = {
+      materialId: 'ms_a36', thicknessMm: 2, finishType: 'none', quantity: 1, turnaround: 'standard_3d',
+      geometry: { cutLengthMm: 1, areaMm2: 1, boundingBox: { widthMm: 1, heightMm: 1, aspectRatio: 1 } },
+    };
+    const res = await QuoteController.createQuote(post('/api/v1/quote', legacy));
+    expect(res.status).toBe(400);
+    expect(processStoredSheetQuoteRequest).not.toHaveBeenCalled();
   });
 });

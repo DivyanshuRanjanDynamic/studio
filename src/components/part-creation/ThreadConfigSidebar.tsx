@@ -56,18 +56,18 @@ export function ThreadConfigSidebar({
   const hasHoles = conversionResult?.holes && conversionResult.holes.length > 0;
 
   return (
-    <div className="w-[380px] bg-white border-l border-slate-100 flex flex-col h-full animate-in slide-in-from-right duration-500 shadow-2xl z-30">
+    <div className="w-[380px] bg-lp-card border-l border-lp-border flex flex-col h-full animate-in slide-in-from-right duration-500 shadow-sm z-30">
       {/* Header */}
-      <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white/80 backdrop-blur-md">
+      <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-lp-card/80 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-            <TableProperties className="w-4 h-4 text-[#2F5FA7]" />
+          <div className="w-8 h-8 rounded-sm bg-lp-accent flex items-center justify-center">
+            <TableProperties className="w-4 h-4 text-lp-primary" />
           </div>
           <div>
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none mb-1">
+            <h3 className="text-xs font-black text-lp-fg uppercase tracking-widest leading-none mb-1">
               Thread Configuration
             </h3>
-            <p className="text-[9px] font-bold text-[#2F5FA7] uppercase tracking-widest leading-none">
+            <p className="text-[9px] font-bold text-lp-primary uppercase tracking-widest leading-none">
               Properties Inspector
             </p>
           </div>
@@ -76,7 +76,7 @@ export function ThreadConfigSidebar({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="h-8 w-8 rounded-lg text-blue-100 hover:bg-slate-50"
+          className="h-8 w-8 rounded-sm text-lp-muted-fg hover:bg-lp-accent"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -85,9 +85,9 @@ export function ThreadConfigSidebar({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
         {!hasHoles ? (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100/50">
+            <div className="p-4 bg-amber-50 rounded-sm border border-amber-100/50">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-sm bg-amber-500 flex items-center justify-center">
                   <Target className="w-3.5 h-3.5 text-white" />
                 </div>
                 <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest">Manual Setup</p>
@@ -98,7 +98,7 @@ export function ThreadConfigSidebar({
             </div>
 
             <div className="space-y-3">
-              <Label className="text-[9px] uppercase font-black tracking-widest text-blue-100 flex items-center gap-2 px-1">
+              <Label className="text-[9px] uppercase font-black tracking-widest text-lp-muted-fg flex items-center gap-2 px-1">
                 <MousePointer2 className="w-3 h-3" />
                 Requirements
               </Label>
@@ -106,30 +106,30 @@ export function ThreadConfigSidebar({
                 value={tappingNotes}
                 onChange={(e) => onTappingNotesChange(e.target.value)}
                 placeholder="E.g., 4x M6 holes on top flange..."
-                className="w-full min-h-[140px] p-4 text-[11px] font-bold text-slate-700 bg-slate-50/50 border border-slate-100 rounded-2xl resize-none focus:bg-white focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-300 placeholder:italic"
+                className="w-full min-h-[140px] p-4 text-[11px] font-bold text-lp-fg bg-lp-accent/50 border border-lp-border rounded-sm resize-none focus:bg-lp-card focus:border-lp-primary focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-lp-muted-fg placeholder:italic"
               />
             </div>
 
-            <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-sm">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                <p className="text-[9px] font-black text-blue-100 uppercase tracking-widest text-center">Reference Thread Chart</p>
+            <div className="rounded-sm border border-lp-border overflow-hidden bg-lp-card shadow-sm">
+              <div className="px-4 py-3 bg-lp-accent border-b border-lp-border">
+                <p className="text-[9px] font-black text-lp-muted-fg uppercase tracking-widest text-center">Reference Thread Chart</p>
               </div>
-              <div className="grid grid-cols-2 divide-x divide-slate-100">
+              <div className="grid grid-cols-2 divide-x divide-lp-border">
                 <div className="p-3 space-y-2">
-                  <p className="text-[8px] font-black text-[#2F5FA7] uppercase tracking-widest mb-2 border-b border-blue-50 pb-1 text-center">Metric</p>
+                  <p className="text-[8px] font-black text-lp-primary uppercase tracking-widest mb-2 border-b border-lp-border pb-1 text-center">Metric</p>
                   {METRIC_TAPS.slice(0, 8).map(tap => (
                     <div key={tap.id} className="flex justify-between items-center text-[9px]">
-                      <span className="font-bold text-slate-600 uppercase">{tap.name}</span>
-                      <span className="font-mono text-slate-300">{tap.drillSize}mm</span>
+                      <span className="font-bold text-lp-muted-fg uppercase">{tap.name}</span>
+                      <span className="font-lp-mono text-lp-muted-fg">{tap.drillSize}mm</span>
                     </div>
                   ))}
                 </div>
                 <div className="p-3 space-y-2">
-                  <p className="text-[8px] font-black text-[#2F5FA7] uppercase tracking-widest mb-2 border-b border-blue-50 pb-1 text-center">Imperial</p>
+                  <p className="text-[8px] font-black text-lp-primary uppercase tracking-widest mb-2 border-b border-lp-border pb-1 text-center">Imperial</p>
                   {IMPERIAL_TAPS.slice(0, 8).map(tap => (
                     <div key={tap.id} className="flex justify-between items-center text-[9px]">
-                      <span className="font-bold text-slate-600 uppercase">{tap.name}</span>
-                      <span className="font-mono text-slate-300">{tap.drillSize}mm</span>
+                      <span className="font-bold text-lp-muted-fg uppercase">{tap.name}</span>
+                      <span className="font-lp-mono text-lp-muted-fg">{tap.drillSize}mm</span>
                     </div>
                   ))}
                 </div>
@@ -139,16 +139,16 @@ export function ThreadConfigSidebar({
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[9px] font-black text-blue-100 uppercase tracking-widest">
+              <span className="text-[9px] font-black text-lp-muted-fg uppercase tracking-widest">
                 Analyzed Geometry
               </span>
-              <Badge variant="outline" className="text-[8px] font-black border-slate-200 text-blue-100 px-2 py-0 h-5">
+              <Badge variant="outline" className="text-[8px] font-black border-lp-border text-lp-muted-fg px-2 py-0 h-5">
                 {conversionResult?.holes?.length ?? 0} FEATURES
               </Badge>
             </div>
 
             {tapCandidates.length > 0 ? (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-3">
+              <div className="p-4 rounded-sm bg-amber-50 border border-amber-200 space-y-3">
                 <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">
                   {tapCandidates.length} tappable hole{tapCandidates.length === 1 ? '' : 's'} highlighted
                 </p>
@@ -158,14 +158,14 @@ export function ThreadConfigSidebar({
                 {onApplySuggested && (
                   <Button
                     onClick={onApplySuggested}
-                    className="w-full h-9 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest"
+                    className="w-full h-9 rounded-sm bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest"
                   >
                     Apply suggested threads
                   </Button>
                 )}
               </div>
             ) : (
-              <p className="px-1 text-[10px] font-bold text-slate-400 leading-relaxed">
+              <p className="px-1 text-[10px] font-bold text-lp-muted-fg leading-relaxed">
                 No hole matches a standard tap drill size. You can still choose threads below, or describe them in the
                 notes.
               </p>
@@ -186,10 +186,10 @@ export function ThreadConfigSidebar({
                   <div
                     key={idx}
                     className={cn(
-                      "p-4 rounded-2xl border-2 transition-all duration-300",
+                      "p-4 rounded-sm border-2 transition-all duration-300",
                       selection
-                        ? "bg-blue-50/50 border-[#2F5FA7] shadow-lg shadow-blue-500/5 scale-[1.02]"
-                        : "bg-white border-slate-100 hover:border-slate-300"
+                        ? "bg-lp-accent/50 border-lp-primary shadow-sm scale-[1.02]"
+                        : "bg-lp-card border-lp-border hover:border-lp-primary/40"
                     )}
                     onMouseEnter={() => onHoleHover(idx)}
                     onMouseLeave={() => onHoleHover(undefined)}
@@ -197,8 +197,8 @@ export function ThreadConfigSidebar({
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col">
-                          <p className="text-[11px] font-black text-slate-900 leading-tight tabular-nums">{diamInch.toFixed(4)}"</p>
-                          <p className="text-[8px] font-bold text-blue-100 uppercase tracking-tighter tabular-nums">{diamMm.toFixed(2)}mm DIA</p>
+                          <p className="text-[11px] font-black text-lp-fg leading-tight tabular-nums">{diamInch.toFixed(4)}"</p>
+                          <p className="text-[8px] font-bold text-lp-muted-fg uppercase tracking-tighter tabular-nums">{diamMm.toFixed(2)}mm DIA</p>
                           {tappable.has(idx) && (
                             <span className="mt-1 w-fit px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest">
                               Tappable
@@ -207,14 +207,14 @@ export function ThreadConfigSidebar({
                         </div>
                         <div className="h-6 w-px bg-slate-100" />
                         <div className="flex flex-col">
-                          <p className="text-[11px] font-black text-slate-900 leading-tight tabular-nums">{depthInch.toFixed(3)}"</p>
-                          <p className="text-[8px] font-bold text-blue-100 uppercase tracking-tighter tabular-nums">{hole.depth.toFixed(1)}mm DEP</p>
+                          <p className="text-[11px] font-black text-lp-fg leading-tight tabular-nums">{depthInch.toFixed(3)}"</p>
+                          <p className="text-[8px] font-bold text-lp-muted-fg uppercase tracking-tighter tabular-nums">{hole.depth.toFixed(1)}mm DEP</p>
                         </div>
                       </div>
 
                       <div className={cn(
                         "w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-500",
-                        selection ? "bg-blue-600 border-[#2F5FA7] text-white" : "border-slate-200 text-transparent"
+                        selection ? "bg-lp-primary border-lp-primary text-white" : "border-lp-border text-transparent"
                       )}>
                         <Target className="w-2.5 h-2.5" />
                       </div>
@@ -228,20 +228,20 @@ export function ThreadConfigSidebar({
                         <Button
                           variant={selection ? "default" : "outline"}
                           className={cn(
-                            "w-full h-10 text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl border-2 transition-all duration-300",
+                            "w-full h-10 text-[10px] font-black uppercase tracking-widest gap-2 rounded-sm border-2 transition-all duration-300",
                             selection
-                              ? "bg-blue-600 text-white border-transparent"
-                              : "bg-white border-slate-200 hover:border-[#2F5FA7] hover:text-[#2F5FA7]"
+                              ? "bg-lp-primary text-white border-transparent"
+                              : "bg-lp-card border-lp-border hover:border-lp-primary hover:text-lp-primary"
                           )}
                         >
                           {selection ? selection.tapType : "Select Thread Type"}
                           <ChevronDown className="w-3.5 h-3.5" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[320px] p-2 bg-white/95 backdrop-blur-xl border-slate-200 shadow-2xl rounded-2xl z-[9999]" align="end">
+                      <PopoverContent className="w-[320px] p-2 bg-lp-card/95 backdrop-blur-xl border-lp-border shadow-sm rounded-sm z-[9999]" align="end">
                         <div className="space-y-1">
-                          <div className="px-3 py-2 border-b border-slate-100 mb-2">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[#2F5FA7]">Recommended Standards</p>
+                          <div className="px-3 py-2 border-b border-lp-border mb-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-lp-primary">Recommended Standards</p>
                           </div>
 
                           <div className="grid grid-cols-2 gap-1 px-1">
@@ -254,23 +254,23 @@ export function ThreadConfigSidebar({
                                     setOpenPopoverIndex(null);
                                   }}
                                   className={cn(
-                                    "flex flex-col px-3 py-2 text-left rounded-xl transition-all",
+                                    "flex flex-col px-3 py-2 text-left rounded-sm transition-all",
                                     selection?.tapType === tap.id
-                                      ? "bg-blue-50 border border-blue-100"
-                                      : "hover:bg-slate-50 border border-transparent"
+                                      ? "bg-lp-accent border border-lp-primary/20"
+                                      : "hover:bg-lp-accent border border-transparent"
                                   )}
                                 >
-                                  <span className="text-[10px] font-black text-slate-900 uppercase">{tap.name}</span>
-                                  <span className="text-[8px] font-bold text-blue-100 uppercase">Drill: {tap.drillSize}mm</span>
+                                  <span className="text-[10px] font-black text-lp-fg uppercase">{tap.name}</span>
+                                  <span className="text-[8px] font-bold text-lp-muted-fg uppercase">Drill: {tap.drillSize}mm</span>
                                 </button>
                               ))
                             ) : (
-                              <p className="col-span-2 px-3 py-4 text-[9px] text-blue-100 italic text-center font-bold">No automatic matches</p>
+                              <p className="col-span-2 px-3 py-4 text-[9px] text-lp-muted-fg italic text-center font-bold">No automatic matches</p>
                             )}
                           </div>
 
-                          <div className="px-3 py-2 border-t border-slate-100 mt-2 mb-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-100">All Industrial Taps</p>
+                          <div className="px-3 py-2 border-t border-lp-border mt-2 mb-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-lp-muted-fg">All Industrial Taps</p>
                           </div>
                           <div className="max-h-[200px] overflow-y-auto custom-scrollbar px-2 grid grid-cols-2 gap-1 py-1">
                             {ALL_TAPS.map(tap => (
@@ -281,10 +281,10 @@ export function ThreadConfigSidebar({
                                   setOpenPopoverIndex(null);
                                 }}
                                 className={cn(
-                                  "px-3 py-2 text-[9px] font-bold rounded-lg transition-all text-left uppercase border",
+                                  "px-3 py-2 text-[9px] font-bold rounded-sm transition-all text-left uppercase border",
                                   selection?.tapType === tap.id
-                                    ? "bg-blue-50 border-blue-100 text-[#2F5FA7]"
-                                    : "border-transparent text-blue-200 hover:bg-slate-50 hover:text-slate-900"
+                                    ? "bg-lp-accent border-lp-primary/20 text-lp-primary"
+                                    : "border-transparent text-lp-muted-fg hover:bg-lp-accent hover:text-lp-fg"
                                 )}
                               >
                                 {tap.name}
@@ -299,7 +299,7 @@ export function ThreadConfigSidebar({
                                 onTapSelect(idx, null);
                                 setOpenPopoverIndex(null);
                               }}
-                              className="w-full h-10 mt-2 text-red-500 hover:text-red-700 hover:bg-red-50 text-[10px] font-black uppercase tracking-widest rounded-xl"
+                              className="w-full h-10 mt-2 text-red-500 hover:text-red-700 hover:bg-red-50 text-[10px] font-black uppercase tracking-widest rounded-sm"
                             >
                               Reset Configuration
                             </Button>
@@ -312,23 +312,23 @@ export function ThreadConfigSidebar({
               })}
             </div>
 
-            <div className="pt-4 border-t border-slate-100 mt-4 space-y-4">
+            <div className="pt-4 border-t border-lp-border mt-4 space-y-4">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-lp-fg uppercase tracking-widest">
                   Missing holes?
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-blue-100" />
+                <ChevronDown className="w-3.5 h-3.5 text-lp-muted-fg" />
               </div>
 
               <div className="space-y-3">
-                <p className="text-[9px] font-bold text-blue-100 uppercase tracking-widest leading-relaxed">
-                  Please describe how your part should be tapped. <span className="text-[#2F5FA7] underline cursor-pointer hover:text-blue-700 transition-colors">Full tapping catalog</span>
+                <p className="text-[9px] font-bold text-lp-muted-fg uppercase tracking-widest leading-relaxed">
+                  Please describe how your part should be tapped. <span className="text-lp-primary underline cursor-pointer hover:text-lp-primary transition-colors">Full tapping catalog</span>
                 </p>
                 <textarea
                   value={tappingNotes}
                   onChange={(e) => onTappingNotesChange(e.target.value)}
                   placeholder="Tapping note"
-                  className="w-full min-h-[100px] p-4 text-[11px] font-bold text-slate-700 bg-slate-50/50 border border-slate-100 rounded-2xl resize-none focus:bg-white focus:border-[#2F5FA7] focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-slate-300"
+                  className="w-full min-h-[100px] p-4 text-[11px] font-bold text-lp-fg bg-lp-accent/50 border border-lp-border rounded-sm resize-none focus:bg-lp-card focus:border-lp-primary focus:ring-4 focus:ring-blue-500/5 transition-all placeholder:text-lp-muted-fg"
                 />
               </div>
             </div>
@@ -337,17 +337,17 @@ export function ThreadConfigSidebar({
       </div>
 
       {/* Footer Actions */}
-      <div className="p-6 border-t border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between gap-4">
+      <div className="p-6 border-t border-lp-border bg-lp-card/80 backdrop-blur-md flex items-center justify-between gap-4">
         <Button
           variant="ghost"
           onClick={onResetAll}
-          className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 hover:text-slate-600 hover:bg-slate-50 px-4 h-11 rounded-xl"
+          className="text-[10px] font-black uppercase tracking-[0.2em] text-lp-muted-fg hover:text-lp-muted-fg hover:bg-lp-accent px-4 h-11 rounded-sm"
         >
           Reset All
         </Button>
         <Button
           onClick={onClose}
-          className="flex-1 bg-blue-600 hover:bg-[#1E3A66] text-white text-[10px] font-black uppercase tracking-[0.2em] h-11 rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98]"
+          className="flex-1 bg-lp-primary hover:bg-lp-primary/90 text-white text-[10px] font-black uppercase tracking-[0.2em] h-11 rounded-sm shadow-sm transition-all active:scale-[0.98]"
         >
           Done
         </Button>

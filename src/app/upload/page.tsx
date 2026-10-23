@@ -32,7 +32,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { MANUFACTURING_PROCESSES, MATERIALS, FINISHES, TOLERANCES } from '../lib/mock-data';
-import { LandingNav } from '@/components/LandingNav';
+import { V2Shell } from '@/components/V2Shell';
 
 interface DesignFile {
   name: string;
@@ -150,9 +150,9 @@ export default function UploadPage() {
   const totalSize = files.reduce((sum, f) => sum + f.size, 0);
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-[#020617] text-zinc-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative overflow-hidden">
+    <V2Shell noFooter>
+      <div className="min-h-screen pb-16 bg-lp-ink text-lp-muted-fg relative overflow-hidden -mt-20 pt-24">
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none" />
-      <LandingNav />
       <div className="container mx-auto px-4 max-w-5xl relative z-10">
         {/* ── Step indicator ── */}
         <div className="flex items-center justify-center gap-2 mb-14">
@@ -646,6 +646,7 @@ export default function UploadPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </V2Shell>
   );
 }

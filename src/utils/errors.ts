@@ -28,6 +28,8 @@ export enum ErrorCode {
   UNSUPPORTED_FORMAT = 'UNSUPPORTED_FORMAT',
   PARSE_FAILED = 'PARSE_FAILED',
   DUPLICATE_FILE = 'DUPLICATE_FILE',
+  /** Valid solid, but not a constant-thickness sheet — sheet pricing can't apply */
+  NOT_SHEET_METAL = 'NOT_SHEET_METAL',
 
   // Auth
   UNAUTHORIZED = 'UNAUTHORIZED',

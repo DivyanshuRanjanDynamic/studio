@@ -2,8 +2,6 @@
 
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { LandingNav } from '@/components/LandingNav';
-import { BackToHomeBar } from '@/components/BackToHomeBar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -11,6 +9,13 @@ import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Check, Loader2, FileText, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { V2Shell } from '@/components/V2Shell';
+import { Reveal, Tag } from '@/components/home/primitives';
+
+const inputCls =
+  'h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm';
+const inputErrorCls =
+  'h-12 bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 rounded-sm text-sm border-red-400 focus:border-red-500 focus:ring-red-100';
 
 function ConsultationPageContent() {
   const searchParams = useSearchParams();
@@ -94,7 +99,6 @@ function ConsultationPageContent() {
     };
 
     try {
-      // Server route saves the request and emails the admin team.
       const res = await fetch('/api/v1/consultation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,204 +126,182 @@ function ConsultationPageContent() {
   }
 
   return (
-    <div className="pb-20 pt-3 px-4 container mx-auto">
-      <div className="max-w-xl mx-auto">
-        <h1 className="text-3xl font-bold text-[#1E3A66] mb-2 tracking-tight">
-          Talk to a Manufacturing Expert
-        </h1>
-        <p className="text-[#64748B] mb-8 text-base font-medium">
-          Get your design reviewed, value-engineered, or fully optimised by our in-house
-          manufacturing experts.
-        </p>
+    <section className="py-20 md:py-28">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-5">
+        <Reveal>
+          <Tag>Expert Consultation</Tag>
+        </Reveal>
+        <Reveal delay={80}>
+          <h1 className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
+            Talk to a <span className="font-lp-serif italic">Manufacturing Expert</span>
+          </h1>
+        </Reveal>
+        <Reveal delay={140}>
+          <p className="mt-4 max-w-xl text-sm text-lp-muted-fg">
+            Get your design reviewed, value-engineered, or fully optimised by our in-house
+            manufacturing experts.
+          </p>
+        </Reveal>
 
-        {isSubmitted ? (
-          <div className="py-16 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-slate-100 shadow-xl">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4">
-              <Check className="w-7 h-7 text-emerald-500" />
+        <div className="mt-14 max-w-xl mx-auto">
+          {isSubmitted ? (
+            <Reveal>
+              <div className="py-16 flex flex-col items-center justify-center text-center border border-lp-border bg-lp-bg">
+                <div className="flex size-16 items-center justify-center bg-emerald-50 text-emerald-500 mb-4">
+                  <Check className="size-7" />
+                </div>
+                <p className="text-lg font-medium">Request Received!</p>
+                <p className="mt-2 text-sm text-lp-muted-fg max-w-sm px-8">
+                  One of our engineers will reach out to you within the next 24 hours to discuss your
+                  project.
+                </p>
+              </div>
+            </Reveal>
+          ) : isUserLoading || !user ? (
+            <div className="py-24 flex flex-col items-center justify-center">
+              <Loader2 className="size-8 text-lp-primary animate-spin mb-4" />
+              <p className="lp-label-mono text-lp-muted-fg">Verifying Session...</p>
             </div>
-            <p className="text-[#1E3A66] font-bold text-lg mb-2">Request Received!</p>
-            <p className="text-[#64748B] text-sm max-w-sm font-medium px-8">
-              One of our engineers will reach out to you within the next 24 hours to discuss your
-              project.
-            </p>
-          </div>
-        ) : isUserLoading || !user ? (
-          <div className="py-24 flex flex-col items-center justify-center">
-            <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin mb-4" />
-            <p className="text-blue-200 text-sm font-bold uppercase tracking-widest">
-              Verifying Session...
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white border border-slate-100 p-6 sm:p-10 rounded-3xl shadow-[0_20px_50px_rgba(47,95,167,0.1)] relative overflow-hidden">
-            <form onSubmit={handleConsultationSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="name"
-                    className="text-[11px] font-bold text-[#2F5FA7] uppercase tracking-widest ml-1"
-                  >
-                    Name
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    defaultValue={user?.displayName || ''}
-                    required
-                    readOnly
-                    className="bg-slate-100 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 h-12 text-sm rounded-xl transition-all font-medium cursor-not-allowed opacity-90"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="phone"
-                    className="text-[11px] font-bold text-[#2F5FA7] uppercase tracking-widest ml-1"
-                  >
-                    Phone
-                  </label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    defaultValue={profile?.phone || ''}
-                    required
-                    onChange={(e) => {
-                      if (!fieldErrors.phone) return;
-                      const nextError = validatePhone(e.target.value);
-                      setFieldErrors((prev) => ({ ...prev, phone: nextError || undefined }));
-                    }}
-                    onBlur={(e) => {
-                      const nextError = validatePhone(e.target.value);
-                      setFieldErrors((prev) => ({ ...prev, phone: nextError || undefined }));
-                    }}
-                    className={`bg-slate-50 text-[#1E3A66] placeholder:text-blue-100 h-12 text-sm rounded-xl transition-all font-medium ${
-                      fieldErrors.phone
-                        ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                        : 'border-slate-200 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20'
-                    }`}
-                  />
-                  {fieldErrors.phone && (
-                    <p className="text-[10px] text-red-600 font-bold tracking-wide">
-                      {fieldErrors.phone}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="text-[11px] font-bold text-[#2F5FA7] uppercase tracking-widest ml-1"
-                >
-                  Work Email
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  defaultValue={user?.email || ''}
-                  required
-                  readOnly
-                  className="bg-slate-100 border-slate-200 text-[#1E3A66] placeholder:text-blue-100 h-12 text-sm rounded-xl transition-all font-medium cursor-not-allowed opacity-90"
-                />
-              </div>
-
-              {prefilledRef && (
-                <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start gap-3 shadow-inner">
-                  <FileText className="w-5 h-5 text-[#2F5FA7] shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-[#1E3A66] mb-1">
-                      Quote {prefilledRef} Attached
-                    </p>
-                    <p className="text-xs text-[#64748B] font-medium leading-relaxed">
-                      Our engineers will have access to your estimated pricing, material choices,
-                      and quantities for faster context.
-                    </p>
+          ) : (
+            <Reveal>
+              <div className="border border-lp-border bg-lp-bg p-6 sm:p-10">
+                <form onSubmit={handleConsultationSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label htmlFor="name" className="lp-label-mono text-lp-primary">
+                        Name
+                      </label>
+                      <Input
+                        id="name"
+                        name="name"
+                        defaultValue={user?.displayName || ''}
+                        required
+                        readOnly
+                        className={`${inputCls} cursor-not-allowed opacity-70`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="phone" className="lp-label-mono text-lp-primary">
+                        Phone
+                      </label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        defaultValue={profile?.phone || ''}
+                        required
+                        onChange={(e) => {
+                          if (!fieldErrors.phone) return;
+                          const nextError = validatePhone(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, phone: nextError || undefined }));
+                        }}
+                        onBlur={(e) => {
+                          const nextError = validatePhone(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, phone: nextError || undefined }));
+                        }}
+                        className={fieldErrors.phone ? inputErrorCls : inputCls}
+                      />
+                      {fieldErrors.phone && (
+                        <p className="text-[10px] text-red-500 font-medium">{fieldErrors.phone}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="lp-label-mono text-lp-primary">
+                      Work Email
+                    </label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      defaultValue={user?.email || ''}
+                      required
+                      readOnly
+                      className={`${inputCls} cursor-not-allowed opacity-70`}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="message"
-                  className="text-[11px] font-bold text-[#2F5FA7] uppercase tracking-widest ml-1"
-                >
-                  Project Brief & DFM Questions
-                </label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  defaultValue={defaultMessage}
-                  required
-                  minLength={20}
-                  onChange={(e) => {
-                    if (!fieldErrors.message) return;
-                    const nextError = validateMessage(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, message: nextError || undefined }));
-                  }}
-                  onBlur={(e) => {
-                    const nextError = validateMessage(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, message: nextError || undefined }));
-                  }}
-                  placeholder="Describe your design, material, quantity, and any technical questions..."
-                  className={`bg-slate-50 text-[#1E3A66] placeholder:text-blue-100 min-h-[140px] text-sm rounded-xl resize-none transition-all font-medium ${
-                    fieldErrors.message
-                      ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                      : 'border-slate-200 focus:border-[#2F5FA7]/50 focus:ring-[#2F5FA7]/20'
-                  }`}
-                />
-                {fieldErrors.message && (
-                  <p className="text-[10px] text-red-600 font-bold tracking-wide">
-                    {fieldErrors.message}
-                  </p>
-                )}
+                  {prefilledRef && (
+                    <div className="p-4 bg-lp-accent border border-lp-border flex items-start gap-3">
+                      <FileText className="size-5 text-lp-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium mb-1">
+                          Quote {prefilledRef} Attached
+                        </p>
+                        <p className="text-xs text-lp-muted-fg leading-relaxed">
+                          Our engineers will have access to your estimated pricing, material choices,
+                          and quantities for faster context.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label htmlFor="message" className="lp-label-mono text-lp-primary">
+                      Project Brief & DFM Questions
+                    </label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      defaultValue={defaultMessage}
+                      required
+                      minLength={20}
+                      onChange={(e) => {
+                        if (!fieldErrors.message) return;
+                        const nextError = validateMessage(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, message: nextError || undefined }));
+                      }}
+                      onBlur={(e) => {
+                        const nextError = validateMessage(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, message: nextError || undefined }));
+                      }}
+                      placeholder="Describe your design, material, quantity, and any technical questions..."
+                      className={`min-h-[140px] resize-none text-sm rounded-sm ${
+                        fieldErrors.message
+                          ? 'border-red-400 bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-red-500 focus:ring-red-100'
+                          : 'border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10'
+                      }`}
+                    />
+                    {fieldErrors.message && (
+                      <p className="text-[10px] text-red-500 font-medium">{fieldErrors.message}</p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="lp-label-mono w-full h-14 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm mt-4 transition-all active:scale-[0.98]"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <>
+                        Request Expert Consultation
+                        <ArrowRight className="ml-2 size-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
               </div>
-
-              <Button
-                type="submit"
-                className="w-full h-14 font-bold text-base bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl mt-4 shadow-lg shadow-blue-900/10 transition-all active:scale-[0.98]"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  'Request Expert Consultation'
-                )}
-              </Button>
-            </form>
-          </div>
-        )}
+            </Reveal>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 export default function ConsultationPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans selection:bg-[#2F5FA7]/30 relative overflow-hidden">
-      {/* Background Grid & Glows */}
-      <div
-        className="absolute inset-0 bg-[#F8FAFC]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(47, 95, 167, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(47, 95, 167, 0.05) 1px, transparent 1px)',
-          backgroundSize: '30px 30px',
-        }}
-      />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#2F5FA7]/5 blur-[100px] rounded-full pointer-events-none" />
-
-      <div className="relative z-10">
-        <LandingNav />
-        <BackToHomeBar className="pt-8 pb-0" />
-
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center pt-24">
-              <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
-            </div>
-          }
-        >
-          <ConsultationPageContent />
-        </Suspense>
-      </div>
-    </div>
+    <V2Shell>
+      <Suspense
+        fallback={
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <Loader2 className="size-8 text-lp-primary animate-spin" />
+          </div>
+        }
+      >
+        <ConsultationPageContent />
+      </Suspense>
+    </V2Shell>
   );
 }

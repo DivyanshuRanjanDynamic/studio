@@ -3,8 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { LandingNav } from '@/components/LandingNav';
-import { Footer } from '@/components/Footer';
+import { V2Shell } from '@/components/V2Shell';
 import {
   CheckCircle2,
   XCircle,
@@ -66,8 +65,7 @@ function OrderConfirmationContent() {
   const isPaid = order.paymentStatus === 'paid';
 
   return (
-    <div className="min-h-screen bg-slate-50/50 text-slate-900 font-sans selection:bg-blue-100">
-      <LandingNav />
+    <V2Shell noFooter>
 
       <main className="container mx-auto px-4 py-12 md:py-20 max-w-5xl">
         {/* Header Section */}
@@ -344,8 +342,7 @@ function OrderConfirmationContent() {
         </div>
       </main>
 
-      <Footer />
-    </div>
+    </V2Shell>
   );
 }
 

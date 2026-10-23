@@ -84,7 +84,21 @@ import {
   ArrowUpRight,
   Users,
   Info,
+  PanelLeft,
+  Asterisk,
 } from 'lucide-react';
+import '@/components/home/landing.css';
+import { landingFontVars } from '@/components/home/fonts';
+import { HomeNav } from '@/components/home/HomeNav';
+import {
+  AdminCursor,
+  dialogClass,
+  dialogTitleClass,
+  dialogCancelClass,
+  dialogActionClass,
+  dialogDangerClass,
+} from '@/components/admin/admin-ui';
+import { RfqDetailDrawer } from '@/components/admin/RfqDetailDrawer';
 import {
   useFirestore,
   useCollection,
@@ -122,6 +136,7 @@ import { OrderManagement } from '@/components/admin/OrderManagement';
 import { IndustrialDemandHub } from '@/components/admin/IndustrialDemandHub';
 import { ContactQueries } from '@/components/admin/ContactQueries';
 import { RfqInstantCosts } from '@/components/admin/RfqInstantCosts';
+import { PricingCalibration } from '@/components/admin/PricingCalibration';
 import { MechMasterDetailDrawer } from '@/components/admin/MechMasterDetailDrawer';
 
 // Constants moved to @/config/constants
@@ -185,12 +200,22 @@ export default function AdminPanel() {
   const db = useFirestore();
   const { toast } = useToast();
 
+  // Dialogs and sheets portal into <body>, outside the admin root: give body the same fonts and tokens.
+  useEffect(() => {
+    const classes = ['lp-root', ...landingFontVars.split(' ').filter(Boolean)];
+    document.body.classList.add(...classes);
+    return () => document.body.classList.remove(...classes);
+  }, []);
+
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
   }, [db, user?.uid]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const profileRole = profile?.role;
+  // Users whose token has already been force-refreshed this session (see below)
+  const refreshedTokenFor = useRef<string | null>(null);
 
   useEffect(() => {
     async function verifyAdmin() {
@@ -202,14 +227,21 @@ export default function AdminPanel() {
       }
 
       try {
-        // 2. FORCE REFRESH the token to pick up any new custom claims (Admin elevation)
-        // This is crucial for users who were just whitelisted on the server.
-        await user.getIdToken(true);
+        // 2. Secure admin checks: custom claim (cached token) or server profile role.
+        // Firestore rules authorise admins by the profile role, so a cached token is enough.
+        // Never force-refresh routinely: every new token makes the Firestore SDK restart
+        // its live connections, which logs 400/404 errors for the aborted requests.
+        let tokenResult = await getIdTokenResult(user);
+        let hasAdminClaim = checkIsAdmin(tokenResult.claims);
+        const profileIsAdmin = profileRole === 'admin';
 
-        // 3. Perform secure admin checks (custom claim + server profile role).
-        const tokenResult = await getIdTokenResult(user);
-        const hasAdminClaim = checkIsAdmin(tokenResult.claims);
-        const profileIsAdmin = profile?.role === 'admin';
+        // 3. Only when nothing says admin, refresh once before giving up — a user who was
+        // just whitelisted may hold a token issued before the admin claim existed.
+        if (!hasAdminClaim && !profileIsAdmin && refreshedTokenFor.current !== user.uid) {
+          refreshedTokenFor.current = user.uid;
+          tokenResult = await getIdTokenResult(user, true);
+          hasAdminClaim = checkIsAdmin(tokenResult.claims);
+        }
 
         if (hasAdminClaim || profileIsAdmin) {
           setIsAdminConfirmed(true);
@@ -229,7 +261,8 @@ export default function AdminPanel() {
     }
 
     verifyAdmin();
-  }, [user, isUserLoading, profile, isProfileLoading, router, toast, db]);
+    // Depend on the role, not the profile object: every profile snapshot would re-run the check.
+  }, [user, isUserLoading, profileRole, isProfileLoading, router, db]);
 
   const buyersQuery = useMemoFirebase(
     () =>
@@ -1147,58 +1180,61 @@ export default function AdminPanel() {
 
   if (isAdminConfirmed === null || isUserLoading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="animate-spin text-primary" />
+      <div className={`lp-root adm-dots flex min-h-screen items-center justify-center ${landingFontVars}`}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="size-5 animate-spin text-lp-primary" />
+          <span className="adm-mono text-lp-muted-fg">Loading admin panel</span>
+        </div>
       </div>
     );
   if (!isAdminConfirmed) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 bg-card sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-blue-200 hover:text-[#1E3A66]"
-            onClick={() => setSidebarOpen((v) => !v)}
-          >
-            {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
-          <Image src="/mechhub.png" alt="MechHub Logo" width={44} height={44} />
-          <span className="font-headline font-bold text-lg text-[#1E3A66] hidden sm:inline">
-            MechHub Admin
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 border-slate-200 hover:bg-slate-50 text-slate-700"
-          >
-            <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Logout</span>
-          </Button>
-        </div>
-      </header>
+    <div className={`lp-root adm-dots adm-shell min-h-screen ${landingFontVars}`}>
+      <HomeNav />
+      <AdminCursor />
+      <div className="pt-16">
+        <header className="sticky top-16 z-40 flex h-[52px] items-center justify-between border-y border-lp-border bg-lp-bg/85 px-4 backdrop-blur-md sm:px-5">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              className="flex size-8 items-center justify-center text-lp-fg transition-colors hover:text-lp-primary"
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Toggle sidebar"
+            >
+              <PanelLeft className="size-4" strokeWidth={1.75} />
+            </button>
+            <span className="flex items-center gap-2 text-base tracking-tight">
+              <Asterisk className="size-3.5 text-lp-primary" />
+              MechHub <span className="adm-serif text-lg">Admin</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="/" className="adm-mono hidden transition-colors hover:text-lp-primary sm:inline">
+              Customer view
+            </a>
+            <button type="button" onClick={handleLogout} className="adm-btn adm-btn-ghost h-9 px-3">
+              <LogOut className="size-3.5" /> Logout
+            </button>
+          </div>
+        </header>
 
-      <div className="flex flex-1 relative overflow-hidden">
-        {/* Mobile backdrop */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
-            onClick={() => setSidebarOpen(false)}
+        <div className="relative flex">
+          {sidebarOpen && (
+            <div
+              className="adm-overlay fixed inset-0 z-30 bg-lp-ink/30 backdrop-blur-sm md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
+          <AdminSidebar
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
           />
-        )}
 
-        <AdminSidebar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
-
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          <main key={activeTab} className="min-w-0 flex-1 px-4 pb-24 pt-10 sm:px-10">
           {activeTab === 'demand' && (
             <IndustrialDemandHub
               restockRequests={restockRequests || []}
@@ -1210,6 +1246,7 @@ export default function AdminPanel() {
           {activeTab === 'rfqs' && (
             <RfqManagement
               rfqs={filteredRfqs}
+              vendors={vendors || []}
               isLoading={isRfqsLoading}
               onUpdateStatus={handleUpdateStatus}
               onViewDetails={(rfq) => {
@@ -1219,13 +1256,16 @@ export default function AdminPanel() {
             />
           )}
 
-          {activeTab === 'users' && <UserDirectory users={buyers || []} />}
+          {activeTab === 'users' && <UserDirectory users={buyers || []} rfqs={filteredRfqs} />}
 
           {activeTab === 'vendor_approvals' && <VendorApprovals />}
+
+          {activeTab === 'pricing_calibration' && <PricingCalibration />}
 
           {activeTab === 'vendors' && (
             <VendorRegistry
               vendors={vendors || []}
+              rfqs={filteredRfqs}
               onAddVendor={() => {
                 setSelectedVendorProfile(null);
                 setShowVendorModal(true);
@@ -1292,931 +1332,179 @@ export default function AdminPanel() {
               }}
             />
           )}
-        </main>
+          </main>
+        </div>
       </div>
 
-      {showDetailsModal &&
-        selectedRfq &&
-        (() => {
-          // Aggregate all design files
-          const partFiles = (selectedRfqParts || [])
-            .filter((p: any) => p.cadFile?.fileUrl)
-            .map((p: any) => ({
-              name: p.cadFile?.fileName || `${p.partName || 'part'}_design`,
-              dataUrl: p.cadFile.fileUrl,
-              partName: p.partName,
-            }));
-
-          const fileList: { name: string; dataUrl: string; size?: number; partName?: string }[] = [
-            ...(selectedRfq.designFiles?.length > 0
-              ? selectedRfq.designFiles
-              : selectedRfq.designFileUrl
-                ? [
-                  {
-                    name: selectedRfq.designFileName || 'Main_Design_Data',
-                    dataUrl: selectedRfq.designFileUrl,
-                  },
-                ]
-                : []),
-            ...partFiles,
-          ];
-          const getExt = (n: string) => {
-            const e = n.split('.').pop()?.toUpperCase() || 'FILE';
-            return e.length > 4 ? e.slice(0, 4) : e;
-          };
-          const sc: Record<string, string> = {
-            submitted: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-            quotation_sent: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
-            under_negotiation: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25',
-            accepted: 'bg-green-500/15 text-green-400 border-green-500/25',
-            assigned: 'bg-green-500/15 text-green-400 border-green-500/25',
-            in_progress: 'bg-purple-500/15 text-purple-400 border-purple-500/25',
-            completed: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-            rejected: 'bg-red-500/15 text-red-400 border-red-500/25',
-            cancelled: 'bg-red-500/15 text-red-400 border-red-500/25',
-          };
-          const COLOR_HEX_MAP: Record<string, string> = {
-            black: '#121212',
-            white: '#FAFAFA',
-            red: '#D32F2F',
-            blue: '#1E88E5',
-            green: '#388E3C',
-            yellow: '#FBC02D',
-            grey: '#757575',
-            clear: '#E0E0E0',
-            gold: '#FFD700',
-          };
-          return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
-              <Card className="w-full max-w-5xl max-h-[92vh] bg-white border-slate-200 shadow-2xl overflow-hidden flex flex-col">
-                <div className="h-1 bg-gradient-to-r from-primary via-blue-400 to-primary" />
-                <div className="px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-5 flex items-start justify-between gap-3 sm:gap-4 shrink-0">
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-lg sm:text-2xl font-headline font-bold text-[#1E3A66] truncate">
-                      {selectedRfq.projectName}
-                    </h2>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-blue-200 flex-wrap">
-                      <span className="font-mono text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                        {selectedRfq.id.slice(0, 14)}
-                      </span>
-                      <span className="opacity-40">|</span>
-                      <span className="flex items-center gap-1.5">
-                        <UserIcon className="w-3.5 h-3.5 text-blue-100" /> {selectedRfq.userName}
-                      </span>
-                      <span className="opacity-40">|</span>
-                      <span className="flex items-center gap-1.5 font-mono text-xs text-[#2F5FA7]">
-                        <Phone className="w-3.5 h-3.5" />{' '}
-                        {selectedRfqCustomer?.phone ||
-                          selectedRfq.userPhone ||
-                          'No Phone Registered'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Badge
-                      className={`text-[10px] px-3 py-1.5 font-bold uppercase tracking-wider border shadow-sm ${sc[selectedRfq.status] || 'bg-slate-100 text-slate-700 border-slate-200'}`}
-                    >
-                      {selectedRfq.status.replace(/_/g, ' ')}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-blue-100 hover:text-slate-600"
-                      onClick={() => setShowDetailsModal(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="h-px bg-slate-100" />
-
-                <div className="px-4 sm:px-8 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 overflow-y-auto flex-1 min-h-0">
-                  {/* Right */}
-                  <div className="lg:col-span-7 space-y-6">
-                    {/* Payment & Milestone Tracking */}
-                    {(selectedRfq.paymentStatus?.advance?.paid ||
-                      selectedRfq.finalPrice > 0 ||
-                      selectedRfq.quotedPrice > 0) && (
-                        <div className="mb-8">
-                          <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-4">
-                            <CreditCard className="w-3.5 h-3.5 text-emerald-500" /> Financial &
-                            Milestone Tracking
-                          </h3>
-
-                          {(() => {
-                            const finances = calculateProjectFinances(
-                              selectedRfq.finalPrice || selectedRfq.quotedPrice || 0
-                            );
-
-                            return (
-                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 overflow-hidden text-sm shadow-sm">
-                                <div className="p-4 border-b border-emerald-100 bg-white space-y-2">
-                                  <div className="flex justify-between items-center text-xs text-blue-200">
-                                    <span className="flex items-center gap-1.5">
-                                      <Box className="w-3.5 h-3.5 opacity-50" /> Quotation Subtotal
-                                    </span>
-                                    <span className="font-semibold text-slate-700">
-                                      INR {finances.subtotal.toLocaleString('en-IN')}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-xs text-blue-200">
-                                    <span className="flex items-center gap-1.5">
-                                      <Gavel className="w-3.5 h-3.5 opacity-50" /> GST (18%)
-                                    </span>
-                                    <span className="font-semibold text-slate-700">
-                                      INR {finances.gst.toLocaleString('en-IN')}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-xs text-blue-200">
-                                    <span className="flex items-center gap-1.5">
-                                      <ShoppingCart className="w-3.5 h-3.5 opacity-50" /> Shipping
-                                      (Ground)
-                                    </span>
-                                    <span className="font-semibold text-slate-700">
-                                      INR {finances.shipping.toLocaleString('en-IN')}
-                                    </span>
-                                  </div>
-                                  <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-blue-200 font-bold uppercase text-[10px] tracking-wider">
-                                      Total Order Value
-                                    </span>
-                                    <span className="font-bold text-slate-900 text-lg">
-                                      INR {finances.total.toLocaleString('en-IN')}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                                  {/* Advance Payment Block */}
-                                  <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
-                                        50% Advance
-                                      </span>
-                                      {selectedRfq.paymentStatus?.advance?.paid ? (
-                                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px]">
-                                          PAID
-                                        </Badge>
-                                      ) : (
-                                        <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-[10px]">
-                                          PENDING
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <p className="text-xl font-bold text-slate-900">
-                                        INR {finances.advance.toLocaleString('en-IN')}
-                                      </p>
-                                    </div>
-                                    {selectedRfq.paymentStatus?.advance?.paid && (
-                                      <div className="text-[10px] text-blue-200 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
-                                        <p>
-                                          On:{' '}
-                                          {new Date(
-                                            selectedRfq.paymentStatus.advance.paidAt
-                                          ).toLocaleString('en-IN')}
-                                        </p>
-                                        <p className="font-mono text-[9px] truncate">
-                                          Ref: {selectedRfq.paymentStatus.advance.razorpayPaymentId}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Completion Payment Block */}
-                                  <div className="space-y-3 md:pl-4 pt-4 md:pt-0">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
-                                        50% Balance
-                                      </span>
-                                      {selectedRfq.paymentStatus?.completion?.paid ? (
-                                        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px]">
-                                          PAID
-                                        </Badge>
-                                      ) : (
-                                        <Badge className="bg-slate-500/10 text-slate-600 border-slate-500/20 text-[10px]">
-                                          PENDING
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <p className="text-xl font-bold text-slate-900">
-                                        INR {finances.balance.toLocaleString('en-IN')}
-                                      </p>
-                                    </div>
-                                    {selectedRfq.paymentStatus?.completion?.paid && (
-                                      <div className="text-[10px] text-blue-200 space-y-1 bg-slate-100 p-2 rounded border border-slate-200">
-                                        <p>
-                                          On:{' '}
-                                          {new Date(
-                                            selectedRfq.paymentStatus.completion.paidAt
-                                          ).toLocaleString('en-IN')}
-                                        </p>
-                                        <p className="font-mono text-[9px] truncate">
-                                          Ref:{' '}
-                                          {selectedRfq.paymentStatus.completion.razorpayPaymentId}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      )}
-
-                    {/* Pricing Worksheet */}
-                    {selectedRfqParts && selectedRfqParts.length > 0 && (
-                      <RfqInstantCosts
-                        parts={selectedRfqParts as any}
-                        project={selectedRfq}
-                        onApplyInstantPrices={applyInstantPrices}
-                      />
-                    )}
-
-                    {selectedRfqParts && selectedRfqParts.length > 0 && (
-                      <div className="mb-8 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                          <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#1E3A66]">
-                            <TrendingUp className="w-3.5 h-3.5" /> Pricing Worksheet
-                          </h3>
-                          <Badge
-                            variant="secondary"
-                            className="bg-slate-200 text-slate-700 text-[8px] font-bold uppercase"
-                          >
-                            Work-in-Progress
-                          </Badge>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-[11px] border-collapse">
-                            <thead>
-                              <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider">
-                                  Part Details
-                                </th>
-                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider text-center">
-                                  Qty
-                                </th>
-                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider">
-                                  Unit Cost (₹)
-                                </th>
-                                <th className="px-4 py-2 font-bold text-blue-200 uppercase tracking-wider text-right">
-                                  Total (₹)
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {selectedRfqParts.map((part: any) => {
-                                const pId = part.id as string;
-                                const unitCost = Number(partCosts[pId] || 0);
-                                const total = unitCost * (part.quantity || 0);
-                                return (
-                                  <tr key={pId} className="hover:bg-slate-50/30 transition-colors">
-                                    <td className="px-4 py-3">
-                                      <p className="font-bold text-slate-900 leading-tight">
-                                        {part.partName}
-                                      </p>
-                                      <p className="text-[9px] text-blue-100 uppercase font-medium">
-                                        {part.material?.name || 'Custom Material'}
-                                      </p>
-                                    </td>
-                                    <td className="px-4 py-3 text-center font-mono font-bold text-slate-600">
-                                      {part.quantity}
-                                    </td>
-                                    <td className="px-4 py-3 w-32">
-                                      <div className="relative">
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-300 font-bold">
-                                          ₹
-                                        </span>
-                                        <Input
-                                          type="number"
-                                          value={partCosts[pId] || ''}
-                                          onChange={(e) => {
-                                            const newVal = e.target.value;
-                                            setPartCosts((prev) => ({ ...prev, [pId]: newVal }));
-
-                                            // Auto-update grand total
-                                            const newCosts = { ...partCosts, [pId]: newVal };
-                                            const subtotal = selectedRfqParts.reduce(
-                                              (sum: number, p: any) => {
-                                                const childId = p.id as string;
-                                                return (
-                                                  sum +
-                                                  Number(newCosts[childId] || 0) * (p.quantity || 0)
-                                                );
-                                              },
-                                              0
-                                            );
-                                            setSendQuotePrice(subtotal.toString());
-                                          }}
-                                          className="pl-5 h-8 text-[11px] font-mono font-bold border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20 bg-white"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
-                                      {total.toLocaleString('en-IN')}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                            <tfoot className="bg-slate-50/80">
-                              <tr className="border-t border-slate-200">
-                                <td
-                                  colSpan={3}
-                                  className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-blue-200"
-                                >
-                                  Calculated Subtotal
-                                </td>
-                                <td className="px-4 py-3 text-right text-sm font-bold text-[#1E3A66] font-mono">
-                                  ₹{Number(sendQuotePrice || 0).toLocaleString('en-IN')}
-                                </td>
-                              </tr>
-                            </tfoot>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Detailed Parts Breakdown */}
-                    {selectedRfqParts && selectedRfqParts.length > 0 && (
-                      <div className="mb-8">
-                        <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#E56E03] mb-4">
-                          <Box className="w-3.5 h-3.5" /> Engineering Parts Inventory (
-                          {selectedRfqParts.length})
-                        </h3>
-                        <div className="space-y-4">
-                          {selectedRfqParts.map((part: any, idx: number) => (
-                            <div
-                              key={part.id || idx}
-                              className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:border-[#E56E03]/30 transition-all"
-                            >
-                              <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-[#E56E03] text-white text-[9px] font-bold px-1.5 py-1 rounded shadow-sm">
-                                    P{idx + 1}
-                                  </span>
-                                  <span className="font-bold text-slate-900 text-sm tracking-tight">
-                                    {part.partName}
-                                  </span>
-                                </div>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[9px] font-bold border-[#E56E03]/20 text-[#E56E03] uppercase"
-                                >
-                                  {part.quantity} UNITS
-                                </Badge>
-                              </div>
-                              <div className="p-4 space-y-3">
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="space-y-1">
-                                    <Label className="text-[8px] font-bold text-blue-100 uppercase tracking-widest">
-                                      Process & Service
-                                    </Label>
-                                    <p className="text-[11px] font-bold text-slate-800 uppercase leading-none">
-                                      {part.service?.replace(/_/g, ' ') || 'General Engineering'}
-                                    </p>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-[8px] font-bold text-blue-100 uppercase tracking-widest">
-                                      Base Material
-                                    </Label>
-                                    <p className="text-[11px] font-bold text-slate-800 uppercase leading-none">
-                                      {part.material?.name || 'Custom'}
-                                      {part.material?.grade && (
-                                        <span className="text-[9px] text-blue-100 font-medium ml-1">
-                                          ({part.material.grade})
-                                        </span>
-                                      )}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="bg-slate-50/80 rounded-lg p-3 grid grid-cols-3 gap-2">
-                                  <div className="text-center border-r border-slate-200">
-                                    <p className="text-[7px] font-bold text-blue-100 uppercase tracking-widest mb-0.5">
-                                      Thickness
-                                    </p>
-                                    <p className="text-[10px] font-bold text-slate-900 font-mono">
-                                      {part.material?.thickness || '-'} mm
-                                    </p>
-                                  </div>
-                                  <div className="text-center border-r border-slate-200">
-                                    <p className="text-[7px] font-bold text-blue-100 uppercase tracking-widest mb-0.5">
-                                      Finish
-                                    </p>
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      {part.coatingColor && COLOR_HEX_MAP[part.coatingColor] && (
-                                        <div
-                                          className="w-2.5 h-2.5 rounded-full border border-slate-200 shadow-sm"
-                                          style={{ backgroundColor: COLOR_HEX_MAP[part.coatingColor] }}
-                                        />
-                                      )}
-                                      <p className="text-[10px] font-bold text-slate-900 uppercase">
-                                        {part.coatingColor || 'Standard'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-[7px] font-bold text-blue-100 uppercase tracking-widest mb-0.5">
-                                      Quantity
-                                    </p>
-                                    <p className="text-[10px] font-bold text-slate-900 font-mono">
-                                      {part.quantity} PCS
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {part.secondaryProcesses && part.secondaryProcesses.length > 0 && (
-                                  <div className="flex flex-wrap gap-1">
-                                    {part.secondaryProcesses.map((s: string) => (
-                                      <Badge
-                                        key={s}
-                                        variant="secondary"
-                                        className="bg-blue-50 text-blue-600 text-[8px] border-blue-100 uppercase tracking-tighter"
-                                      >
-                                        {s.replace(/_/g, ' ')}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Dimensions from CAD Analysis */}
-                                {part.dimensions && (
-                                  <div className="bg-indigo-50/50 rounded-lg p-3 border border-indigo-100">
-                                    <p className="text-[7px] font-bold text-indigo-400 uppercase tracking-widest mb-1">
-                                      CAD Dimensions (mm)
-                                    </p>
-                                    <p className="text-[11px] font-mono font-bold text-indigo-900">
-                                      {Number(part.dimensions.x).toFixed(1)} × {Number(part.dimensions.y).toFixed(1)} × {Number(part.dimensions.z).toFixed(1)} mm
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Tap Selections from auto-detection */}
-                                {part.taps && part.taps.length > 0 && (
-                                  <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
-                                    <p className="text-[7px] font-bold text-emerald-500 uppercase tracking-widest mb-2">
-                                      Threading / Tap Configuration ({part.taps.length} Holes)
-                                    </p>
-                                    <div className="space-y-1">
-                                      {part.taps.map((tap: any, tIdx: number) => {
-                                        const hole = part.analysis?.holes?.[tap.holeIndex];
-                                        return (
-                                          <div key={tIdx} className="flex items-center justify-between text-[10px] bg-white/50 p-1.5 rounded border border-emerald-100/50">
-                                            <div className="flex flex-col">
-                                              <span className="font-bold text-slate-700">Hole #{tap.holeIndex + 1}</span>
-                                              {hole && (
-                                                <span className="text-[8px] text-blue-200 font-mono italic">
-                                                  Design: Ø {(hole.radius * 2).toFixed(2)}mm × {hole.depth.toFixed(1)}mm
-                                                </span>
-                                              )}
-                                            </div>
-                                            <Badge className="bg-emerald-500 text-white text-[9px] border-none font-black uppercase px-2 py-0.5">
-                                              {getTapName(tap.tapType)}
-                                            </Badge>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Bend Analysis Breakdown */}
-                                {part.analysis?.bends && part.analysis.bends.length > 0 && (
-                                  <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-                                    <p className="text-[7px] font-bold text-blue-500 uppercase tracking-widest mb-2">
-                                      Sheet Metal Bend Analysis ({part.analysis.bends.length} Bends)
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {part.analysis.bends.map((bend: any, bIdx: number) => (
-                                        <div key={bIdx} className="text-[9px] bg-white/50 p-1.5 rounded border border-blue-100/50 flex flex-col gap-0.5">
-                                          <span className="font-bold text-slate-700 uppercase tracking-tighter">Bend #{bIdx + 1}</span>
-                                          <span className="text-[8px] text-blue-200 font-mono">Radius: {bend.radius.toFixed(1)}mm</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Manual tapping notes from customer */}
-                                {part.tappingNotes && (
-                                  <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-200">
-                                    <p className="text-[7px] font-bold text-amber-500 uppercase tracking-widest mb-1">
-                                      Customer Tapping Instructions
-                                    </p>
-                                    <p className="text-[10px] text-amber-900 leading-relaxed whitespace-pre-wrap">
-                                      {part.tappingNotes}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Discount Tier */}
-                                {part.discountTier && (
-                                  <Badge variant="outline" className="text-[8px] font-bold border-purple-200 text-purple-600 uppercase">
-                                    Discount: {part.discountTier}
-                                  </Badge>
-                                )}
-
-                                {part.cadFile?.fileUrl && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="w-full h-9 border-[#E56E03]/10 text-[#E56E03] hover:bg-[#E56E03]/5 gap-2 text-[10px] font-bold uppercase tracking-widest"
-                                    onClick={() =>
-                                      handleDownload(
-                                        part.cadFile.fileUrl,
-                                        part.cadFile.fileName || `${part.partName}_Design`
-                                      )
-                                    }
-                                  >
-                                    <Download className="w-3.5 h-3.5" /> Download Design Data
-                                  </Button>
-                                )}
-
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Customer Negotiation Chat */}
-                    <div className="mb-8">
-                      <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#2F5FA7] mb-4">
-                        <MessageSquare className="w-3.5 h-3.5" /> Customer Negotiation History
-                      </h3>
-                      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                        <div className="max-h-[300px] overflow-y-auto p-4 space-y-4 bg-slate-50/30">
-                          {selectedRfq.negotiationHistory?.length > 0 ? (
-                            selectedRfq.negotiationHistory.map((msg: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className={`flex flex-col ${msg.role === 'admin' ? 'items-end' : 'items-start'}`}
-                              >
-                                <div
-                                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${msg.role === 'admin' ? 'bg-[#1E3A66] text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}
-                                >
-                                  <p className="leading-relaxed">{msg.message}</p>
-                                  {msg.proposedPrice && (
-                                    <div
-                                      className={`mt-2 pt-2 border-t text-[10px] font-bold uppercase tracking-wider ${msg.role === 'admin' ? 'border-white/10 text-blue-200' : 'border-slate-100 text-[#2F5FA7]'}`}
-                                    >
-                                      Proposed: INR {msg.proposedPrice.toLocaleString()}
-                                    </div>
-                                  )}
-                                </div>
-                                <span className="text-[8px] font-bold text-blue-100 uppercase tracking-widest mt-1 px-1">
-                                  {msg.role === 'admin' ? 'Global Admin' : 'Customer'} •{' '}
-                                  {new Date(msg.timestamp).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="py-10 text-center text-blue-100">
-                              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                              <p className="text-[10px] uppercase font-bold tracking-widest">
-                                No negotiation history yet
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Response Box */}
-                        <div className="p-4 border-t border-slate-200 bg-white">
-                          <div className="space-y-3">
-                            <Textarea
-                              placeholder="Type your response to the customer..."
-                              value={adminNegMessage}
-                              onChange={(e) => setAdminNegMessage(e.target.value)}
-                              className="text-xs bg-slate-50/50 border-slate-200 focus:bg-white transition-all min-h-[80px]"
-                            />
-                            <div className="flex gap-3">
-                              <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-blue-100 uppercase">
-                                  INR
-                                </span>
-                                <Input
-                                  type="number"
-                                  placeholder="New Quote (Optional)"
-                                  value={adminNegPrice}
-                                  onChange={(e) => setAdminNegPrice(e.target.value)}
-                                  className="pl-12 text-xs h-10 border-slate-200 bg-slate-50/50"
-                                />
-                              </div>
-                              <Button
-                                size="sm"
-                                className="px-6 font-bold uppercase tracking-widest text-[10px] h-10"
-                                onClick={handleAdminNegotiationResponse}
-                                disabled={!adminNegMessage || isSubmittingNeg}
-                              >
-                                {isSubmittingNeg ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  'Send Reply'
-                                )}
-                              </Button>
-                            </div>
-                            <p className="text-[9px] text-blue-100 leading-tight">
-                              Sending a response will automatically visibility status to "Quotation
-                              Received" for the customer.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* MechMaster Shortlisting & Dispatch */}
-                    {(selectedRfq.status === 'submitted' || selectedRfq.status === 'under_review') && (
-                      <div className="mb-8">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-600">
-                            <Users className="w-3.5 h-3.5 text-indigo-500" /> MechMaster Selection Registry
-                          </h3>
-                          {(selectedRfq.shortlistedVendorIds || []).length > 0 && (
-                            <Button
-                              size="sm"
-                              className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-indigo-200"
-                              onClick={() => handleDispatchRfq(selectedRfq.id)}
-                              disabled={isDispatching}
-                            >
-                              {isDispatching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                              Dispatch RFQ to {(selectedRfq.shortlistedVendorIds || []).length} Vendors
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="rounded-xl border border-indigo-100 bg-indigo-50/20 overflow-hidden shadow-sm">
-                          <div className="max-h-[300px] overflow-y-auto p-4 space-y-2">
-                            {vendors?.filter(v => v.isActive).map((vendor: any) => {
-                              const isShortlisted = (selectedRfq.shortlistedVendorIds || []).includes(vendor.id);
-                              return (
-                                <div key={vendor.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-bold text-slate-900 text-xs truncate">{vendor.teamName || vendor.fullName}</p>
-                                      {vendor.isVerified && <Badge className="bg-blue-500 h-3 w-3 p-0 rounded-full flex items-center justify-center border-none"><Check className="w-2 h-2 text-white" /></Badge>}
-                                    </div>
-                                    <p className="text-[10px] text-blue-200 uppercase font-medium">{vendor.location} • {vendor.rating || 'N/A'} ⭐</p>
-                                  </div>
-                                  <Button
-                                    size="sm"
-                                    variant={isShortlisted ? 'default' : 'outline'}
-                                    className={`h-7 text-[9px] font-bold uppercase ${isShortlisted ? 'bg-indigo-600 hover:bg-indigo-700' : 'border-slate-200'}`}
-                                    onClick={() => handleShortlistVendor(selectedRfq.id, vendor.id)}
-                                  >
-                                    {isShortlisted ? 'Shortlisted' : 'Shortlist'}
-                                  </Button>
-                                </div>
-                              );
-                            })}
-                            {(!vendors || vendors.length === 0) && (
-                              <div className="text-center py-6 text-blue-100 text-[10px] font-bold uppercase tracking-widest">
-                                No active MechMasters found in registry
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-3 bg-indigo-50 border-t border-indigo-100 italic text-[9px] text-indigo-600 flex items-center gap-2">
-                            <Info className="w-3 h-3" /> Shortlisting vendors allows you to batch-invite them. Dispatching transitions the project to "RFQ SENT".
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-primary mb-4">
-                      <TrendingUp className="w-3.5 h-3.5" /> Bidding & Negotiations
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedRfqQuotes?.map((quote) => (
-                        <Card
-                          key={quote.id}
-                          className="bg-white border-slate-200 overflow-hidden hover:border-slate-300 transition-all"
-                        >
-                          <div className="p-5">
-                            <div className="flex items-start justify-between gap-4 mb-4">
-                              <div className="min-w-0">
-                                <p className="font-bold text-slate-900 text-base truncate">
-                                  {quote.vendorName}
-                                </p>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-[9px] uppercase mt-1 ${quote.status === 'pending' ? 'border-yellow-500/25 text-yellow-400' : quote.status === 'accepted' ? 'border-green-500/25 text-green-400' : 'border-slate-200 text-blue-200'}`}
-                                >
-                                  {quote.status}
-                                </Badge>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-xl font-bold text-primary">
-                                  INR {Number(quote.quotedPrice).toLocaleString('en-IN')}
-                                </p>
-                                <p className="text-xs text-blue-200">{quote.leadTimeDays} days</p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 font-semibold border-slate-200 hover:bg-slate-50 gap-1.5"
-                                onClick={() => {
-                                  setRevisingQuote(quote);
-                                  setRevPrice(quote.quotedPrice.toString());
-                                  setRevLeadTime(quote.leadTimeDays.toString());
-                                  setRevMessage('');
-                                  setIsRevising(true);
-                                }}
-                              >
-                                <History className="w-3.5 h-3.5" /> Review
-                              </Button>
-                              <Button
-                                size="sm"
-                                className="flex-1 font-semibold gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
-                                onClick={() =>
-                                  setPendingAssignVendor({
-                                    rfqId: selectedRfq.id,
-                                    vendorId: quote.vendorId,
-                                  })
-                                }
-                              >
-                                <UserCheck className="w-3.5 h-3.5" /> Assign
-                              </Button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                      {(!selectedRfqQuotes || selectedRfqQuotes.length === 0) && (
-                        <div className="p-8 sm:p-14 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
-                          <Clock className="w-10 h-10 mx-auto text-muted-foreground/15 mb-3" />
-                          <p className="text-sm text-blue-200">No active bids yet</p>
-                          <p className="text-xs text-blue-100 mt-1">
-                            Send a quotation to start receiving bids.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-4 sm:px-8 py-3 sm:py-5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
-                  <Button
-                    variant="outline"
-                    className="px-8 border-slate-200 hover:bg-slate-50"
-                    onClick={() => setShowDetailsModal(false)}
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    className="px-8 font-bold gap-2"
-                    onClick={() => setShowSendQuoteModal(true)}
-                  >
-                    <Send className="w-4 h-4" /> Send Quotation
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          );
-        })()}
+      {showDetailsModal && selectedRfq && (
+        <RfqDetailDrawer
+          rfq={selectedRfq}
+          parts={selectedRfqParts}
+          quotes={selectedRfqQuotes}
+          customer={selectedRfqCustomer}
+          vendors={vendors}
+          partCosts={partCosts}
+          setPartCosts={setPartCosts}
+          sendQuotePrice={sendQuotePrice}
+          setSendQuotePrice={setSendQuotePrice}
+          adminNegMessage={adminNegMessage}
+          setAdminNegMessage={setAdminNegMessage}
+          adminNegPrice={adminNegPrice}
+          setAdminNegPrice={setAdminNegPrice}
+          isSubmittingNeg={isSubmittingNeg}
+          onSendNegotiation={handleAdminNegotiationResponse}
+          isDispatching={isDispatching}
+          onDispatch={handleDispatchRfq}
+          onShortlist={handleShortlistVendor}
+          onReviewQuote={(quote) => {
+            setRevisingQuote(quote);
+            setRevPrice(quote.quotedPrice.toString());
+            setRevLeadTime(quote.leadTimeDays.toString());
+            setRevMessage('');
+            setIsRevising(true);
+          }}
+          onAssign={(vendorId) => setPendingAssignVendor({ rfqId: selectedRfq.id, vendorId })}
+          onDownload={handleDownload}
+          onApplyInstantPrices={applyInstantPrices}
+          onUpdateStatus={handleUpdateStatus}
+          onSendQuotation={() => setShowSendQuoteModal(true)}
+          onClose={() => setShowDetailsModal(false)}
+        />
+      )}
 
       {showSendQuoteModal && selectedRfq && (
-        <div className="fixed inset-0 z-[105] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card className="w-full max-w-md bg-white border-slate-200 p-8 shadow-2xl">
-            <h2 className="text-xl font-headline font-bold mb-6 text-[#1E3A66] flex items-center gap-2">
-              <Send className="w-5 h-5 text-primary" /> Send Quotation to Customer
+        <div className="fixed inset-0 z-[105] flex items-center justify-center p-4">
+          <div className="adm-overlay absolute inset-0 bg-lp-ink/40 backdrop-blur-[3px]" onClick={() => setShowSendQuoteModal(false)} />
+          <div className="adm-pop relative w-full max-w-md border border-lp-border bg-white p-7 font-lp-sans shadow-[0_30px_80px_-30px_rgba(11,13,18,0.35)]">
+            <p className="adm-mono text-lp-primary">Quotation</p>
+            <h2 className="mt-2 text-[28px] leading-tight tracking-tight">
+              Send to <span className="adm-serif">customer</span>
             </h2>
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Label>Assign Vendor</Label>
-                <Select value={sendQuoteVendorId} onValueChange={setSendQuoteVendorId}>
-                  <SelectTrigger className="bg-white border-slate-200">
-                    <SelectValue placeholder="Select a MechMaster" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[200]">
-                    {vendors?.map((v: any) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        {v.teamName || v.fullName} - {v.location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="mt-6 space-y-5">
+              <div>
+                <label htmlFor="sq-vendor" className="adm-mono mb-2 block text-lp-muted-fg">Assign vendor</label>
+                <select
+                  id="sq-vendor"
+                  value={sendQuoteVendorId}
+                  onChange={(e) => setSendQuoteVendorId(e.target.value)}
+                  className="adm-select h-10 w-full bg-white"
+                >
+                  <option value="" disabled>
+                    Select a MechMaster
+                  </option>
+                  {vendors?.map((v: any) => (
+                    <option key={v.id} value={v.id}>
+                      {v.teamName || v.fullName} - {v.location}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Quoted Price (INR)</Label>
-                  <Input
+                <div>
+                  <label htmlFor="sq-price" className="adm-mono mb-2 block text-lp-muted-fg">Quoted price (INR)</label>
+                  <input
+                    id="sq-price"
                     value={sendQuotePrice}
                     onChange={(e) => setSendQuotePrice(e.target.value)}
                     type="number"
-                    className="bg-white border-slate-200"
+                    className="adm-input font-lp-mono"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Lead Time (Days)</Label>
-                  <Input
+                <div>
+                  <label htmlFor="sq-lead" className="adm-mono mb-2 block text-lp-muted-fg">Lead time (days)</label>
+                  <input
+                    id="sq-lead"
                     value={sendQuoteLeadTime}
                     onChange={(e) => setSendQuoteLeadTime(e.target.value)}
                     type="number"
-                    className="bg-white border-slate-200"
+                    className="adm-input font-lp-mono"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Admin Remarks</Label>
-                <Textarea
+              <div>
+                <label htmlFor="sq-remarks" className="adm-mono mb-2 block text-lp-muted-fg">Admin remarks</label>
+                <textarea
+                  id="sq-remarks"
                   value={sendQuoteRemarks}
                   onChange={(e) => setSendQuoteRemarks(e.target.value)}
-                  className="bg-white border-slate-200 h-24"
+                  className="adm-input h-24 text-sm"
                   placeholder="Notes about this quotation for the customer..."
                 />
               </div>
-              <div className="flex gap-3 pt-4">
-                <Button
-                  className="flex-1 font-bold h-12"
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  className="adm-btn adm-btn-primary h-11 flex-1"
                   onClick={handleAdminSendQuotation}
                   disabled={!sendQuoteVendorId || !sendQuotePrice || !sendQuoteLeadTime}
                 >
-                  Send to Customer
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 border-slate-200 h-12"
-                  onClick={() => setShowSendQuoteModal(false)}
-                >
+                  <Send className="size-3.5" /> Send to customer
+                </button>
+                <button type="button" className="adm-btn adm-btn-ghost h-11 flex-1" onClick={() => setShowSendQuoteModal(false)}>
                   Cancel
-                </Button>
+                </button>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
       {isRevising && revisingQuote && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card className="w-full max-w-md bg-white border-slate-200 p-8 shadow-2xl">
-            <h2 className="text-xl font-headline font-bold mb-6 text-[#1E3A66] flex items-center gap-2">
-              <Gavel className="w-5 h-5 text-primary" /> Intervention: Revise Quotation
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="adm-overlay absolute inset-0 bg-lp-ink/40 backdrop-blur-[3px]" onClick={() => setIsRevising(false)} />
+          <div className="adm-pop relative w-full max-w-md border border-lp-border bg-white p-7 font-lp-sans shadow-[0_30px_80px_-30px_rgba(11,13,18,0.35)]">
+            <p className="adm-mono text-lp-primary">Intervention</p>
+            <h2 className="mt-2 text-[28px] leading-tight tracking-tight">
+              Revise <span className="adm-serif">quotation</span>
             </h2>
-            <div className="space-y-5">
+            <div className="mt-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                    New Price (INR)
-                  </Label>
-                  <Input
+                <div>
+                  <label htmlFor="rv-price" className="adm-mono mb-2 block text-lp-muted-fg">New price (INR)</label>
+                  <input
+                    id="rv-price"
                     value={revPrice}
                     onChange={(e) => setRevPrice(e.target.value)}
                     type="number"
-                    className="bg-white border-slate-200 font-bold text-lg"
+                    className="adm-input font-lp-mono text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                    New Lead Time (Days)
-                  </Label>
-                  <Input
+                <div>
+                  <label htmlFor="rv-lead" className="adm-mono mb-2 block text-lp-muted-fg">New lead time (days)</label>
+                  <input
+                    id="rv-lead"
                     value={revLeadTime}
                     onChange={(e) => setRevLeadTime(e.target.value)}
                     type="number"
-                    className="bg-white border-slate-200 font-bold text-lg"
+                    className="adm-input font-lp-mono text-base"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                  Revision Reason / Message
-                </Label>
-                <Textarea
+              <div>
+                <label htmlFor="rv-msg" className="adm-mono mb-2 block text-lp-muted-fg">Revision reason / message</label>
+                <textarea
+                  id="rv-msg"
                   value={revMessage}
                   onChange={(e) => setRevMessage(e.target.value)}
-                  className="bg-white border-slate-200 h-32"
+                  className="adm-input h-32 text-sm"
                   placeholder="Explain why you are revising this quote (shown in history)..."
                 />
               </div>
-              <div className="flex gap-3 pt-4">
-                <Button
-                  className="flex-1 font-bold h-12 bg-[#1E3A66] hover:bg-[#1E3A66]/90"
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  className="adm-btn adm-btn-ink h-11 flex-1"
                   onClick={handleAdminReviseQuote}
                   disabled={!revPrice || !revLeadTime || isSubmittingQuote}
                 >
-                  {isSubmittingQuote ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    'Apply Revision'
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 border-slate-200 h-12"
-                  onClick={() => setIsRevising(false)}
-                >
+                  {isSubmittingQuote ? <Loader2 className="size-4 animate-spin" /> : 'Apply revision'}
+                </button>
+                <button type="button" className="adm-btn adm-btn-ghost h-11 flex-1" onClick={() => setIsRevising(false)}>
                   Cancel
-                </Button>
+                </button>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
@@ -2229,14 +1517,14 @@ export default function AdminPanel() {
       />
 
       {showVendorModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <Card className="w-full max-w-2xl bg-white border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-[#1E3A66]/5">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-lp-ink/40 backdrop-blur-[3px] adm-overlay overflow-y-auto">
+          <Card className="w-full max-w-2xl rounded-none bg-white border-lp-border font-lp-sans adm-pop shadow-[0_30px_80px_-30px_rgba(11,13,18,0.35)] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-lp-border flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-headline font-bold text-[#1E3A66]">
+                <h2 className="text-[28px] font-normal tracking-tight">
                   MechMaster Wizard
                 </h2>
-                <p className="text-xs text-blue-200 font-bold uppercase tracking-widest mt-0.5">
+                <p className="adm-mono text-lp-primary mt-1">
                   Step {vendorStep} of {totalVendorSteps}
                 </p>
               </div>
@@ -2244,7 +1532,7 @@ export default function AdminPanel() {
                 {[1, 2, 3, 4].map((s) => (
                   <div
                     key={s}
-                    className={`w-2 h-2 rounded-full ${vendorStep >= s ? 'bg-[#1E3A66]' : 'bg-slate-200'}`}
+                    className={`h-1 w-6 transition-colors duration-300 ${vendorStep >= s ? 'bg-lp-primary' : 'bg-lp-border'}`}
                   />
                 ))}
               </div>
@@ -2256,22 +1544,22 @@ export default function AdminPanel() {
                 <div
                   className={`${vendorStep !== 1 ? 'hidden' : ''} space-y-6 animate-in fade-in slide-in-from-bottom-2`}
                 >
-                  <div className="flex items-center gap-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="relative w-20 h-20 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center">
+                  <div className="flex items-center gap-6 p-4 bg-lp-muted border border-lp-border">
+                    <div className="relative w-20 h-20 bg-white border border-lp-border overflow-hidden flex items-center justify-center">
                       {profileImage ? (
                         <Image src={profileImage} alt="Preview" fill className="object-cover" />
                       ) : (
-                        <ImageIcon className="text-slate-300 w-8 h-8" />
+                        <ImageIcon className="text-neutral-300 w-8 h-8" />
                       )}
                     </div>
                     <div className="space-y-2 flex-1">
-                      <Label className="text-[10px] uppercase font-bold text-blue-200 tracking-widest">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Brand Mark
                       </Label>
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full border-slate-200 gap-2 h-10 text-xs font-bold"
+                        className="adm-btn adm-btn-ghost w-full rounded-none"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Upload className="w-4 h-4" /> Upload Logo
@@ -2288,29 +1576,29 @@ export default function AdminPanel() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Official Company Name
                       </Label>
                       <Input
                         name="teamName"
                         defaultValue={selectedVendorProfile?.teamName}
                         required
-                        className="bg-white border-slate-200"
+                        className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Primary Identity
                       </Label>
                       <Input
                         name="fullName"
                         defaultValue={selectedVendorProfile?.fullName}
                         required
-                        className="bg-white border-slate-200"
+                        className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Contact Email
                       </Label>
                       <Input
@@ -2318,29 +1606,29 @@ export default function AdminPanel() {
                         type="email"
                         defaultValue={selectedVendorProfile?.email}
                         required
-                        className="bg-white border-slate-200"
+                        className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Direct Comms
                       </Label>
                       <Input
                         name="phone"
                         defaultValue={selectedVendorProfile?.phone}
                         required
-                        className="bg-white border-slate-200"
+                        className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                       />
                     </div>
                     <div className="space-y-2 col-span-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Operation Center
                       </Label>
                       <Input
                         name="location"
                         defaultValue={selectedVendorProfile?.location}
                         placeholder="City, State"
-                        className="bg-white border-slate-200"
+                        className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                       />
                     </div>
                   </div>
@@ -2350,25 +1638,25 @@ export default function AdminPanel() {
                 <div
                   className={`${vendorStep !== 2 ? 'hidden' : ''} space-y-6 animate-in fade-in slide-in-from-right-2`}
                 >
-                  <Label className="text-xs uppercase font-bold text-[#1E3A66] tracking-widest">
+                  <Label className="adm-mono font-normal text-lp-primary">
                     Select Operational Specializations
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {SPECIALIZATIONS.map((s) => (
                       <div
                         key={s}
-                        className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-blue-200 transition-colors"
+                        className="flex items-center gap-3 p-3 bg-white border border-lp-border hover:border-lp-primary hover:text-lp-primary transition-colors"
                       >
                         <Checkbox
                           id={s}
                           name={s}
                           value="on"
                           defaultChecked={selectedVendorProfile?.specializations?.includes(s)}
-                          className="border-slate-300"
+                          className="border-neutral-300"
                         />
                         <label
                           htmlFor={s}
-                          className="text-xs font-bold text-slate-700 cursor-pointer flex-1"
+                          className="text-xs font-bold text-neutral-700 cursor-pointer flex-1"
                         >
                           {s}
                         </label>
@@ -2383,30 +1671,30 @@ export default function AdminPanel() {
                 >
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Workshop Intelligence (Bio/Description)
                       </Label>
                       <Textarea
                         name="portfolio"
                         defaultValue={selectedVendorProfile?.portfolio}
                         placeholder="Describe manufacturing capabilities, machinery, and experience..."
-                        className="bg-white border-slate-200 h-32"
+                        className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg h-32"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                        <Label className="adm-mono font-normal text-lp-muted-fg">
                           Exp. Years
                         </Label>
                         <Input
                           name="experienceYears"
                           type="number"
                           defaultValue={selectedVendorProfile?.experienceYears || 0}
-                          className="bg-white border-slate-200"
+                          className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                        <Label className="adm-mono font-normal text-lp-muted-fg">
                           Initial Tier Rating
                         </Label>
                         <Input
@@ -2416,7 +1704,7 @@ export default function AdminPanel() {
                           min="0"
                           max="5"
                           defaultValue={selectedVendorProfile?.rating || 0}
-                          className="bg-white border-slate-200 font-bold"
+                          className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg font-bold"
                         />
                       </div>
                     </div>
@@ -2428,13 +1716,13 @@ export default function AdminPanel() {
                   className={`${vendorStep !== 4 ? 'hidden' : ''} space-y-6 animate-in fade-in slide-in-from-right-2`}
                 >
                   <div className="space-y-4">
-                    <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 space-y-6">
+                    <div className="p-6 bg-lp-muted border border-lp-border space-y-6">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <Label htmlFor="v_isActive" className="text-slate-900 font-bold text-sm">
+                          <Label htmlFor="v_isActive" className="text-neutral-900 font-bold text-sm">
                             Active in Marketplace
                           </Label>
-                          <p className="text-[10px] text-blue-200 uppercase font-bold tracking-widest">
+                          <p className="adm-mono text-lp-muted-fg">
                             Visibility status in listings
                           </p>
                         </div>
@@ -2445,16 +1733,16 @@ export default function AdminPanel() {
                           defaultChecked={
                             selectedVendorProfile ? selectedVendorProfile.isActive : true
                           }
-                          className="h-5 w-5 border-slate-300"
+                          className="h-5 w-5 border-neutral-300"
                         />
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-slate-200 pt-6">
+                      <div className="flex items-center justify-between border-t border-neutral-200 pt-6">
                         <div className="space-y-1">
                           <Label htmlFor="v_isVerified" className="text-blue-700 font-bold text-sm">
                             Verified Hub Partner
                           </Label>
-                          <p className="text-[10px] text-blue-200 uppercase font-bold tracking-widest">
+                          <p className="adm-mono text-lp-muted-fg">
                             Grant official verification badge
                           </p>
                         </div>
@@ -2468,8 +1756,8 @@ export default function AdminPanel() {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
-                      <p className="text-[10px] text-[#1E3A66] leading-relaxed font-medium">
+                    <div className="p-4 border-l-2 border-lp-primary bg-lp-accent/40">
+                      <p className="text-[10px] text-neutral-900 leading-relaxed font-medium">
                         Note: Verification grants special badges and priority indexing in search
                         results. Ensure all documents have been audited before authorizing.
                       </p>
@@ -2478,11 +1766,11 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0">
+              <div className="p-6 bg-lp-bg border-t border-lp-border flex justify-between items-center shrink-0">
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-blue-200 hover:text-slate-900"
+                  className="adm-btn rounded-none text-lp-muted-fg hover:bg-transparent hover:text-lp-fg"
                   onClick={() =>
                     vendorStep > 1 ? setVendorStep((v) => v - 1) : setShowVendorModal(false)
                   }
@@ -2493,14 +1781,14 @@ export default function AdminPanel() {
                   <Button
                     type="button"
                     onClick={() => setVendorStep((v) => v + 1)}
-                    className="gap-2 bg-[#1E3A66] hover:bg-[#1E3A66]/90 text-white font-bold h-11 px-6"
+                    className="adm-btn adm-btn-ink h-11 rounded-none"
                   >
                     Continue <ChevronRight className="w-4 h-4" />
                   </Button>
                 ) : (
                   <Button
                     type="submit"
-                    className="bg-[#1E3A66] text-white hover:bg-[#1E3A66]/90 font-bold h-11 px-8 shadow-lg shadow-blue-900/10"
+                    className="adm-btn adm-btn-primary h-11 rounded-none"
                     disabled={isSubmittingVendor}
                   >
                     {isSubmittingVendor ? (
@@ -2518,19 +1806,19 @@ export default function AdminPanel() {
 
       {/* Product Modal */}
       {showProductModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card className="w-full max-w-xl bg-white border-slate-200 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="absolute top-0 left-0 w-full h-1 bg-[#1E3A66]" />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-lp-ink/40 backdrop-blur-[3px] adm-overlay">
+          <Card className="w-full max-w-xl rounded-none bg-white border-lp-border font-lp-sans adm-pop shadow-[0_30px_80px_-30px_rgba(11,13,18,0.35)] relative overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-lp-primary" />
             <form onSubmit={handleSaveProduct}>
-              <CardHeader className="pb-4 border-b border-slate-100 mb-4 bg-slate-50/50">
+              <CardHeader className="pb-4 border-b border-lp-border mb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="font-headline text-xl text-[#1E3A66]">
+                  <CardTitle className="text-[28px] font-normal tracking-tight">
                     {selectedProduct ? 'Update Product Details' : 'Onboard New SKU'}
                   </CardTitle>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-blue-100 hover:text-slate-600"
+                    className="h-9 w-9 rounded-none border border-lp-border hover:bg-lp-fg hover:text-lp-bg"
                     onClick={() => setShowProductModal(false)}
                     type="button"
                   >
@@ -2541,26 +1829,26 @@ export default function AdminPanel() {
               <CardContent className="space-y-4 pt-0 overflow-y-auto max-h-[70vh]">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                    <Label className="adm-mono font-normal text-lp-muted-fg">
                       Product Name
                     </Label>
                     <Input
                       name="name"
                       defaultValue={selectedProduct?.name}
                       required
-                      className="bg-white border-slate-200 h-10"
+                      className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg h-10"
                       placeholder="e.g. 6201 Bearing"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                    <Label className="adm-mono font-normal text-lp-muted-fg">
                       SKU / Model
                     </Label>
                     <Input
                       name="sku"
                       defaultValue={selectedProduct?.sku}
                       required
-                      className="bg-white border-slate-200 h-10 font-mono"
+                      className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg h-10 font-mono"
                       placeholder="BRG-001"
                     />
                   </div>
@@ -2568,14 +1856,14 @@ export default function AdminPanel() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                    <Label className="adm-mono font-normal text-lp-muted-fg">
                       Category
                     </Label>
                     <Select
                       name="categoryId"
                       defaultValue={selectedProduct?.categoryId || 'raw-materials'}
                     >
-                      <SelectTrigger className="bg-white border-slate-200 h-10">
+                      <SelectTrigger className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -2589,13 +1877,13 @@ export default function AdminPanel() {
                   </div>
                   <div className="space-y-2 text-right flex flex-col justify-end pb-2">
                     <div className="flex items-center justify-end gap-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                      <Label className="adm-mono font-normal text-lp-muted-fg">
                         Live on Store
                       </Label>
                       <Checkbox
                         name="isActive"
                         defaultChecked={selectedProduct ? selectedProduct.isActive : true}
-                        className="border-slate-300"
+                        className="border-neutral-300"
                       />
                     </div>
                   </div>
@@ -2603,37 +1891,37 @@ export default function AdminPanel() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                    <Label className="adm-mono font-normal text-lp-muted-fg">
                       Base Cost (INR)
                     </Label>
                     <Input
                       name="basePrice"
                       type="number"
-                      className="bg-white border-slate-200 font-bold"
+                      className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg font-bold"
                       defaultValue={selectedProduct?.basePrice}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                    <Label className="adm-mono font-normal text-lp-muted-fg">
                       Retail Listing (INR)
                     </Label>
                     <Input
                       name="salePrice"
                       type="number"
-                      className="bg-white border-slate-200 font-bold text-blue-600"
+                      className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg font-bold text-blue-600"
                       defaultValue={selectedProduct?.salePrice}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                    <Label className="adm-mono font-normal text-lp-muted-fg">
                       Inventory
                     </Label>
                     <Input
                       name="inventory"
                       type="number"
-                      className="bg-white border-slate-200"
+                      className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg"
                       defaultValue={selectedProduct?.inventory}
                       required
                     />
@@ -2641,35 +1929,35 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                  <Label className="adm-mono font-normal text-lp-muted-fg">
                     Technical Specifications
                   </Label>
                   <Input
                     name="specs"
                     defaultValue={selectedProduct?.specs}
                     required
-                    className="bg-white border-slate-200 h-10"
+                    className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg h-10"
                     placeholder="e.g. 12x32x10mm, Sealed"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-blue-200">
+                  <Label className="adm-mono font-normal text-lp-muted-fg">
                     Marketing Description
                   </Label>
                   <Textarea
                     name="description"
                     defaultValue={selectedProduct?.description}
-                    className="bg-white border-slate-200 min-h-[80px]"
+                    className="rounded-none bg-white border-lp-border shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg min-h-[80px]"
                     placeholder="Brief product overview..."
                   />
                 </div>
 
                 {/* Professional Image Management Section */}
                 {selectedProduct && selectedProduct.id !== 'new' && (
-                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="space-y-4 pt-4 border-t border-neutral-100">
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-[#1E3A66]">
+                      <Label className="adm-mono font-normal text-lp-primary">
                         Media Repository
                       </Label>
                       <div className="flex gap-2">
@@ -2677,7 +1965,7 @@ export default function AdminPanel() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-7 text-[10px] font-bold border-slate-200 gap-1.5"
+                          className="adm-btn adm-btn-ghost h-8 px-3 rounded-none"
                           disabled={isUploadingImage}
                           onClick={() => productImageInputRef.current?.click()}
                         >
@@ -2702,9 +1990,9 @@ export default function AdminPanel() {
                     </div>
 
                     <div
-                      className={`grid grid-cols-4 gap-3 p-4 rounded-xl border-2 border-dashed transition-all ${isDragging
-                        ? 'border-primary bg-primary/5 scale-[1.02]'
-                        : 'border-slate-200 bg-slate-50'
+                      className={`grid grid-cols-4 gap-3 p-4 border border-dashed transition-all ${isDragging
+                        ? 'border-lp-primary bg-lp-accent/40 scale-[1.01]'
+                        : 'border-lp-border bg-lp-bg'
                         }`}
                       onDragOver={onDragOver}
                       onDragLeave={onDragLeave}
@@ -2713,7 +2001,7 @@ export default function AdminPanel() {
                       {selectedProduct.images?.map((img: any) => (
                         <div
                           key={img.id}
-                          className="relative aspect-square rounded-lg bg-white border border-slate-200 overflow-hidden group shadow-sm"
+                          className="relative aspect-square bg-white border border-lp-border overflow-hidden group shadow-sm"
                         >
                           <Image src={img.urls.thumb} alt="Product" fill className="object-cover" />
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -2728,7 +2016,7 @@ export default function AdminPanel() {
                             </Button>
                           </div>
                           <div className="absolute top-1 left-1">
-                            <Badge className="text-[8px] px-1 py-0 bg-[#1E3A66] text-white font-bold uppercase">
+                            <Badge className="rounded-none text-[8px] px-1 py-0 bg-lp-ink text-white font-normal font-lp-mono uppercase">
                               {img.type}
                             </Badge>
                           </div>
@@ -2736,8 +2024,8 @@ export default function AdminPanel() {
                       ))}
                       {isUploadingImage && (
                         <div className="aspect-square rounded-lg bg-white border border-dashed border-primary/20 flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin text-[#1E3A66]" />
-                          <span className="text-[8px] font-bold text-[#1E3A66]">
+                          <Loader2 className="w-5 h-5 animate-spin text-neutral-900" />
+                          <span className="text-[8px] font-bold text-neutral-900">
                             {uploadProgress}%
                           </span>
                         </div>
@@ -2745,8 +2033,8 @@ export default function AdminPanel() {
                       {!isUploadingImage &&
                         (!selectedProduct.images || selectedProduct.images.length === 0) && (
                           <div className="col-span-4 py-8 text-center">
-                            <ImageIcon className="w-6 h-6 mx-auto text-slate-300 mb-2" />
-                            <p className="text-[10px] text-blue-100 uppercase tracking-widest px-4 font-bold">
+                            <ImageIcon className="w-6 h-6 mx-auto text-neutral-300 mb-2" />
+                            <p className="text-[10px] text-neutral-400 uppercase tracking-widest px-4 font-bold">
                               Drag assets here
                             </p>
                           </div>
@@ -2755,19 +2043,19 @@ export default function AdminPanel() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex justify-end gap-3 pt-6 pb-6 bg-slate-50 border-t border-slate-100">
+              <CardFooter className="flex justify-end gap-3 pt-6 pb-6 bg-lp-bg border-t border-lp-border">
                 <Button
                   variant="ghost"
                   onClick={() => setShowProductModal(false)}
                   type="button"
-                  className="text-blue-200 hover:text-slate-900"
+                  className="adm-btn rounded-none text-lp-muted-fg hover:bg-transparent hover:text-lp-fg"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmittingProduct}
-                  className="min-w-[140px] bg-[#1E3A66] text-white font-bold hover:bg-[#1E3A66]/90 shadow-lg shadow-blue-900/10"
+                  className="adm-btn adm-btn-primary h-11 min-w-[160px] rounded-none"
                 >
                   {isSubmittingProduct ? (
                     <Loader2 className="animate-spin w-4 h-4" />
@@ -2789,15 +2077,15 @@ export default function AdminPanel() {
           if (!open) setPendingAssignVendor(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={dialogClass}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Assign Vendor?</AlertDialogTitle>
+            <AlertDialogTitle className={dialogTitleClass}>Assign Vendor?</AlertDialogTitle>
             <AlertDialogDescription>
               This will assign the project to the selected vendor and finalize negotiation.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className={dialogCancelClass}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (!pendingAssignVendor) return;
@@ -2817,15 +2105,15 @@ export default function AdminPanel() {
           if (!open) setPendingImageDelete(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={dialogClass}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Asset?</AlertDialogTitle>
+            <AlertDialogTitle className={dialogTitleClass}>Delete Asset?</AlertDialogTitle>
             <AlertDialogDescription>
               This removes the image from cloud storage and product metadata.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className={dialogCancelClass}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 if (!pendingImageDelete) return;
@@ -2845,15 +2133,15 @@ export default function AdminPanel() {
           if (!open) setPendingProductDeleteId(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={dialogClass}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+            <AlertDialogTitle className={dialogTitleClass}>Delete Product?</AlertDialogTitle>
             <AlertDialogDescription>
               This permanently archives the product and purges all linked cloud assets.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className={dialogCancelClass}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 if (!pendingProductDeleteId) return;
@@ -2872,17 +2160,17 @@ export default function AdminPanel() {
           if (!open) setPendingVendorDeleteId(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={dialogClass}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove MechMaster?</AlertDialogTitle>
+            <AlertDialogTitle className={dialogTitleClass}>Remove MechMaster?</AlertDialogTitle>
             <AlertDialogDescription>
               This permanently purges the vendor's profile from the system. This action cannot be reversed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className={dialogCancelClass}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
+              className={dialogDangerClass}
               onClick={async () => {
                 if (!pendingVendorDeleteId) return;
                 await handleDeleteVendor(pendingVendorDeleteId);

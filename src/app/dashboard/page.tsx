@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { LandingNav } from '@/components/LandingNav';
+import { V2Shell } from '@/components/V2Shell';
+import { landingFontVars } from '@/components/home/fonts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -774,6 +775,18 @@ function UserDashboardContent() {
     }
   };
 
+  const pipelineValue = React.useMemo(() => {
+    if (!sortedRfqs || sortedRfqs.length === 0) return 0;
+    return sortedRfqs.reduce((sum, rfq) => sum + (rfq.finalPrice || rfq.quotedPrice || 0), 0);
+  }, [sortedRfqs]);
+
+  const avgLeadTime = React.useMemo(() => {
+    if (!sortedRfqs || sortedRfqs.length === 0) return 0;
+    const rfqsWithLead = sortedRfqs.filter((r) => r.leadTimeDays && r.leadTimeDays > 0);
+    if (rfqsWithLead.length === 0) return 3;
+    return Math.round(rfqsWithLead.reduce((s, r) => s + (r.leadTimeDays || 0), 0) / rfqsWithLead.length);
+  }, [sortedRfqs]);
+
   if (isUserLoading || !user)
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -783,11 +796,10 @@ function UserDashboardContent() {
 
   if (!isProfileLoading && profile?.role === 'vendor_pending') {
     return (
-      <div className="min-h-screen pt-2 pb-12 bg-[#F6F8FC] font-sans text-slate-600">
-        <LandingNav />
+      <V2Shell noFooter>
         <div className="container mx-auto px-4 flex items-center justify-center min-h-[70vh]">
-          <div className="max-w-md text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm animate-in zoom-in-95 duration-500">
-            <Clock className="w-16 h-16 text-[#2F5FA7] mx-auto mb-6" />
+          <div className="max-w-md text-center p-8 bg-lp-card border border-lp-border rounded-sm animate-in zoom-in-95 duration-500">
+            <Clock className="w-16 h-16 text-lp-primary mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Application Under Review</h2>
             <p className="text-blue-200 mb-8 leading-relaxed">
               Thank you for applying to be a MechMaster. Our team is currently reviewing your workshop capabilities. You will receive an email once your vendor profile is approved.
@@ -800,127 +812,151 @@ function UserDashboardContent() {
             </Button>
           </div>
         </div>
-      </div>
+      </V2Shell>
     );
   }
 
   return (
-    <div className="min-h-screen pt-2 pb-12 bg-[#F6F8FC] font-sans text-slate-600 selection:bg-blue-500/10 selection:text-blue-600">
-      <LandingNav />
-      <div className="container mx-auto px-4">
+    <V2Shell noFooter>
+      <div className="container mx-auto px-4 sm:px-6 pb-16">
+        {/* Admin banner */}
         {isAdminConfirmed && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4 duration-700 gap-4">
+          <div className="mb-6 p-4 bg-lp-accent border border-lp-border rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <ShieldAlert className="w-5 h-5 text-blue-600 shrink-0" />
+              <ShieldAlert className="w-5 h-5 text-lp-primary shrink-0" />
               <div>
-                <p className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                  Admin Access Detected
-                </p>
-                <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">
+                <p className="lp-label-mono text-lp-fg">Admin access detected</p>
+                <p className="lp-label-mono text-lp-muted-fg mt-0.5" style={{ fontSize: '9px' }}>
                   You are currently in the customer view.
                 </p>
               </div>
             </div>
-            <Button
+            <button
               onClick={() => router.push('/admin')}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl px-6 h-10 text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
+              className="w-full sm:w-auto h-9 px-5 rounded-sm bg-lp-primary text-lp-primary-fg lp-label-mono hover:bg-lp-primary/90 transition-colors"
             >
               Go to Admin Panel
-            </Button>
+            </button>
           </div>
         )}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
-              Project Hub
-            </h1>
-            <p className="text-blue-200 mt-2 text-sm tracking-[0.04em]">
-              Manage your manufacturing pipeline
-            </p>
+
+        {/* Hero */}
+        <div className="pt-4 pb-8 md:pb-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-lp-primary text-lp-primary-fg mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-lp-primary-fg animate-pulse" />
+            <span className="lp-label-mono" style={{ fontSize: '10px' }}>Dashboard · Welcome back</span>
           </div>
-          <div
-            className="flex w-full md:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
-            style={{ animationDelay: '100ms' }}
-          >
-            <Button
-              className="h-11 px-6 text-sm font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm transition-all rounded-xl"
-              onClick={() => router.push('/consultation')}
-            >
-              <PhoneCall className="w-4 h-4 mr-2 text-[#2F5FA7]" /> Book Free Consultation
-            </Button>
-            <Button
-              className="h-11 px-6 text-sm font-semibold bg-white hover:bg-blue-50 text-[#2F5FA7] border border-[#2F5FA7]/30 shadow-sm transition-all rounded-xl"
-              onClick={() => router.push('/quote/instant')}
-            >
-              <Zap className="w-4 h-4 mr-2" /> Instant Quote
-            </Button>
-            <Button
-              className="h-11 px-6 text-sm font-semibold bg-blue-600 hover:bg-[#1E3A66] text-white shadow-sm transition-all border-none rounded-xl"
-              onClick={() => setIsCreateProjectOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" /> Start New Design
-            </Button>
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight text-lp-fg leading-[1.05]">
+                Project<br />
+                <span className="font-lp-serif italic text-lp-primary">Hub</span>
+              </h1>
+              <p className="text-sm sm:text-base text-lp-muted-fg mt-4 max-w-md leading-relaxed">
+                Manage your manufacturing pipeline from CAD file to parts at your door.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button
+                onClick={() => router.push('/consultation')}
+                className="h-11 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors flex items-center justify-center gap-2"
+              >
+                <PhoneCall className="w-3.5 h-3.5" /> Book consultation
+              </button>
+              <button
+                onClick={() => router.push('/quote/instant')}
+                className="h-11 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors flex items-center justify-center gap-2"
+              >
+                <Zap className="w-3.5 h-3.5" /> Instant quote
+              </button>
+              <button
+                onClick={() => setIsCreateProjectOpen(true)}
+                className="h-11 px-6 rounded-sm bg-lp-primary text-lp-primary-fg lp-label-mono hover:bg-lp-primary/90 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5" /> Start new design
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Stats bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-b border-lp-border py-6 mb-8 gap-y-4">
+          <div className="text-center sm:border-r border-lp-border">
+            <p className="lp-label-mono text-lp-muted-fg mb-1">Active projects</p>
+            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{sortedRfqs?.length || 0}</p>
+          </div>
+          <div className="text-center sm:border-r border-lp-border">
+            <p className="lp-label-mono text-lp-muted-fg mb-1">Parts uploaded</p>
+            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{allParts?.length || 0}</p>
+          </div>
+          <div className="text-center sm:border-r border-lp-border">
+            <p className="lp-label-mono text-lp-muted-fg mb-1">Pipeline value</p>
+            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">₹{pipelineValue.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="lp-label-mono text-lp-muted-fg mb-1">Avg. lead time</p>
+            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{avgLeadTime} days</p>
+          </div>
+        </div>
+
+        {/* Main content: list + detail panel */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div
-            className="lg:col-span-7 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
-            style={{ animationDelay: '200ms' }}
-          >
+          {/* Left: Tabs & list */}
+          <div className="lg:col-span-7">
             <Tabs
               value={activeTab}
               onValueChange={handleDashboardTabChange}
               className="space-y-6"
             >
-              <TabsList className="bg-white border border-slate-200 p-2 rounded-2xl shadow-sm min-h-[64px] w-full flex overflow-x-auto no-scrollbar justify-start md:justify-center">
+              <TabsList className="bg-transparent border-b border-lp-border p-0 rounded-none h-auto w-full flex justify-start gap-0">
                 <TabsTrigger
                   value="projects"
-                  className="px-5 py-3 rounded-xl transition-all border border-transparent text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[state=active]:border-[#2F5FA7] data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] shrink-0"
+                  className="px-4 py-3 rounded-none border-b-2 border-transparent text-sm font-medium text-lp-muted-fg hover:text-lp-fg data-[state=active]:border-lp-fg data-[state=active]:text-lp-fg data-[state=active]:bg-transparent transition-colors"
                 >
                   Project RFQs
                 </TabsTrigger>
                 <TabsTrigger
                   value="designs"
-                  className="px-5 py-3 rounded-xl transition-all border border-transparent text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[state=active]:border-[#2F5FA7] data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] shrink-0"
+                  className="px-4 py-3 rounded-none border-b-2 border-transparent text-sm font-medium text-lp-muted-fg hover:text-lp-fg data-[state=active]:border-lp-fg data-[state=active]:text-lp-fg data-[state=active]:bg-transparent transition-colors"
                 >
                   Designs
                 </TabsTrigger>
                 <TabsTrigger
                   value="shop_orders"
-                  className="px-5 py-3 rounded-xl transition-all border border-transparent text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 data-[state=active]:border-[#2F5FA7] data-[state=active]:bg-blue-50 data-[state=active]:text-[#2F5FA7] shrink-0"
+                  className="px-4 py-3 rounded-none border-b-2 border-transparent text-sm font-medium text-lp-muted-fg hover:text-lp-fg data-[state=active]:border-lp-fg data-[state=active]:text-lp-fg data-[state=active]:bg-transparent transition-colors"
                 >
                   Shop Orders
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="projects" className="space-y-4">
+              <TabsContent value="projects" className="space-y-0">
                 {isRfqsLoading && (!sortedRfqs || sortedRfqs.length === 0) && (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#2F5FA7]" />
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="w-6 h-6 animate-spin text-lp-primary" />
                   </div>
                 )}
 
                 {!isRfqsLoading && (!sortedRfqs || sortedRfqs.length === 0) && (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 space-y-4">
-                    <History className="w-12 h-12 mx-auto text-slate-300 opacity-20" />
-                    <p className="text-blue-200 font-bold uppercase tracking-widest text-xs">
-                      You haven't started any projects yet.
+                  <div className="text-center py-20 border border-dashed border-lp-border rounded-sm space-y-4">
+                    <History className="w-10 h-10 mx-auto text-lp-muted-fg/30" />
+                    <p className="lp-label-mono text-lp-muted-fg">
+                      You haven&apos;t started any projects yet.
                     </p>
-                    <Button
-                      variant="outline"
+                    <button
                       onClick={() => setIsCreateProjectOpen(true)}
-                      className="uppercase tracking-widest text-[10px] font-bold border-slate-200"
+                      className="h-9 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors"
                     >
-                      Start Your First Design
-                    </Button>
+                      Start your first design
+                    </button>
                   </div>
                 )}
 
                 {!isRfqsLoading &&
                   sortedRfqs &&
                   sortedRfqs.length > 0 &&
-                  sortedRfqs.map((order) => {
+                  sortedRfqs.map((order, idx) => {
                     const projectParts = allParts?.filter((p) => p.projectId === order.id) || [];
                     const mainMaterial =
                       projectParts.length > 0 ? projectParts[0].material.name : 'No Parts';
@@ -931,11 +967,13 @@ function UserDashboardContent() {
                       STATUS_MAP[order.status] ||
                       STATUS_MAP.draft;
                     const StatusIcon = statusInfo.icon;
+                    const isSelected = selectedOrderId === order.id;
+
                     return (
-                      <Card
+                      <div
                         key={order.id}
                         tabIndex={0}
-                        className={`cursor-pointer transition-all duration-200 ${selectedOrderId === order.id ? 'bg-white border-[#2F5FA7]/40 shadow-[0_14px_32px_rgba(47,95,167,0.14)] ring-1 ring-[#2F5FA7]/20 -translate-y-0.5' : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-white hover:shadow-md hover:-translate-y-0.5'} overflow-hidden relative group`}
+                        className={`flex items-center gap-4 px-4 py-5 border-b border-lp-border cursor-pointer transition-all duration-200 group ${isSelected ? 'bg-lp-accent' : 'hover:bg-lp-accent/50'}`}
                         onClick={() => setSelectedOrderId(order.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
@@ -944,203 +982,152 @@ function UserDashboardContent() {
                           }
                         }}
                       >
-                        <CardContent className="p-6 flex items-center justify-between">
-                          <div className="flex items-center gap-5">
-                            <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${statusInfo.color.split(' ')[0]} bg-opacity-10 border ${statusInfo.color.split(' ').slice(-1)[0]} shadow-sm`}
-                            >
-                              <StatusIcon className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="font-bold text-slate-900 tracking-tight text-base group-hover:text-[#2F5FA7] transition-colors">
-                                {order.projectName || 'Untitled Design'}
-                              </p>
-                              <div className="text-[11px] text-blue-200 flex items-center gap-3 mt-2">
-                                <span className="flex items-center gap-1.5">
-                                  <Clock className="w-3 h-3 text-[#2F5FA7]/70" />{' '}
-                                  <span className="font-consolas pt-0.5">
-                                    {new Date(order.createdAt).toLocaleDateString()}
-                                  </span>
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className={`${BADGE_BASE_CLASS} ${getStatusBadgeTone(order)}`}
-                                >
-                                  {statusInfo.label}
-                                </Badge>
-                              </div>
-                            </div>
+                        {/* Number */}
+                        <span className="text-sm font-lp-mono text-lp-muted-fg/50 w-7 shrink-0">
+                          {String(idx + 1).padStart(2, '0')}.
+                        </span>
+
+                        {/* Icon */}
+                        <div className={`w-10 h-10 rounded-sm flex items-center justify-center shrink-0 border ${isSelected ? 'bg-lp-primary/10 border-lp-primary/30' : 'bg-lp-accent border-lp-border'}`}>
+                          <StatusIcon className={`w-4 h-4 ${isSelected ? 'text-lp-primary' : 'text-lp-muted-fg'}`} />
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium text-sm tracking-tight truncate transition-colors ${isSelected ? 'text-lp-primary' : 'text-lp-fg group-hover:text-lp-primary'}`}>
+                            {order.projectName || 'Untitled Design'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <span className="lp-label-mono text-lp-muted-fg" style={{ fontSize: '9px' }}>
+                              {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                            <span className={`lp-label-mono px-2 py-0.5 rounded-sm ${getStatusBadgeTone(order)}`} style={{ fontSize: '9px' }}>
+                              {statusInfo.label}
+                            </span>
+                            <span className="lp-label-mono text-lp-muted-fg hidden sm:inline" style={{ fontSize: '9px' }}>
+                              {mainMaterial} · {totalQty} pcs
+                            </span>
                           </div>
-                          <div className="text-right hidden sm:block">
-                            <p className="text-xs font-bold uppercase tracking-[0.15em] text-blue-200 leading-none mb-1.5">
-                              Status Summary
-                            </p>
-                            <p className="text-xs font-semibold text-slate-700">
-                              {mainMaterial} • {totalQty} PCS
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/projects/${order.id}`);
-                              }}
-                            >
-                              Open
-                            </Button>
-                            <ChevronRight
-                              className={`w-4 h-4 transition-transform duration-200 ${selectedOrderId === order.id ? 'text-[#2F5FA7] translate-x-0.5' : 'text-blue-100 group-hover:text-[#2F5FA7]'}`}
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+
+                        {/* Open link */}
+                        <button
+                          className="lp-label-mono text-lp-muted-fg hover:text-lp-primary transition-colors flex items-center gap-1 shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/projects/${order.id}`);
+                          }}
+                        >
+                          Open <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     );
                   })}
               </TabsContent>
 
-              <TabsContent value="designs" className="space-y-4">
+              <TabsContent value="designs" className="space-y-0">
                 {isPartsLoading && (!allParts || allParts.length === 0) && (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#2F5FA7]" />
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="w-6 h-6 animate-spin text-lp-primary" />
                   </div>
                 )}
 
                 {!isPartsLoading && (!allParts || allParts.length === 0) && (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 space-y-4">
-                    <Layers className="w-12 h-12 mx-auto text-slate-200 opacity-20" />
-                    <p className="text-blue-200 font-bold uppercase tracking-widest text-xs">
+                  <div className="text-center py-20 border border-dashed border-lp-border rounded-sm space-y-4">
+                    <Layers className="w-10 h-10 mx-auto text-lp-muted-fg/30" />
+                    <p className="lp-label-mono text-lp-muted-fg">
                       No design files added to any projects.
                     </p>
-                    <Button
-                      variant="outline"
+                    <button
                       onClick={() => setIsCreateProjectOpen(true)}
-                      className="uppercase tracking-widest text-[10px] font-bold border-slate-200"
+                      className="h-9 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors"
                     >
-                      Upload Your First STEP File
-                    </Button>
+                      Upload your first STEP file
+                    </button>
                   </div>
                 )}
 
                 {allParts && allParts.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                     {allParts.map((part: MechanicalPart) => {
                       const Icon = SERVICE_ICONS[part.service] || Package;
                       return (
-                        <Card
+                        <div
                           key={part.id}
-                          className="bg-white border-slate-200 hover:border-[#2F5FA7] hover:shadow-xl transition-all cursor-pointer group"
+                          className="p-4 border border-lp-border rounded-sm bg-lp-bg hover:bg-lp-accent hover:border-lp-primary/30 transition-all cursor-pointer group"
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
-                              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100 group-hover:bg-white transition-colors">
-                                <Icon className="w-5 h-5 text-[#2F5FA7]" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <p className="font-bold text-slate-900 uppercase tracking-wide text-[11px] truncate">
-                                    {part.partName || 'Untitled Part'}
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-[8px] font-black uppercase tracking-widest text-[#2F5FA7] hover:bg-blue-50 border border-blue-100 rounded-md"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handlePreviewDesign(part);
-                                      }}
-                                    >
-                                      Preview 3D
-                                    </Button>
-                                    <span className="text-[8px] text-blue-100 font-mono italic">
-                                      {part.cadFile?.fileName.slice(-12)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <p className="text-[9px] font-bold text-[#2F5FA7] uppercase tracking-widest mt-0.5">
-                                  {SERVICE_DISPLAY_NAMES[part.service] || part.service}
-                                </p>
-                                <div className="space-y-2 mt-2">
-                                  <div className="flex items-center gap-3 text-[9px] text-blue-100 font-bold uppercase tracking-widest">
-                                    <span className="flex items-center gap-1 text-[#2F5FA7]">
-                                      <Layers className="w-3 h-3" />
-                                      {part.material.name}{' '}
-                                      {part.material.grade && (
-                                        <span className="text-blue-100">
-                                          ({part.material.grade})
-                                        </span>
-                                      )}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Hash className="w-3 h-3" />
-                                      {part.quantity} PCS
-                                    </span>
-                                    <span className="flex items-center gap-1 ml-auto opacity-60">
-                                      <Clock className="w-2.5 h-2.5" />
-                                      {new Date(part.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-
-                                  {part.secondaryProcesses &&
-                                    part.secondaryProcesses.length > 0 && (
-                                      <div className="flex flex-wrap gap-1.5 pt-1">
-                                        {part.secondaryProcesses.map((proc) => (
-                                          <Badge
-                                            key={proc}
-                                            variant="outline"
-                                            className="text-[7px] px-1.5 py-0 h-4 border-slate-100 bg-slate-50 text-blue-200 font-bold uppercase tracking-tight"
-                                          >
-                                            {proc.replace(/_/g, ' ')}
-                                          </Badge>
-                                        ))}
-                                        {part.coatingColor && (
-                                          <div className="flex items-center gap-1 ml-1">
-                                            <div
-                                              className="w-2 h-2 rounded-full border border-slate-200"
-                                              style={{
-                                                backgroundColor:
-                                                  part.coatingColor === 'custom'
-                                                    ? '#ccc'
-                                                    : part.coatingColor,
-                                              }}
-                                            />
-                                            <span className="text-[7px] font-bold text-blue-100 uppercase">
-                                              {part.coatingColor}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                </div>
-                              </div>
+                          <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border group-hover:border-lp-primary/30 transition-colors shrink-0">
+                              <Icon className="w-4 h-4 text-lp-primary" />
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-medium text-sm text-lp-fg truncate group-hover:text-lp-primary transition-colors">
+                                  {part.partName || 'Untitled Part'}
+                                </p>
+                                <button
+                                  className="lp-label-mono text-lp-primary hover:underline shrink-0"
+                                  style={{ fontSize: '9px' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePreviewDesign(part);
+                                  }}
+                                >
+                                  Preview 3D
+                                </button>
+                              </div>
+                              <p className="lp-label-mono text-lp-primary mt-0.5" style={{ fontSize: '9px' }}>
+                                {SERVICE_DISPLAY_NAMES[part.service] || part.service}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                <span className="lp-label-mono text-lp-muted-fg flex items-center gap-1" style={{ fontSize: '9px' }}>
+                                  <Layers className="w-3 h-3" />
+                                  {part.material.name}
+                                  {part.material.grade && ` (${part.material.grade})`}
+                                </span>
+                                <span className="lp-label-mono text-lp-muted-fg flex items-center gap-1" style={{ fontSize: '9px' }}>
+                                  <Hash className="w-3 h-3" />
+                                  {part.quantity} pcs
+                                </span>
+                              </div>
+                              {part.secondaryProcesses && part.secondaryProcesses.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {part.secondaryProcesses.map((proc) => (
+                                    <span
+                                      key={proc}
+                                      className="lp-label-mono px-1.5 py-0.5 rounded-sm bg-lp-accent border border-lp-border text-lp-muted-fg"
+                                      style={{ fontSize: '8px' }}
+                                    >
+                                      {proc.replace(/_/g, ' ')}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="shop_orders" className="space-y-4">
+              <TabsContent value="shop_orders" className="space-y-0">
                 {isShopOrdersLoading &&
                   (!completedShopOrders || completedShopOrders.length === 0) && (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="w-6 h-6 animate-spin text-lp-primary" />
                     </div>
                   )}
 
                 {!isShopOrdersLoading &&
                   (!completedShopOrders || completedShopOrders.length === 0) && (
-                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 space-y-4">
-                      <History className="w-12 h-12 mx-auto text-slate-300 opacity-20" />
-                      <p className="text-blue-200 font-bold uppercase tracking-widest text-xs">
+                    <div className="text-center py-20 border border-dashed border-lp-border rounded-sm space-y-3">
+                      <History className="w-10 h-10 mx-auto text-lp-muted-fg/30" />
+                      <p className="lp-label-mono text-lp-muted-fg">
                         No completed orders yet.
                       </p>
-                      <p className="text-[10px] text-blue-100 max-w-[240px] mx-auto uppercase tracking-wider font-bold italic leading-relaxed">
+                      <p className="text-xs text-lp-muted-fg/60 max-w-[260px] mx-auto leading-relaxed">
                         Only orders that have been successfully delivered are shown in this history.
                       </p>
                     </div>
@@ -1148,11 +1135,11 @@ function UserDashboardContent() {
 
                 {completedShopOrders &&
                   completedShopOrders.length > 0 &&
-                  (completedShopOrders as any[]).map((order: any) => (
-                    <Card
+                  (completedShopOrders as any[]).map((order: any, idx: number) => (
+                    <div
                       key={order.id}
                       tabIndex={0}
-                      className="bg-white border-slate-200 hover:border-slate-300 hover:bg-white transition-all duration-200 overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                      className="flex items-center gap-4 px-4 py-5 border-b border-lp-border cursor-pointer hover:bg-lp-accent/50 transition-all group"
                       onClick={() => router.push(`/orders/${order.id}`)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -1161,113 +1148,100 @@ function UserDashboardContent() {
                         }
                       }}
                     >
-                      <CardContent className="p-6 flex items-center justify-between">
-                        <div className="flex items-center gap-5">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50 border border-blue-100 shadow-sm">
-                            <Package className="w-5 h-5 text-[#2F5FA7]" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 tracking-tight text-base truncate max-w-[240px]">
-                              {(order.items?.length || 0) + (order.shopItems?.length || 0)}{' '}
-                              {(order.items?.length || 0) + (order.shopItems?.length || 0) === 1
-                                ? 'Component'
-                                : 'Components'}{' '}
-                              Procured
-                            </p>
-                            <div className="text-[11px] text-blue-200 flex items-center gap-3 mt-2">
-                              <span className="flex items-center gap-1.5">
-                                <Clock className="w-3 h-3 text-[#2F5FA7]/70" />{' '}
-                                <span className="font-consolas">
-                                  {order.createdAt
-                                    ? new Date(order.createdAt).toLocaleDateString()
-                                    : 'UNKNOWN DATE'}
-                                </span>
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className={`${BADGE_BASE_CLASS} ${order.status === 'paid' ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-amber-100 bg-amber-50 text-amber-700'}`}
-                              >
-                                {order.status === 'paid'
-                                  ? 'TXN SECURED'
-                                  : order.status?.toUpperCase() || 'UNKNOWN'}
-                              </Badge>
-                            </div>
-                          </div>
+                      <span className="text-sm font-lp-mono text-lp-muted-fg/50 w-7 shrink-0">
+                        {String(idx + 1).padStart(2, '0')}.
+                      </span>
+                      <div className="w-10 h-10 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border shrink-0">
+                        <Package className="w-4 h-4 text-lp-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-lp-fg truncate group-hover:text-lp-primary transition-colors">
+                          {(order.items?.length || 0) + (order.shopItems?.length || 0)}{' '}
+                          {(order.items?.length || 0) + (order.shopItems?.length || 0) === 1
+                            ? 'Component'
+                            : 'Components'}{' '}
+                          Procured
+                        </p>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="lp-label-mono text-lp-muted-fg" style={{ fontSize: '9px' }}>
+                            {order.createdAt
+                              ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                              : 'Unknown date'}
+                          </span>
+                          <span className={`lp-label-mono px-2 py-0.5 rounded-sm ${order.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`} style={{ fontSize: '9px' }}>
+                            {order.status === 'paid' ? 'TXN SECURED' : order.status?.toUpperCase() || 'UNKNOWN'}
+                          </span>
                         </div>
-                        <div className="text-right flex items-center gap-4">
-                          <div className="hidden sm:block">
-                            <p className="text-xs font-bold text-slate-900 font-mono italic">
-                              ₹{(order.pricing?.total || 0).toLocaleString()}
-                            </p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-blue-100 group-hover:text-[#2F5FA7] transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                      <div className="text-right flex items-center gap-4">
+                        <div className="hidden sm:block">
+                          <p className="text-sm font-medium text-lp-fg font-lp-mono">
+                            ₹{(order.pricing?.total || 0).toLocaleString()}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <ChevronRight className="w-3.5 h-3.5 text-lp-muted-fg group-hover:text-lp-primary transition-colors" />
+                      </div>
+                    </div>
                   ))}
               </TabsContent>
 
             </Tabs>
           </div>
 
-          <div className="lg:col-span-5 space-y-6 relative z-10">
+          {/* Right: Detail panel */}
+          <div className="lg:col-span-5 relative z-10">
             {selectedOrder ? (
-              <div
-                className="space-y-6 sticky top-28 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
-                style={{ animationDelay: '300ms' }}
-              >
-                <Card className="bg-white border-slate-200 shadow-sm overflow-hidden rounded-2xl">
-                  <CardHeader className="border-b border-slate-100 px-6 pt-6 pb-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <Badge className={`${BADGE_BASE_CLASS} border-blue-100 bg-blue-50 text-[#2F5FA7]`}>
+              <div className="sticky top-28 space-y-6">
+                <div className="border border-lp-border rounded-sm bg-lp-bg overflow-hidden">
+                  {/* Detail header */}
+                  <div className="border-b border-lp-border px-6 pt-6 pb-5">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="lp-label-mono px-2.5 py-1 rounded-sm border border-lp-border bg-lp-accent text-lp-fg">
                         {SERVICE_DISPLAY_NAMES[selectedOrderParts[0]?.service] || 'PROJECT'}
-                      </Badge>
+                      </span>
                       <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={`${BADGE_BASE_CLASS} ${getStatusBadgeTone(selectedOrder)}`}
-                        >
+                        <span className={`lp-label-mono px-2.5 py-1 rounded-sm ${getStatusBadgeTone(selectedOrder)}`}>
                           {selectedOrderStatusInfo.label}
-                        </Badge>
+                        </span>
                         {selectedOrder.status === 'draft' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-blue-100 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          <button
+                            className="w-8 h-8 rounded-sm flex items-center justify-center text-lp-muted-fg hover:text-lp-destructive hover:bg-lp-destructive/5 transition-colors"
                             onClick={() => setPendingDeleteProject(selectedOrder)}
                             title="Delete Project"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </Button>
+                          </button>
                         )}
                       </div>
                     </div>
-                    <CardTitle className="text-2xl text-slate-900 tracking-tight">
+                    <h2 className="text-2xl font-medium text-lp-fg tracking-tight mt-1">
                       {selectedOrder.projectName}
-                    </CardTitle>
-                    <CardDescription className="text-sm tracking-[0.04em] text-blue-200 mt-2 max-w-[80%] leading-relaxed border-l-2 border-[#2F5FA7]/30 pl-3">
-                      <MapPin className="w-3.5 h-3.5 inline-block mr-1 text-[#2F5FA7]" />
-                      {selectedOrder.deliveryLocation}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-2 gap-4 text-xs mb-8">
-                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-                        <p className="text-xs text-blue-200 font-bold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
-                          <Layers className="w-3 h-3 text-[#2F5FA7]/70" /> Material
+                    </h2>
+                    <p className="text-sm text-lp-muted-fg mt-2 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-lp-primary" />
+                      {selectedOrder.deliveryLocation} · {new Date(selectedOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+
+                  {/* Material & Quantity */}
+                  <div className="px-6 py-5">
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="p-4 bg-lp-accent rounded-sm border border-lp-border">
+                        <p className="lp-label-mono text-lp-primary mb-1.5 flex items-center gap-1.5" style={{ fontSize: '9px' }}>
+                          <Layers className="w-3 h-3" /> Material
                         </p>
-                        <p className="font-bold text-slate-900 text-sm font-consolas">
+                        <p className="font-medium text-sm text-lp-fg">
                           {selectedOrderParts.length > 0
                             ? selectedOrderParts[0].material.name
                             : 'No Parts'}
                         </p>
                       </div>
-                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-                        <p className="text-xs text-blue-200 font-bold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
-                          <Hash className="w-3 h-3 text-[#2F5FA7]/70" /> Quantity
+                      <div className="p-4 bg-lp-accent rounded-sm border border-lp-border">
+                        <p className="lp-label-mono text-lp-primary mb-1.5 flex items-center gap-1.5" style={{ fontSize: '9px' }}>
+                          <Hash className="w-3 h-3" /> Quantity
                         </p>
-                        <p className="font-bold text-slate-900 text-sm font-consolas">
-                          {selectedOrderParts.reduce((sum, p) => sum + (p.quantity || 0), 0)} PCS
+                        <p className="font-medium text-sm text-lp-fg">
+                          {selectedOrderParts.reduce((sum, p) => sum + (p.quantity || 0), 0)} pcs
                         </p>
                       </div>
                     </div>
@@ -1277,94 +1251,76 @@ function UserDashboardContent() {
                       selectedOrder.status === 'quotation_sent' ||
                       selectedOrder.status === 'negotiation') && (
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-[#2F5FA7]" /> Received Quotations
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-medium text-lp-fg flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-lp-primary" /> Received Quotations
                             </h3>
-                            <Badge className={`${BADGE_BASE_CLASS} border-blue-100 bg-blue-50 text-[#2F5FA7]`}>
+                            <span className="lp-label-mono text-lp-primary bg-lp-accent px-2.5 py-1 rounded-sm border border-lp-border">
                               {quotations?.length || 0} Offers
-                            </Badge>
+                            </span>
                           </div>
 
                           {quotations && quotations.length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                               {quotations.map((quote) => {
                                 const lastNeg =
                                   quote.negotiationHistory?.[quote.negotiationHistory.length - 1];
                                 const isCounter = lastNeg?.party === 'vendor';
 
                                 return (
-                                  <Card
+                                  <div
                                     key={quote.id}
-                                    className="bg-white border-slate-200 shadow-lg hover:border-[#2F5FA7]/50 hover:bg-slate-50 transition-all overflow-hidden group"
+                                    className="border border-lp-border bg-lp-card rounded-sm hover:border-lp-primary/30 transition-all overflow-hidden group"
                                   >
-                                    <div className="p-5 space-y-4">
+                                    <div className="p-4 space-y-4">
                                       <div className="flex justify-between items-start">
                                         <div>
-                                          <p className="font-bold text-slate-900 tracking-tight uppercase">
+                                          <p className="font-medium text-lp-fg text-sm">
                                             {quote.vendorName || 'MechMaster'}
                                           </p>
-                                          <div className="flex items-center gap-1 text-[10px] text-blue-200 font-bold uppercase tracking-widest mt-1">
-                                            <TrendingUp className="w-3 h-3 text-[#2F5FA7]" />
+                                          <div className="flex items-center gap-1 lp-label-mono text-lp-muted-fg mt-1">
+                                            <TrendingUp className="w-3 h-3 text-lp-primary" />
                                             {quote.vendorRating || '4.5'} Rating
                                           </div>
                                         </div>
                                         <div className="text-right">
-                                          <p className="text-2xl font-bold font-consolas text-[#2F5FA7]">
+                                          <p className="text-xl font-medium text-lp-primary font-lp-mono">
                                             ₹{quote.quotedPrice.toLocaleString()}
                                           </p>
-                                          <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest mt-1">
-                                            Lead Time:{' '}
-                                            <span className="text-slate-900">
-                                              {quote.leadTimeDays} Days
-                                            </span>
+                                          <p className="lp-label-mono text-lp-muted-fg mt-1">
+                                            Lead Time: <span className="text-lp-fg">{quote.leadTimeDays} Days</span>
                                           </p>
                                         </div>
                                       </div>
 
                                       {quote.negotiationHistory &&
                                         quote.negotiationHistory.length > 0 && (
-                                          <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl space-y-3 mt-4 shadow-sm">
-                                            <p className="text-[10px] font-bold text-[#2F5FA7] uppercase tracking-widest mb-2 flex items-center gap-2">
-                                              <MessageSquare className="w-3 h-3" /> Negotiation
-                                              History
+                                          <div className="bg-lp-accent border border-lp-border p-3 rounded-sm space-y-2 mt-3">
+                                            <p className="lp-label-mono text-lp-primary flex items-center gap-2">
+                                              <MessageSquare className="w-3 h-3" /> Negotiation History
                                             </p>
-                                            <div className="max-h-[150px] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                            <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2">
                                               {quote.negotiationHistory.map(
                                                 (hist: any, idx: number) => (
                                                   <div
                                                     key={idx}
-                                                    className={`p-3 rounded-lg text-xs border ${hist.party === 'admin' ? 'bg-blue-50 border-blue-100' : hist.party === 'vendor' ? 'bg-amber-50 border-amber-100' : 'bg-slate-100 border-slate-200'}`}
+                                                    className="p-3 rounded-sm text-xs border border-lp-border bg-lp-bg"
                                                   >
-                                                    <div className="flex justify-between font-bold mb-2 uppercase tracking-widest text-[10px] text-blue-100">
-                                                      <span
-                                                        className={
-                                                          hist.party === 'admin'
-                                                            ? 'text-blue-600'
-                                                            : hist.party === 'vendor'
-                                                              ? 'text-amber-600'
-                                                              : 'text-[#2F5FA7]'
-                                                        }
-                                                      >
+                                                    <div className="flex justify-between lp-label-mono text-lp-muted-fg mb-2">
+                                                      <span className={hist.party === 'admin' ? 'text-lp-primary' : hist.party === 'vendor' ? 'text-amber-600' : 'text-lp-fg'}>
                                                         {hist.party}
                                                       </span>
-                                                      <span className="font-consolas">
-                                                        {new Date(
-                                                          hist.createdAt
-                                                        ).toLocaleDateString()}
+                                                      <span className="font-lp-mono">
+                                                        {new Date(hist.createdAt).toLocaleDateString()}
                                                       </span>
                                                     </div>
-                                                    <p className="text-slate-600 leading-relaxed mb-2 italic">
-                                                      "{hist.message}"
+                                                    <p className="text-lp-muted-fg leading-relaxed mb-2 italic">
+                                                      &ldquo;{hist.message}&rdquo;
                                                     </p>
-                                                    <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest mt-2 bg-white/50 p-2 rounded-md">
-                                                      <span className="text-[#2F5FA7]">
-                                                        ₹{hist.price}
-                                                      </span>
-                                                      <span className="text-slate-300">|</span>
-                                                      <span className="text-[#2F5FA7]">
-                                                        {hist.leadTime} Days
-                                                      </span>
+                                                    <div className="flex gap-3 lp-label-mono mt-2">
+                                                      <span className="text-lp-primary">₹{hist.price}</span>
+                                                      <span className="text-lp-border">|</span>
+                                                      <span className="text-lp-primary">{hist.leadTime} Days</span>
                                                     </div>
                                                   </div>
                                                 )
@@ -1377,7 +1333,7 @@ function UserDashboardContent() {
                                         <div className="flex flex-1 gap-3">
                                           <Button
                                             variant="outline"
-                                            className="flex-1 tracking-widest h-11 text-[10px] uppercase border-[#2F5FA7]/30 text-[#2F5FA7] bg-blue-50/50 hover:bg-blue-50 hover:text-[#1E3A66] transition-all"
+                                            className="flex-1 h-10 lp-label-mono border-lp-border text-lp-fg hover:bg-lp-accent hover:text-lp-primary transition-all rounded-sm"
                                             onClick={() => {
                                               setNegotiatingQuote(quote);
                                               setNegPrice(quote.quotedPrice.toString());
@@ -1387,20 +1343,18 @@ function UserDashboardContent() {
                                           >
                                             <MessageSquare className="w-3 h-3 mr-1" /> Negotiate
                                           </Button>
-
                                         </div>
                                       </div>
                                     </div>
-                                  </Card>
+                                  </div>
                                 );
                               })}
                             </div>
                           ) : (
-                            <div className="p-8 text-center bg-card/50 rounded-xl border border-dashed border-white/10">
-                              <Clock className="w-8 h-8 mx-auto text-muted-foreground opacity-30 mb-3 animate-pulse" />
-                              <p className="text-xs text-muted-foreground">
-                                Waiting for MechMasters to review your design and submit competitive
-                                bids.
+                            <div className="p-8 text-center bg-lp-accent rounded-sm border border-dashed border-lp-border">
+                              <Clock className="w-8 h-8 mx-auto text-lp-muted-fg opacity-40 mb-3 animate-pulse" />
+                              <p className="text-xs text-lp-muted-fg">
+                                Waiting for MechMasters to review your design and submit competitive bids.
                               </p>
                             </div>
                           )}
@@ -1410,64 +1364,59 @@ function UserDashboardContent() {
                     {/* ── ADVANCE PAYMENT (status = accepted, advance not yet paid) ── */}
                     {selectedOrder.status === 'accepted' &&
                       !selectedOrder.paymentStatus?.advance?.paid && (
-                        <div className="rounded-2xl border border-orange-200 bg-white shadow-xl overflow-hidden">
+                        <div className="rounded-sm border border-lp-border bg-lp-card overflow-hidden">
                           {(() => {
                             const finances = calculateProjectFinances(basePrice);
                             return (
                               <>
-                                <div className="p-5 border-b border-orange-50 bg-orange-50/50">
+                                <div className="p-4 border-b border-lp-border bg-lp-accent">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <CreditCard className="w-4 h-4 text-orange-600" />
-                                    <p className="text-sm font-bold text-slate-900 uppercase tracking-widest">
+                                    <CreditCard className="w-4 h-4 text-amber-600" />
+                                    <p className="text-sm font-medium text-lp-fg">
                                       Advance Payment Required
                                     </p>
                                   </div>
-                                  <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">
+                                  <p className="lp-label-mono text-lp-muted-fg">
                                     Pay 50% to lock in your MechMaster and start production.
                                   </p>
                                 </div>
-                                <div className="p-5 space-y-5">
-                                  <div className="space-y-3 mb-2">
-                                    <div className="flex justify-between text-[10px] uppercase font-bold text-blue-100">
+                                <div className="p-4 space-y-4">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between lp-label-mono text-lp-muted-fg">
                                       <span>Base Quote</span>
-                                      <span>₹{finances.subtotal.toLocaleString()}</span>
+                                      <span className="font-lp-mono text-lp-fg">₹{finances.subtotal.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between text-[10px] uppercase font-bold text-blue-100">
+                                    <div className="flex justify-between lp-label-mono text-lp-muted-fg">
                                       <span>GST (18%)</span>
-                                      <span>₹{finances.gst.toLocaleString()}</span>
+                                      <span className="font-lp-mono text-lp-fg">₹{finances.gst.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between text-[10px] uppercase font-bold text-blue-100">
-                                      <span>Logistic Logistics</span>
-                                      <span>₹{finances.shipping.toLocaleString()}</span>
+                                    <div className="flex justify-between lp-label-mono text-lp-muted-fg">
+                                      <span>Logistics</span>
+                                      <span className="font-lp-mono text-lp-fg">₹{finances.shipping.toLocaleString()}</span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-between border-t border-slate-50 pt-4">
+                                  <div className="flex items-center justify-between border-t border-lp-border pt-4">
                                     <div>
-                                      <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest mb-1">
-                                        Total Order Value
-                                      </p>
-                                      <p className="text-lg font-bold text-slate-900 font-consolas">
+                                      <p className="lp-label-mono text-lp-muted-fg mb-1">Total Order Value</p>
+                                      <p className="text-lg font-medium text-lp-fg font-lp-mono">
                                         ₹{finances.total.toLocaleString()}
                                       </p>
                                     </div>
                                     <div className="text-right">
-                                      <p className="text-[10px] text-orange-600 font-bold uppercase tracking-widest mb-1">
-                                        Advance (50%)
-                                      </p>
-                                      <p className="text-2xl font-bold text-orange-600 font-consolas">
+                                      <p className="lp-label-mono text-amber-600 mb-1">Advance (50%)</p>
+                                      <p className="text-2xl font-medium text-amber-600 font-lp-mono">
                                         ₹{finances.advance.toLocaleString()}
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex gap-3 text-[10px] text-blue-200 bg-slate-50 rounded-xl p-3.5 border border-slate-100 shadow-sm">
+                                  <div className="flex gap-3 text-xs text-lp-muted-fg bg-lp-accent rounded-sm p-3 border border-lp-border">
                                     <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                                    <p className="leading-relaxed font-bold tracking-wide">
-                                      Advance is held securely in escrow. Remaining 50% is due only
-                                      after you confirm delivery of your parts.
+                                    <p className="leading-relaxed">
+                                      Advance is held securely in escrow. Remaining 50% is due only after you confirm delivery.
                                     </p>
                                   </div>
                                   <Button
-                                    className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl shadow-lg transition-all border-none"
+                                    className="w-full h-11 lp-label-mono bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all"
                                     onClick={() => handlePayment('advance')}
                                     disabled={isPayingAdvance || finances.subtotal <= 0}
                                   >
@@ -1494,50 +1443,40 @@ function UserDashboardContent() {
 
                     {/* ── IN PRODUCTION (advance paid) ── */}
                     {selectedOrder.status === 'in_production' && (
-                      <div className="rounded-2xl border border-blue-200 bg-white shadow-xl p-6 space-y-5">
+                      <div className="rounded-sm border border-lp-border bg-lp-card p-5 space-y-4">
                         {(() => {
                           const finances = calculateProjectFinances(basePrice);
                           return (
                             <>
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
-                                  <Hammer className="w-5 h-5 text-[#2F5FA7]" />
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border">
+                                  <Hammer className="w-5 h-5 text-lp-primary" />
                                 </div>
                                 <div>
-                                  <p className="font-bold text-slate-900 text-sm uppercase tracking-widest">
-                                    In Production
-                                  </p>
-                                  <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                                    Your MechMaster is manufacturing your parts.
-                                  </p>
+                                  <p className="font-medium text-lp-fg text-sm">In Production</p>
+                                  <p className="lp-label-mono text-lp-muted-fg">Your MechMaster is manufacturing your parts.</p>
                                 </div>
                               </div>
                               {selectedOrder.paymentStatus?.advance?.paid && (
-                                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] uppercase font-bold tracking-widest shadow-sm">
+                                <div className="flex items-center gap-3 p-3 rounded-sm bg-emerald-50/50 border border-emerald-200/30 lp-label-mono">
                                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                                   <div className="flex-1">
                                     <span className="text-emerald-700">Advance Paid</span>
-                                    <span className="text-blue-100 ml-2 font-consolas text-xs">
+                                    <span className="text-lp-muted-fg ml-2 font-lp-mono text-xs">
                                       · ₹{finances.advance.toLocaleString()}
                                     </span>
                                   </div>
                                   {selectedOrder.paymentStatus.advance.paidAt && (
-                                    <span className="text-blue-100 font-consolas text-xs">
-                                      {new Date(
-                                        selectedOrder.paymentStatus.advance.paidAt
-                                      ).toLocaleDateString()}
+                                    <span className="text-lp-muted-fg font-lp-mono text-xs">
+                                      {new Date(selectedOrder.paymentStatus.advance.paidAt).toLocaleDateString()}
                                     </span>
                                   )}
                                 </div>
                               )}
-                              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-[10px] font-bold uppercase tracking-wide text-blue-200 shadow-sm">
-                                <Clock className="w-4 h-4 shrink-0 text-[#2F5FA7] animate-pulse" />
+                              <div className="flex items-center gap-3 p-3 rounded-sm bg-lp-accent border border-lp-border lp-label-mono text-lp-muted-fg">
+                                <Clock className="w-4 h-4 shrink-0 text-lp-primary animate-pulse" />
                                 <span className="leading-relaxed">
-                                  Remaining{' '}
-                                  <strong className="text-[#2F5FA7] font-consolas text-xs">
-                                    ₹{finances.balance.toLocaleString()}
-                                  </strong>{' '}
-                                  will be due upon delivery.
+                                  Remaining <strong className="text-lp-primary font-lp-mono text-xs">₹{finances.balance.toLocaleString()}</strong> will be due upon delivery.
                                 </span>
                               </div>
                             </>
@@ -1550,59 +1489,46 @@ function UserDashboardContent() {
                     {(selectedOrder.status === 'shipped' ||
                       selectedOrder.status === 'delivered' ||
                       selectedOrder.status === 'shipping') && (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {(() => {
                             const finances = calculateProjectFinances(basePrice);
                             return (
                               <>
-                                <div className="rounded-2xl border border-orange-200 bg-white shadow-xl p-6 space-y-4">
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 shadow-sm animate-pulse">
-                                      <Truck className="w-5 h-5 text-orange-600" />
+                                <div className="rounded-sm border border-lp-border bg-lp-card p-5 space-y-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border">
+                                      <Truck className="w-5 h-5 text-amber-600" />
                                     </div>
                                     <div>
-                                      <p className="font-bold text-slate-900 text-sm uppercase tracking-widest">
-                                        Parts Ready for Arrival
-                                      </p>
-                                      <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                                        Complete full payment to receive your order.
-                                      </p>
+                                      <p className="font-medium text-lp-fg text-sm">Parts Ready for Arrival</p>
+                                      <p className="lp-label-mono text-lp-muted-fg">Complete full payment to receive your order.</p>
                                     </div>
                                   </div>
                                   {selectedOrder.paymentStatus?.advance?.paid && (
-                                    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] uppercase font-bold tracking-widest shadow-sm">
+                                    <div className="flex items-center gap-3 p-3 rounded-sm bg-emerald-50/50 border border-emerald-200/30 lp-label-mono">
                                       <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                                       <span className="text-emerald-700">
-                                        Advance{' '}
-                                        <strong className="font-consolas text-xs">
-                                          ₹{finances.advance.toLocaleString()}
-                                        </strong>{' '}
-                                        Paid
+                                        Advance <strong className="font-lp-mono text-xs">₹{finances.advance.toLocaleString()}</strong> Paid
                                       </span>
                                     </div>
                                   )}
                                 </div>
                                 {!selectedOrder.paymentStatus?.completion?.paid && (
-                                  <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] shadow-inner p-6 space-y-5">
+                                  <div className="rounded-sm border border-lp-border bg-lp-accent p-5 space-y-4">
                                     <div>
-                                      <p className="text-sm font-bold text-slate-900 mb-1 uppercase tracking-widest">
-                                        Pay Balance & Complete Order
-                                      </p>
-                                      <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">
-                                        Once full payment is received, your MechMaster will ensure
-                                        delivery of your parts.
+                                      <p className="text-sm font-medium text-lp-fg mb-1">Pay Balance & Complete Order</p>
+                                      <p className="lp-label-mono text-lp-muted-fg">
+                                        Once full payment is received, your MechMaster will ensure delivery.
                                       </p>
                                     </div>
-                                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                      <p className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
-                                        Balance Due (50%)
-                                      </p>
-                                      <p className="text-2xl font-bold text-[#2F5FA7] font-consolas">
+                                    <div className="flex items-center justify-between p-3 bg-lp-bg rounded-sm border border-lp-border">
+                                      <p className="lp-label-mono text-lp-muted-fg">Balance Due (50%)</p>
+                                      <p className="text-xl font-medium text-lp-primary font-lp-mono">
                                         ₹{finances.balance.toLocaleString()}
                                       </p>
                                     </div>
                                     <Button
-                                      className="w-full h-12 font-bold tracking-widest uppercase text-xs bg-blue-600 hover:bg-[#1E3A66] text-white rounded-xl shadow-lg transition-all border-none"
+                                      className="w-full h-11 lp-label-mono bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all"
                                       onClick={() => handlePayment('completion')}
                                       disabled={isPayingCompletion}
                                     >
@@ -1628,62 +1554,48 @@ function UserDashboardContent() {
 
                     {/* ── FULLY COMPLETED ── */}
                     {selectedOrder.status === 'completed' && (
-                      <div className="rounded-2xl border border-[#2F5FA7]/20 bg-white shadow-2xl p-8 space-y-6">
+                      <div className="rounded-sm border border-lp-border bg-lp-card p-6 space-y-5">
                         {(() => {
                           const finances = calculateProjectFinances(basePrice);
                           return (
                             <>
                               <div className="text-center space-y-3">
-                                <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
-                                  <CheckCircle2 className="text-emerald-500 w-8 h-8" />
+                                <div className="w-14 h-14 bg-emerald-50/50 border border-emerald-200/30 rounded-sm flex items-center justify-center mx-auto">
+                                  <CheckCircle2 className="text-emerald-500 w-7 h-7" />
                                 </div>
-                                <p className="text-2xl font-bold uppercase tracking-widest text-slate-900">
-                                  Order Complete!
-                                </p>
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-blue-200">
+                                <p className="text-xl font-medium text-lp-fg">Order Complete</p>
+                                <p className="lp-label-mono text-lp-muted-fg">
                                   All payments settled. Thanks for building with MechHub.
                                 </p>
                               </div>
-                              <div className="space-y-3 pt-4 border-t border-slate-50">
+                              <div className="space-y-2 pt-4 border-t border-lp-border">
                                 {selectedOrder.paymentStatus?.advance?.paid && (
-                                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm text-xs">
+                                  <div className="flex items-center justify-between p-3 rounded-sm bg-lp-accent border border-lp-border text-xs">
                                     <div className="flex items-center gap-3">
                                       <Check className="w-4 h-4 text-emerald-500" />
-                                      <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                                        Advance Paid
-                                      </span>
+                                      <span className="lp-label-mono text-lp-muted-fg">Advance Paid</span>
                                     </div>
                                     <div className="text-right flex items-center gap-3">
-                                      <p className="font-consolas text-slate-900 font-bold">
-                                        ₹{finances.advance.toLocaleString()}
-                                      </p>
+                                      <p className="font-lp-mono text-lp-fg font-medium">₹{finances.advance.toLocaleString()}</p>
                                       {selectedOrder.paymentStatus.advance.paidAt && (
-                                        <p className="font-consolas text-blue-100 text-[10px]">
-                                          {new Date(
-                                            selectedOrder.paymentStatus.advance.paidAt
-                                          ).toLocaleDateString()}
+                                        <p className="font-lp-mono text-lp-muted-fg text-[10px]">
+                                          {new Date(selectedOrder.paymentStatus.advance.paidAt).toLocaleDateString()}
                                         </p>
                                       )}
                                     </div>
                                   </div>
                                 )}
                                 {selectedOrder.paymentStatus?.completion?.paid && (
-                                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 shadow-sm text-xs">
+                                  <div className="flex items-center justify-between p-3 rounded-sm bg-lp-accent border border-lp-border text-xs">
                                     <div className="flex items-center gap-3">
                                       <Check className="w-4 h-4 text-emerald-500" />
-                                      <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                                        Final Payment
-                                      </span>
+                                      <span className="lp-label-mono text-lp-muted-fg">Final Payment</span>
                                     </div>
                                     <div className="text-right flex items-center gap-3">
-                                      <p className="font-consolas text-slate-900 font-bold">
-                                        ₹{finances.balance.toLocaleString()}
-                                      </p>
+                                      <p className="font-lp-mono text-lp-fg font-medium">₹{finances.balance.toLocaleString()}</p>
                                       {selectedOrder.paymentStatus.completion.paidAt && (
-                                        <p className="font-consolas text-blue-100 text-[10px]">
-                                          {new Date(
-                                            selectedOrder.paymentStatus.completion.paidAt
-                                          ).toLocaleDateString()}
+                                        <p className="font-lp-mono text-lp-muted-fg text-[10px]">
+                                          {new Date(selectedOrder.paymentStatus.completion.paidAt).toLocaleDateString()}
                                         </p>
                                       )}
                                     </div>
@@ -1698,37 +1610,35 @@ function UserDashboardContent() {
 
                     {/* ── ARTIFACTS / EVIDENCE ── */}
                     {selectedOrder.artifacts && selectedOrder.artifacts.length > 0 && (
-                      <div className="pt-6 mt-6 border-t border-slate-100">
-                        <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-4">
-                          Build Evidence & Artifacts
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="pt-5 mt-5 border-t border-lp-border">
+                        <p className="lp-label-mono text-lp-muted-fg mb-3">Build Evidence & Artifacts</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {selectedOrder.artifacts.map((art: any) => (
                             <div
                               key={art.id}
-                              className="group flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all"
+                              className="group flex items-center justify-between p-3 rounded-sm bg-lp-accent border border-lp-border hover:border-lp-primary/30 transition-all"
                             >
                               <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-sm bg-lp-bg border border-lp-border flex items-center justify-center shrink-0">
                                   {art.type === 'qc_report' || art.type === 'shipping_doc' ? (
-                                    <FileText className="w-4 h-4 text-blue-500" />
+                                    <FileText className="w-4 h-4 text-lp-primary" />
                                   ) : (
                                     <Image className="w-4 h-4 text-emerald-500" />
                                   )}
                                 </div>
                                 <div className="overflow-hidden">
-                                  <p className="text-[10px] font-bold text-slate-900 uppercase truncate">
+                                  <p className="text-xs font-medium text-lp-fg truncate">
                                     {art.fileName}
                                   </p>
-                                  <p className="text-[9px] text-blue-100 uppercase tracking-tighter">
-                                    {art.type.replace('_', ' ')} • {new Date(art.uploadedAt).toLocaleDateString()}
+                                  <p className="lp-label-mono text-lp-muted-fg">
+                                    {art.type.replace('_', ' ')} · {new Date(art.uploadedAt).toLocaleDateString()}
                                   </p>
                                 </div>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-blue-100 hover:text-blue-600 hover:bg-white rounded-full transition-all"
+                                className="h-8 w-8 text-lp-muted-fg hover:text-lp-primary hover:bg-lp-bg rounded-sm transition-all"
                                 onClick={async () => {
                                   try {
                                     const token = await user?.getIdToken();
@@ -1754,17 +1664,16 @@ function UserDashboardContent() {
                         </div>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-blue-200 border border-slate-200 rounded-3xl p-12 text-center bg-white shadow-sm">
-                <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                  <Package className="w-8 h-8 text-slate-300" />
+              <div className="h-full flex flex-col items-center justify-center border border-lp-border rounded-sm p-12 text-center bg-lp-card">
+                <div className="w-14 h-14 bg-lp-accent border border-lp-border rounded-sm flex items-center justify-center mb-5">
+                  <Package className="w-7 h-7 text-lp-muted-fg" />
                 </div>
-                <p className="max-w-xs text-sm leading-relaxed">
-                  Select a project from the hub to manage bids, negotiate with vendors, and track
-                  production.
+                <p className="max-w-xs text-sm text-lp-muted-fg leading-relaxed">
+                  Select a project from the hub to manage bids, negotiate with vendors, and track production.
                 </p>
               </div>
             )}
@@ -1780,7 +1689,7 @@ function UserDashboardContent() {
         }}
       >
         <DialogContent
-          className="bg-white text-slate-600 border-slate-200 shadow-2xl rounded-3xl sm:max-w-[450px] overflow-hidden p-0"
+          className={`lp-root ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm sm:max-w-[450px] overflow-hidden p-0`}
           onPointerDownOutside={(e) => {
             if (!profile?.onboarded) e.preventDefault();
           }}
@@ -1789,90 +1698,79 @@ function UserDashboardContent() {
           }}
           hideCloseButton={!profile?.onboarded}
         >
-          {/* Top accent glow */}
-          <div className="h-1.5 bg-blue-600" />
+          <div className="h-1 bg-lp-primary" />
 
-          <div className="p-8">
+          <div className="p-6">
             <DialogHeader className="pt-0">
               <div className="flex items-start justify-between gap-4">
-                <DialogTitle className="text-2xl tracking-tight font-bold text-slate-900 flex items-center gap-3 uppercase">
-                  <UserIcon className="w-6 h-6 text-[#2F5FA7]" />
+                <DialogTitle className="text-xl font-medium text-lp-fg flex items-center gap-3">
+                  <UserIcon className="w-5 h-5 text-lp-primary" />
                   Complete Your Profile
                 </DialogTitle>
                 <button
                   type="button"
                   onClick={handleOnboardingLogout}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-blue-200 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-lp-border text-lp-muted-fg transition-colors hover:bg-lp-accent hover:text-lp-fg"
                   aria-label="Log out"
                   title="Log out"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>
-              <DialogDescription className="text-blue-200 text-[11px] uppercase tracking-widest pt-2 font-bold">
+              <DialogDescription className="text-lp-muted-fg text-xs pt-2">
                 Setup your account to start managing high-precision manufacturing projects.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleOnboardingSubmit} className="space-y-4 py-6">
+            <form onSubmit={handleOnboardingSubmit} className="space-y-4 py-5">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
-                    Full Name
-                  </Label>
+                  <Label className="lp-label-mono text-lp-muted-fg pl-1">Full Name</Label>
                   <Input
                     name="fullName"
                     required
                     placeholder="e.g. Rahul Sharma"
-                    className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-12 rounded-xl placeholder:text-slate-300 shadow-sm"
+                    className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm placeholder:text-lp-muted-fg/50"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
-                    Phone Number
-                  </Label>
+                  <Label className="lp-label-mono text-lp-muted-fg pl-1">Phone Number</Label>
                   <Input
                     name="phone"
                     required
                     placeholder="+91 XXXXX XXXXX"
-                    className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-12 rounded-xl placeholder:text-slate-300 shadow-sm"
+                    className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm placeholder:text-lp-muted-fg/50"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
-                    Organization / Institution
-                  </Label>
+                  <Label className="lp-label-mono text-lp-muted-fg pl-1">Organization / Institution</Label>
                   <Input
                     name="teamName"
                     required
                     placeholder="Company or College name"
-                    className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-12 rounded-xl placeholder:text-slate-300 shadow-sm"
+                    className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm placeholder:text-lp-muted-fg/50"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
-                      Your Role
-                    </Label>
+                    <Label className="lp-label-mono text-lp-muted-fg pl-1">Your Role</Label>
                     <Input
                       name="designation"
                       required
                       placeholder="e.g. Founder, HOD"
-                      className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-12 rounded-xl placeholder:text-slate-300 shadow-sm"
+                      className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm placeholder:text-lp-muted-fg/50"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-blue-100 font-bold uppercase tracking-[0.1em] text-[10px] pl-1">
-                      City
-                    </Label>
+                    <Label className="lp-label-mono text-lp-muted-fg pl-1">City</Label>
                     <Input
                       name="location"
                       required
                       placeholder="e.g. Pune"
-                      className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-12 rounded-xl placeholder:text-slate-300 shadow-sm"
+                      className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm placeholder:text-lp-muted-fg/50"
                     />
                   </div>
                 </div>
@@ -1880,7 +1778,7 @@ function UserDashboardContent() {
 
               <Button
                 type="submit"
-                className="w-full h-14 tracking-widest mt-6 bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl transition-all border-none rounded-xl text-sm font-bold uppercase"
+                className="w-full h-12 mt-5 lp-label-mono bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all"
                 disabled={isSubmittingProfile}
               >
                 {isSubmittingProfile ? (
@@ -1892,23 +1790,13 @@ function UserDashboardContent() {
                 )}
               </Button>
 
-              <p className="text-[9px] text-blue-100 text-center font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-lp-muted-fg text-center">
                 By continuing, you agree to our{' '}
-                <Link
-                  href="/terms-of-service"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-200"
-                >
+                <Link href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:text-lp-fg">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link
-                  href="/privacy-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-200"
-                >
+                <Link href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-lp-fg">
                   Privacy Policy
                 </Link>
                 .
@@ -1919,80 +1807,63 @@ function UserDashboardContent() {
       </Dialog>
 
       <Dialog open={isNegotiating} onOpenChange={setIsNegotiating}>
-        <DialogContent className="bg-white text-slate-600 border-slate-200 shadow-2xl rounded-3xl sm:max-w-[500px]">
+        <DialogContent className={`lp-root ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm sm:max-w-[500px]`}>
           <DialogHeader>
-            <DialogTitle className="text-2xl tracking-tight font-bold text-slate-900 uppercase">
-              Negotiate Terms
-            </DialogTitle>
-            <DialogDescription className="text-blue-200 text-xs uppercase tracking-widest font-bold pt-1">
+            <DialogTitle className="text-xl font-medium text-lp-fg">Negotiate Terms</DialogTitle>
+            <DialogDescription className="text-lp-muted-fg text-xs pt-1">
               Propose your preferred price and timeline to the MechMaster.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
+          <div className="space-y-5 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-blue-100 uppercase tracking-widest text-[10px] font-bold pl-1">
-                  Target Price (₹)
-                </Label>
+              <div className="space-y-1.5">
+                <Label className="lp-label-mono text-lp-muted-fg pl-1">Target Price (₹)</Label>
                 <Input
                   value={negPrice}
                   onChange={(e) => setNegPrice(e.target.value)}
                   type="number"
-                  className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-11 shadow-sm font-consolas"
+                  className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm font-lp-mono"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-blue-100 uppercase tracking-widest text-[10px] font-bold pl-1">
-                  Target Lead Time (Days)
-                </Label>
+              <div className="space-y-1.5">
+                <Label className="lp-label-mono text-lp-muted-fg pl-1">Target Lead Time (Days)</Label>
                 <Input
                   value={negLeadTime}
                   onChange={(e) => setNegLeadTime(e.target.value)}
                   type="number"
-                  className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 h-11 shadow-sm font-consolas"
+                  className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 h-11 rounded-sm font-lp-mono"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-blue-100 uppercase tracking-widest text-[10px] font-bold pl-1">
-                Message to Vendor
-              </Label>
+            <div className="space-y-1.5">
+              <Label className="lp-label-mono text-lp-muted-fg pl-1">Message to Vendor</Label>
               <Textarea
                 value={negMessage}
                 onChange={(e) => setNegMessage(e.target.value)}
                 placeholder="Explain why you are requesting these changes..."
-                className="bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-blue-500/50 min-h-[100px] resize-none shadow-sm"
+                className="bg-lp-accent border-lp-border text-lp-fg focus-visible:ring-lp-primary/50 min-h-[100px] resize-none rounded-sm placeholder:text-lp-muted-fg/50"
               />
             </div>
 
             {negotiatingQuote?.negotiationHistory?.length > 0 && (
-              <div className="space-y-4 border-t border-slate-100 pt-6 bg-slate-50/50 -mx-6 px-6 shadow-inner pb-6">
-                <Label className="text-[#2F5FA7] uppercase tracking-widest text-[10px] font-bold flex items-center gap-2 mb-4">
+              <div className="space-y-3 border-t border-lp-border pt-5 bg-lp-accent -mx-6 px-6 pb-5">
+                <Label className="lp-label-mono text-lp-primary flex items-center gap-2 mb-3">
                   <History className="w-3 h-3" /> Negotiation History
                 </Label>
-                <div className="space-y-3 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2">
                   {negotiatingQuote.negotiationHistory.map((item: any, i: number) => (
-                    <div
-                      key={i}
-                      className={`p-4 rounded-xl text-xs border ${item.party === 'user' || item.party === 'customer' ? 'bg-amber-50 border-amber-100' : item.party === 'admin' ? 'bg-blue-50 border-blue-100' : 'bg-slate-100 border-slate-200'} shadow-sm`}
-                    >
-                      <div
-                        className={`flex justify-between font-bold mb-3 uppercase tracking-widest text-[10px] ${item.party === 'user' || item.party === 'customer' ? 'text-amber-600' : item.party === 'admin' ? 'text-blue-600' : 'text-[#2F5FA7]'}`}
-                      >
+                    <div key={i} className="p-3 rounded-sm text-xs border border-lp-border bg-lp-bg">
+                      <div className={`flex justify-between lp-label-mono mb-2 ${item.party === 'user' || item.party === 'customer' ? 'text-amber-600' : item.party === 'admin' ? 'text-lp-primary' : 'text-lp-fg'}`}>
                         <span>{item.party} Update</span>
-                        <span className="font-consolas text-blue-100">
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
+                        <span className="font-lp-mono text-lp-muted-fg">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                       {item.message && (
-                        <p className="italic mb-3 text-slate-600 leading-relaxed">
-                          "{item.message}"
-                        </p>
+                        <p className="italic mb-2 text-lp-muted-fg leading-relaxed">&ldquo;{item.message}&rdquo;</p>
                       )}
-                      <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest bg-white/50 p-2 rounded-md border border-slate-50">
-                        <span className="text-[#2F5FA7]">₹{item.price}</span>
-                        <span className="text-slate-300">|</span>
-                        <span className="text-[#2F5FA7]">{item.leadTime} Days</span>
+                      <div className="flex gap-3 lp-label-mono mt-2">
+                        <span className="text-lp-primary">₹{item.price}</span>
+                        <span className="text-lp-border">|</span>
+                        <span className="text-lp-primary">{item.leadTime} Days</span>
                       </div>
                     </div>
                   ))}
@@ -2000,17 +1871,17 @@ function UserDashboardContent() {
               </div>
             )}
           </div>
-          <DialogFooter className="gap-2 sm:gap-0 mt-4 border-t border-slate-50 pt-5">
+          <DialogFooter className="gap-2 sm:gap-0 mt-4 border-t border-lp-border pt-4">
             <Button
               variant="outline"
               onClick={() => setIsNegotiating(false)}
-              className="border-slate-200 text-blue-200 hover:text-slate-900 hover:bg-slate-50 uppercase tracking-widest text-[10px] font-bold"
+              className="border-lp-border text-lp-muted-fg hover:text-lp-fg hover:bg-lp-accent lp-label-mono rounded-sm"
             >
               Cancel
             </Button>
             <Button
               onClick={handleProposeNegotiation}
-              className="bg-blue-600 hover:bg-[#1E3A66] text-white tracking-widest shadow-lg transition-all border-none uppercase text-[10px] font-bold px-6 h-10"
+              className="bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 lp-label-mono rounded-sm px-6 h-10 transition-all"
             >
               Send Counter-Proposal
             </Button>
@@ -2026,17 +1897,17 @@ function UserDashboardContent() {
           if (!open) setPendingDeleteProject(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={`lp-root ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm`}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove "{pendingDeleteProject?.projectName}" and all associated
-              parts and files.
+            <AlertDialogTitle className="text-lp-fg font-medium">Delete Project?</AlertDialogTitle>
+            <AlertDialogDescription className="text-lp-muted-fg">
+              This will permanently remove &ldquo;{pendingDeleteProject?.projectName}&rdquo; and all associated parts and files.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-lp-border text-lp-muted-fg hover:bg-lp-accent hover:text-lp-fg rounded-sm">Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-lp-destructive text-lp-primary-fg hover:bg-lp-destructive/90 rounded-sm lp-label-mono"
               onClick={async () => {
                 if (!pendingDeleteProject) return;
                 const liveProject = sortedRfqs.find((order) => order.id === pendingDeleteProject.id);
@@ -2075,15 +1946,15 @@ function UserDashboardContent() {
         fileName={previewPartName}
         isConverting={isConverterLoading}
       />
-    </div>
+    </V2Shell>
   );
 }
 
 export default function UserDashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2F5FA7]"></div>
+      <div className="min-h-screen bg-lp-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lp-primary"></div>
       </div>
     }>
       <UserDashboardContent />

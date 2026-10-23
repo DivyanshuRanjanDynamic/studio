@@ -4,6 +4,7 @@ import { bracketAnalysis } from './__fixtures__/cnc-analysis';
 import { ok } from '@/utils/result';
 import { ErrorCode } from '@/utils/errors';
 import type { CncAnalysis } from '@/types/quoting';
+import { isCncPartQuote, type PartInstantQuote } from '@/models/project.model';
 
 // ═══════════════════════════════════════════════════
 // PartService.addPart — the server prices and stores wizard parts
@@ -73,6 +74,9 @@ beforeEach(() => {
   createPart.mockImplementation(async (part: unknown) => ok(part));
 });
 
+const tappedHoles = (q: PartInstantQuote | null | undefined) =>
+  q && isCncPartQuote(q) ? q.breakdown.tappedHoles : undefined;
+
 async function add(overrides: Record<string, unknown> = {}, userId = 'user_1') {
   const { PartService } = await import('@/services/part.service');
   return PartService.addPart(userId, 'proj_1', body(overrides));
@@ -104,7 +108,7 @@ describe('PartService.addPart', () => {
       unpricedProcesses: ['heat_treatment'],
       quantity: 25,
     });
-    expect(part.instantQuote?.breakdown.tappedHoles).toBe(2);
+    expect(tappedHoles(part.instantQuote)).toBe(2);
     expect(part).toMatchObject({ id: 'part_1', userId: 'user_1', projectId: 'proj_1', status: 'ready_for_quote' });
     expect(part.cadFile).toMatchObject({ fileUrl: FILE_KEY, uploadedAt: '2026-10-20T00:00:00Z' });
     expect(saveQuote).toHaveBeenCalledWith(expect.anything(), 'user_1');
@@ -139,11 +143,20 @@ describe('PartService.addPart', () => {
     expect(createPart).not.toHaveBeenCalled();
   });
 
-  it('rejects threads the part has no holes for', async () => {
+  it('prices the threads the analysed holes can take and flags the rest for an engineer', async () => {
+    // The 3D preview can list more holes than the analysis (split cylinder faces)
     const taps = Array.from({ length: 5 }, (_, i) => ({ holeIndex: i, tapType: 'M6x1.0' }));
     const result = await add({ taps });
-    expect(result.success === false && result.error.code).toBe(ErrorCode.VALIDATION_FAILED);
-    expect(result.success === false && result.error.message).toMatch(/Only 4 holes/);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.quoteStatus).toBe('instant');
+    expect(tappedHoles(result.data.instantQuote)).toBe(4);
+    expect(result.data.instantQuote?.unpricedProcesses).toEqual(['heat_treatment', 'tapping']);
+
+    // A thread whose drill fits no analysed hole is flagged, not priced
+    const wrongSize = await add({ taps: [{ holeIndex: 0, tapType: 'M12x1.75' }] });
+    expect(wrongSize.success && tappedHoles(wrongSize.data.instantQuote)).toBe(0);
+    expect(wrongSize.success && wrongSize.data.instantQuote?.unpricedProcesses).toContain('tapping');
   });
 
   it('adds non-CNC parts, and unpriceable CNC parts, for an engineer to price', async () => {

@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { LandingNav } from '@/components/LandingNav';
-import { Footer } from '@/components/Footer';
+import { V2Shell } from '@/components/V2Shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -352,12 +351,10 @@ export default function VendorOnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
-      <LandingNav />
-
-      <main className="bg-gradient-to-b from-[#7fb2ea] to-[#3f8ce1] py-5 md:py-7">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-4xl rounded-3xl border border-white/50 bg-white/90 p-4 shadow-xl backdrop-blur-sm md:p-6">
+    <V2Shell>
+      <main className="py-8 md:py-12">
+        <div className="mx-auto max-w-[1400px] px-4 sm:px-5">
+          <div className="mx-auto max-w-4xl border border-lp-border bg-lp-bg p-4 md:p-6">
 
             <Link
               href="/dashboard"
@@ -793,7 +790,6 @@ export default function VendorOnboardingPage() {
         </div>
       </main>
 
-      <Footer />
-    </div>
+    </V2Shell>
   );
 }

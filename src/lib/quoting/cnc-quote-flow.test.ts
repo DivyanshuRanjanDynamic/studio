@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateCncQuote, generateQuote, getCncTierTable, isCncQuote } from './pricing-engine';
+import { generateCncQuote, getCncTierTable, isCncQuote } from './pricing-engine';
+import { legacyLaserQuote } from './__fixtures__/legacy-laser-quote';
 import { formatCncStock } from './cnc-materials';
 import { bracketAnalysis, shaftFlatAnalysis } from './__fixtures__/cnc-analysis';
 import { cncAnalysisSchema, cncQuoteCreateSchema } from '@/lib/validation/quoting';
 import { ok } from '@/utils/result';
-import type { CncQuoteRequest, ParsedGeometry } from '@/types/quoting';
+import type { CncQuoteRequest } from '@/types/quoting';
 
 // Firestore is not available in unit tests — capture what would be saved.
 const saveQuote = vi.fn();
@@ -45,23 +46,10 @@ describe('getCncTierTable', () => {
 describe('isCncQuote / formatCncStock', () => {
   it('tells CNC quotes from laser quotes', () => {
     const cnc = generateCncQuote(bracketAnalysis, request);
-    const geometry: ParsedGeometry = {
-      cutLengthMm: 600,
-      areaMm2: 10000,
-      boundingBox: { widthMm: 100, heightMm: 100, aspectRatio: 1 },
-      holeCount: 2,
-      complexityScore: 2,
-      nodeCount: 20,
-      minFeatureSizeMm: 5,
-      minSlotWidthMm: 5,
-      edgeToHoleDistanceMm: 5,
-      hasOpenPaths: false,
-    };
-    const laser = generateQuote('ms_a36', 2, 'none', 1, 'standard_3d', geometry);
-    if (!cnc.success || !laser.success) throw new Error('fixture quotes failed');
+    if (!cnc.success) throw new Error('fixture quote failed');
 
     expect(isCncQuote(cnc.data)).toBe(true);
-    expect(isCncQuote(laser.data)).toBe(false);
+    expect(isCncQuote(legacyLaserQuote())).toBe(false);
   });
 
   it('formats block and bar stock', () => {

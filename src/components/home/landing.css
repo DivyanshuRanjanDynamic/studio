@@ -1,0 +1,309 @@
+/*
+ * Home page (landing) design system.
+ * Everything is scoped to .lp-root or prefixed `lp-` so it cannot leak into
+ * other pages once this stylesheet has been loaded by client-side navigation.
+ */
+
+.lp-root {
+  --lp-background: 99% 0.002 260;
+  --lp-foreground: 16% 0.01 265;
+  --lp-card: 95.5% 0.005 260;
+  --lp-primary: 48% 0.24 264;
+  --lp-primary-foreground: 99% 0 0;
+  --lp-muted: 95% 0.006 260;
+  --lp-muted-foreground: 50% 0.02 260;
+  --lp-accent: 92% 0.04 264;
+  --lp-border: 90% 0.008 260;
+  --lp-ink: 12% 0.005 265;
+  --lp-ink-foreground: 96% 0 0;
+  --lp-destructive: 57.7% 0.245 27.325;
+  /* Near-square corners: rounded-sm => 0, rounded-md => 2px, rounded-lg => 4px */
+  --radius: 0.25rem;
+
+  --lp-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --lp-ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  background-color: oklch(var(--lp-background));
+  color: oklch(var(--lp-foreground));
+  font-family: var(--lp-font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+:where(.lp-root) *,
+:where(.lp-root) *::before,
+:where(.lp-root) *::after {
+  border-color: oklch(var(--lp-border));
+}
+
+/* ── Type helpers ─────────────────────────────────────────────────────────── */
+
+.lp-label-mono {
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+}
+
+.lp-accent-serif {
+  font-family: var(--lp-font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: color-mix(in oklab, oklch(var(--lp-primary)) 55%, oklch(var(--lp-muted-foreground)));
+}
+
+.lp-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 2px;
+  background: oklch(var(--lp-primary));
+  color: oklch(var(--lp-primary-foreground));
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Backgrounds ──────────────────────────────────────────────────────────── */
+
+.lp-grid-bg {
+  background-image:
+    linear-gradient(color-mix(in oklab, oklch(var(--lp-primary-foreground)) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, oklch(var(--lp-primary-foreground)) 10%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.lp-hero-dots {
+  background-image: radial-gradient(color-mix(in oklab, oklch(var(--lp-foreground)) 14%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Scroll reveal ────────────────────────────────────────────────────────── */
+/* Uses the independent `translate` property so Tailwind transform utilities
+   (hover:translate-x-2, hover:-translate-y-2, …) keep working on the same node. */
+
+.lp-reveal {
+  opacity: 0;
+  filter: blur(6px);
+  translate: 0 40px;
+  transition:
+    opacity 0.9s var(--lp-ease-out),
+    translate 0.9s var(--lp-ease-out),
+    filter 0.9s,
+    transform 0.5s,
+    background-color 0.5s,
+    color 0.5s,
+    border-color 0.5s,
+    box-shadow 0.15s;
+}
+
+.lp-reveal.lp-in {
+  opacity: 1;
+  filter: none;
+  translate: none;
+}
+
+/* ── Hero intro ───────────────────────────────────────────────────────────── */
+
+.lp-hero-word {
+  display: inline-block;
+  opacity: 0;
+  animation: lp-word-up 0.9s var(--lp-ease-spring) forwards;
+}
+
+.lp-hero-part {
+  opacity: 0;
+  animation: lp-part-in 1.3s var(--lp-ease-spring) forwards;
+}
+
+.lp-hero-fade {
+  opacity: 0;
+  animation: lp-fade-up 0.9s forwards;
+}
+
+/* ── Looping motion ───────────────────────────────────────────────────────── */
+
+.lp-marquee {
+  animation: lp-marquee 40s linear infinite;
+}
+
+.lp-floaty {
+  animation: lp-floaty 5s ease-in-out infinite;
+}
+
+.lp-spin-slow {
+  animation: lp-spin-slow 18s linear infinite;
+}
+
+.lp-bar-grow {
+  transform-origin: bottom;
+  animation: lp-grow 1.4s var(--lp-ease-spring) both;
+}
+
+/* ── Material swatches ────────────────────────────────────────────────────── */
+
+.lp-sw-aluminium {
+  background:
+    repeating-linear-gradient(90deg, oklch(86% 0.005 250) 0 2px, oklch(80% 0.006 250) 2px 3px),
+    linear-gradient(135deg, oklch(92% 0.004 250), oklch(72% 0.01 250));
+  background-blend-mode: multiply;
+}
+
+.lp-sw-steel {
+  background:
+    repeating-linear-gradient(0deg, oklch(55% 0.01 250) 0 1px, oklch(50% 0.01 250) 1px 3px),
+    linear-gradient(135deg, oklch(62% 0.01 250), oklch(38% 0.01 250));
+  background-blend-mode: multiply;
+}
+
+.lp-sw-stainless {
+  background: conic-gradient(
+    oklch(90% 0.005 250),
+    oklch(65% 0.01 250),
+    oklch(95% 0.003 250),
+    oklch(70% 0.01 250),
+    oklch(90% 0.005 250)
+  );
+}
+
+.lp-sw-carbon {
+  background:
+    repeating-linear-gradient(45deg, oklch(20% 0 0) 0 6px, oklch(28% 0 0) 6px 12px),
+    repeating-linear-gradient(-45deg, oklch(20% 0 0) 0 6px, oklch(30% 0 0) 6px 12px);
+  background-blend-mode: lighten;
+}
+
+.lp-sw-acrylic {
+  background:
+    linear-gradient(135deg, oklch(85% 0.08 230 / 0.9), oklch(60% 0.15 250 / 0.7)),
+    radial-gradient(circle at 30% 30%, oklch(100% 0 0 / 0.6), transparent 50%);
+}
+
+.lp-sw-wood {
+  background: repeating-radial-gradient(
+    at 20% 120%,
+    oklch(72% 0.08 70) 0 6px,
+    oklch(64% 0.09 60) 6px 9px,
+    oklch(78% 0.07 75) 9px 14px
+  );
+}
+
+.lp-sw-print {
+  background: repeating-linear-gradient(
+    0deg,
+    oklch(var(--lp-primary)) 0 3px,
+    color-mix(in oklab, oklch(var(--lp-primary)) 70%, black) 3px 4px
+  );
+}
+
+.lp-sw-sheen {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), oklch(100% 0 0 / 0.45), transparent 45%);
+}
+
+/* Custom cursor only for precise hovering pointers */
+@media (hover: hover) and (pointer: fine) {
+  .lp-cursor-none,
+  .lp-cursor-none * {
+    cursor: none;
+  }
+}
+
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
+
+@keyframes lp-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes lp-floaty {
+  50% {
+    transform: translateY(-14px) rotate(4deg);
+  }
+}
+
+@keyframes lp-spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lp-word-up {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(60%);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+@keyframes lp-part-in {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(120%) rotate(-25deg) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+@keyframes lp-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lp-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-root *,
+  .lp-root *::before,
+  .lp-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+
+  .lp-root .lp-reveal {
+    opacity: 1;
+    filter: none;
+    translate: none;
+  }
+
+  .lp-root .lp-hero-word,
+  .lp-root .lp-hero-part,
+  .lp-root .lp-hero-fade {
+    opacity: 1;
+    animation: none !important;
+  }
+
+  .lp-root .lp-marquee {
+    animation: none !important;
+  }
+}

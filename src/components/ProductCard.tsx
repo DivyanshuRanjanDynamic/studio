@@ -3,14 +3,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Scale, Star, Truck, BadgePercent } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { ScrollReveal } from '@/components/ScrollReveal';
 
 interface ProductCardProps {
   product: any;
@@ -26,17 +23,6 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
       ? product.images.map((img: any) => (typeof img === 'string' ? img : img.urls.product))
       : ['/images/placeholder-part.svg'];
 
-  const avgRating =
-    typeof product.avgRating === 'number'
-      ? product.avgRating
-      : product.reviews?.length
-        ? Math.round(
-            (product.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) /
-              product.reviews.length) *
-              10
-          ) / 10
-        : null;
-  const reviewCount = product.reviewCount || product.reviews?.length || 0;
   const basePrice = product.basePrice || product.salePrice;
   const discount =
     basePrice > product.salePrice
@@ -94,190 +80,140 @@ export function ProductCard({ product, isComparing, toggleCompare, addItem }: Pr
 
   return (
     <div className="group h-full min-w-0">
-      <ScrollReveal variant="fade-up" className="h-full">
-        <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:shadow-[0_16px_35px_rgba(15,23,42,0.10)] sm:rounded-[28px] sm:hover:-translate-y-1 sm:hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)]">
-          <div className="relative border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white p-2.5 sm:p-4">
-            <div className="absolute left-2.5 top-2.5 z-20 flex max-w-[70%] flex-wrap gap-1.5 sm:left-4 sm:top-4 sm:max-w-[80%] sm:gap-2">
-              <Badge className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#2F5FA7] shadow-sm sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
-                {product.categoryId?.replace('-', ' ')}
-              </Badge>
-              {discount > 0 && (
-                <Badge className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700 sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
-                  <BadgePercent className="mr-1 h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                  {discount}% off
-                </Badge>
-              )}
+      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-sm border border-lp-border bg-lp-card transition duration-300 hover:border-lp-primary/30">
+        {/* Header: Category + Discount */}
+        <div className="flex items-center justify-between px-3 pt-3 sm:px-4 sm:pt-4">
+          <span className="lp-label-mono text-lp-muted-fg truncate">
+            {product.categoryId?.replace('-', ' ')}
+          </span>
+          {discount > 0 && (
+            <span className="lp-label-mono text-lp-primary">
+              -{discount}%
+            </span>
+          )}
+        </div>
+
+        {/* Product Image */}
+        <Link
+          href={`/shop/${product.id}`}
+          className="relative mx-3 mt-2 block aspect-square overflow-hidden rounded-sm bg-lp-accent/50 border border-lp-border/50 sm:mx-4 sm:mt-3"
+          onMouseEnter={() => {
+            if (productImages.length > 1) setCurrentImgIdx(1);
+          }}
+          onMouseLeave={() => setCurrentImgIdx(0)}
+        >
+          <Image
+            src={productImages[currentImgIdx] || productImages[0]}
+            alt={product.name}
+            fill
+            className={`object-contain p-4 transition duration-500 group-hover:scale-105 ${
+              isOutOfStock ? 'opacity-50 grayscale' : ''
+            }`}
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 25vw"
+            onError={(e: any) => {
+              e.target.src = '/mechhub.png';
+            }}
+          />
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="lp-label-mono bg-lp-ink text-lp-ink-fg px-3 py-1.5 rounded-sm">
+                Out of stock
+              </span>
             </div>
+          )}
+          {/* Hover overlay */}
+          {!isOutOfStock && (
+            <div className="absolute inset-0 flex items-end justify-start p-3 opacity-0 group-hover:opacity-100 transition-opacity bg-lp-ink/5">
+              <span className="lp-label-mono text-lp-primary flex items-center gap-1">
+                View details <ArrowUpRight className="w-3 h-3" />
+              </span>
+            </div>
+          )}
+        </Link>
 
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleCompare(product);
-              }}
-              className={`absolute right-2.5 top-2.5 z-20 hidden h-7 w-7 items-center justify-center rounded-full border transition sm:right-4 sm:top-4 sm:flex sm:h-10 sm:w-10 ${
-                isComparing
-                  ? 'border-[#2F5FA7] bg-blue-600 text-white'
-                  : 'border-slate-200 bg-white text-blue-200 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
-              }`}
-              aria-label="Compare component"
-            >
-              <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
+        {/* Product Info */}
+        <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+          <Link href={`/shop/${product.id}`} className="block min-w-0">
+            <h3 className="text-sm font-medium text-lp-fg leading-snug line-clamp-1 group-hover:text-lp-primary transition-colors">
+              {product.name}
+            </h3>
+            <p className="mt-0.5 text-xs text-lp-muted-fg line-clamp-1">
+              {product.specs || 'Industrial-grade component'}
+            </p>
+          </Link>
 
-            <Link
-              href={`/shop/${product.id}`}
-              className="relative mt-6 block aspect-[4/3] overflow-hidden rounded-[2rem] bg-slate-100 border border-slate-200 transition-all duration-500 group-hover:border-[#2F5FA7]/30 sm:mt-10"
-              onMouseEnter={() => {
-                if (productImages.length > 1) setCurrentImgIdx(1);
-              }}
-              onMouseLeave={() => setCurrentImgIdx(0)}
-            >
-              <Image
-                src={productImages[currentImgIdx] || productImages[0]}
-                alt={product.name}
-                fill
-                className={`object-cover transition duration-700 group-hover:scale-110 ${
-                  isOutOfStock ? 'opacity-55 grayscale' : ''
-                }`}
-                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 25vw"
-                onError={(e: any) => {
-                  e.target.src = '/mechhub.png';
-                }}
-              />
-              {isOutOfStock && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-950/35">
-                  <Badge className="rounded-full border-none bg-red-600 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                    Out of stock
-                  </Badge>
-                </div>
-              )}
-            </Link>
+          {/* Price */}
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-xl font-medium text-lp-fg tracking-tight">
+              ₹{product.salePrice?.toLocaleString('en-IN')}
+            </span>
+            {basePrice > product.salePrice && (
+              <span className="text-xs text-lp-muted-fg line-through">
+                ₹{basePrice.toLocaleString('en-IN')}
+              </span>
+            )}
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col p-2.5 sm:p-4">
-            <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3 sm:gap-3">
-              <p className="max-w-[65%] truncate rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-blue-200 sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]">
-                {product.sku}
-              </p>
-              {avgRating === null ? (
-                <p className="hidden text-[11px] font-bold text-blue-200 sm:block">No reviews yet</p>
-              ) : (
-                <div className="hidden items-center gap-1 text-[11px] font-bold text-slate-600 sm:flex">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span>{avgRating}</span>
-                  <span className="text-blue-100">({reviewCount})</span>
-                </div>
-              )}
-            </div>
+          {/* Stock + Dispatch */}
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <span className={`lp-label-mono ${
+              isOutOfStock
+                ? 'text-lp-destructive'
+                : product.inventory < 20
+                  ? 'text-amber-600'
+                  : 'text-emerald-600'
+            }`}>
+              {isOutOfStock
+                ? 'Restocking'
+                : `${product.inventory}+ ready`}
+            </span>
+          </div>
 
-            <Link href={`/shop/${product.id}`} className="block min-w-0">
-              <h3 className="line-clamp-2 min-h-[40px] break-words text-[15px] font-bold leading-5 text-slate-900 transition-colors group-hover:text-[#2F5FA7] sm:min-h-[52px] sm:text-base sm:leading-6">
-                {product.name}
-              </h3>
-              <p className="mt-1 line-clamp-2 min-h-[32px] break-words text-xs leading-4 text-slate-600 sm:mt-2 sm:min-h-[40px] sm:text-sm sm:leading-5">
-                {product.specs || 'Industrial-grade component with verified procurement support.'}
-              </p>
-            </Link>
+          <div className="mt-1.5 flex items-center gap-1.5 text-lp-muted-fg">
+            <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none"><path d="M1 10h2l1-4h8l1 4h2M4 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" strokeWidth="1.2"/></svg>
+            <span className="lp-label-mono">
+              {isOutOfStock ? 'Restock in progress' : 'Dispatch in 24-48 hrs'}
+            </span>
+          </div>
 
-            <div className="mt-3 flex items-end justify-between gap-2 sm:mt-4 sm:gap-3">
-              <div className="min-w-0">
-                <div className="flex items-baseline gap-1 sm:gap-2">
-                  <span className="text-2xl font-black leading-none tracking-tight text-slate-950 sm:text-3xl">
-                    ₹{product.salePrice?.toLocaleString('en-IN')}
-                  </span>
-                  {basePrice > product.salePrice && (
-                    <span className="text-xs font-semibold text-blue-100 line-through sm:text-sm">
-                      ₹{basePrice.toLocaleString('en-IN')}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 sm:mt-1 sm:text-xs">
-                  {discount > 0 ? `You save ₹${(basePrice - product.salePrice).toLocaleString('en-IN')}` : 'Best listed price'}
-                </p>
-              </div>
-              <div className="hidden text-right sm:block">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">
-                  Stock
-                </p>
-                <p
-                  className={`mt-1 text-sm font-bold ${
-                    isOutOfStock
-                      ? 'text-red-600'
-                      : product.inventory < 20
-                        ? 'text-amber-600'
-                        : 'text-emerald-700'
-                  }`}
-                >
-                  {isOutOfStock
-                    ? 'Unavailable'
-                    : product.inventory < 20
-                      ? `${product.inventory} left`
-                      : `${product.inventory}+ ready`}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-3 hidden rounded-2xl bg-slate-50 px-3 py-3 sm:mt-4 sm:block">
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Truck className="h-4 w-4 text-[#2F5FA7]" />
-                  <span className="font-semibold">Delivery</span>
-                </div>
-                <span className="text-right text-sm font-bold text-slate-900">
-                  {isOutOfStock ? 'Restock in progress' : 'Dispatch in 24-48 hrs'}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-3 flex gap-2 sm:mt-4 sm:gap-3">
-              <Button
-                asChild
-                variant="outline"
-                className="hidden h-11 min-w-0 flex-1 rounded-2xl border-slate-200 bg-white px-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700 hover:bg-slate-50 sm:flex"
+          {/* CTA */}
+          <div className="mt-3 sm:mt-4">
+            {isOutOfStock ? (
+              <button
+                className="w-full h-10 rounded-sm border border-lp-border lp-label-mono text-lp-fg hover:bg-lp-accent transition-colors flex items-center justify-center gap-1.5"
+                onClick={handleRestockRequest}
+                disabled={isRequesting || hasRequested}
               >
-                <Link href={`/shop/${product.id}`}>
-                  View details
-                </Link>
-              </Button>
-
-              {isOutOfStock ? (
-                <Button
-                  className="h-9 min-w-0 w-full rounded-xl bg-blue-600 px-2 text-[10px] font-black uppercase tracking-[0.1em] text-white hover:bg-[#254b86] sm:h-11 sm:flex-1 sm:rounded-2xl sm:px-3 sm:text-[11px] sm:tracking-[0.14em]"
-                  onClick={handleRestockRequest}
-                  disabled={isRequesting || hasRequested}
-                >
-                  {isRequesting ? 'Sending...' : hasRequested ? 'Requested' : 'Notify me'}
-                </Button>
-              ) : (
-                <Button
-                  className="h-9 w-full rounded-xl bg-[#FFD814] px-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-900 hover:bg-[#f7ca00] sm:h-11 sm:flex-1 sm:rounded-2xl sm:px-3 sm:text-xs sm:tracking-[0.18em]"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    addItem({
-                      id: product.id,
-                      name: product.name,
-                      salePrice: product.salePrice,
-                      basePrice,
-                      sku: product.sku,
-                      image: productImages[0],
-                      inventory: product.inventory,
-                      quantity: 1,
-                    });
-                    toast({
-                      title: 'Added to cart',
-                      description: `${product.name} is ready in your procurement list.`,
-                    });
-                  }}
-                >
-                  <span className="sm:hidden">Add</span>
-                  <span className="hidden sm:inline">Add to cart</span>
-                </Button>
-              )}
-            </div>
+                {isRequesting ? 'Sending...' : hasRequested ? 'Requested' : 'Notify me'}
+                <ArrowUpRight className="w-3 h-3" />
+              </button>
+            ) : (
+              <button
+                className="w-full h-10 rounded-sm bg-lp-primary text-lp-primary-fg lp-label-mono hover:bg-lp-primary/90 transition-colors flex items-center justify-center gap-1.5 active:scale-[0.98]"
+                onClick={(e) => {
+                  e.preventDefault();
+                  addItem({
+                    id: product.id,
+                    name: product.name,
+                    salePrice: product.salePrice,
+                    basePrice,
+                    sku: product.sku,
+                    image: productImages[0],
+                    inventory: product.inventory,
+                    quantity: 1,
+                  });
+                  toast({
+                    title: 'Added to cart',
+                    description: `${product.name} is ready in your procurement list.`,
+                  });
+                }}
+              >
+                + Add to cart
+              </button>
+            )}
           </div>
         </div>
-      </ScrollReveal>
+      </div>
     </div>
   );
 }

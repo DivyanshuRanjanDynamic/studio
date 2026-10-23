@@ -14,22 +14,25 @@ interface ServiceOption {
   popular?: boolean;
 }
 
-const SERVICES: ServiceOption[] = [
+const SERVICES: (ServiceOption & { description: string })[] = [
   {
     id: 'cnc_machining',
-    name: 'CNC Milling/Turning',
+    name: 'CNC Milling / Turning',
+    description: 'Tight tolerances, metal & plastic',
     icon: <Cog className="w-6 h-6" />,
     popular: true,
   },
   {
     id: 'sheet_metal_cutting',
     name: 'Sheet Metal Cutting',
+    description: 'Laser cut, bent & formed',
     icon: <Flame className="w-6 h-6" />,
     popular: true,
   },
   {
     id: '3d_printing',
     name: '3D Printing',
+    description: 'FDM / SLA rapid prototypes',
     icon: <Box className="w-6 h-6" />,
   },
 ];
@@ -51,28 +54,29 @@ export function ServiceSelection({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-bold uppercase tracking-wide text-slate-900 mb-2">
-          Part Configuration
+      <div className="mb-6">
+        <h3 className="text-2xl text-lp-fg mb-1">
+          Part <span className="font-lp-serif italic text-lp-primary">configuration</span>
         </h3>
-        <p className="text-xs uppercase tracking-widest font-bold text-blue-200">
-          Name your part and select manufacturing service
+        <p className="lp-label-mono text-lp-muted-fg">
+          Name your part and pick a service
         </p>
       </div>
 
-      <div className="space-y-2 mb-8 p-4 bg-blue-50/50 rounded-xl border border-blue-100/50">
+      <div className="space-y-2 mb-8 p-4 bg-lp-accent rounded-sm border border-lp-border">
         <Label
           htmlFor="partName"
-          className="text-[10px] uppercase text-[#2F5FA7] font-bold tracking-widest"
+          className="lp-label-mono text-lp-primary flex items-center gap-1.5"
         >
+          <CircleDot className="w-3.5 h-3.5" />
           Part Name
         </Label>
         <Input
           id="partName"
           value={partName}
           onChange={(e) => onPartNameChange(e.target.value)}
-          placeholder="e.g., Support Bracket - V2"
-          className="h-11 border-slate-200 bg-white text-sm uppercase tracking-wider font-bold text-slate-900 placeholder:font-normal placeholder:normal-case"
+          placeholder="e.g. Support Bracket – V2"
+          className="h-11 border-lp-border bg-lp-card text-sm text-lp-fg placeholder:text-lp-muted-fg"
           aria-invalid={showPartNameError}
           autoFocus
         />
@@ -81,50 +85,45 @@ export function ServiceSelection({
             Part name must include at least one letter (not only numbers).
           </p>
         )}
-        <p className="text-[9px] text-blue-100 uppercase tracking-wider font-bold">
-          Give this component a descriptive name for your quote
-        </p>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
-          <Label className="text-[10px] uppercase text-blue-100 font-bold tracking-widest">
-            Select Manufacturing Service
+          <Label className="lp-label-mono text-lp-muted-fg">
+            Manufacturing Service
           </Label>
         </div>
-        <div className="grid grid-cols-1 gap-4">
-          {SERVICES.map((service) => (
+        <div className="grid grid-cols-1 gap-3">
+          {SERVICES.map((service, idx) => (
             <Card
               key={service.id}
-              className={`cursor-pointer transition-all duration-300 overflow-hidden relative group ${selectedService === service.id
-                  ? 'bg-blue-50 border-[#2F5FA7] shadow-[0_10px_30px_rgba(47,95,167,0.15)] ring-1 ring-[#2F5FA7]/20'
-                  : 'bg-white border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+              className={`cursor-pointer transition-all duration-300 overflow-hidden relative group rounded-sm ${selectedService === service.id
+                  ? 'bg-lp-accent border-lp-primary shadow-sm ring-1 ring-lp-primary/20'
+                  : 'bg-lp-card border-lp-border hover:border-lp-primary/40 hover:bg-lp-accent'
                 }`}
               onClick={() => onSelect(service.id)}
             >
               <div className="p-5">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-lp-mono text-lp-muted-fg">{String(idx + 1).padStart(2, '0')}.</span>
                   <div
-                    className={`w-5 h-6 rounded-xl flex items-center justify-center border shadow-sm transition-colors ${selectedService === service.id
-                        ? 'bg-blue-600 text-white border-[#2F5FA7]'
-                        : 'bg-slate-50 text-[#2F5FA7] border-slate-100 group-hover:bg-blue-50'
+                    className={`w-10 h-10 rounded-sm flex items-center justify-center transition-colors ${selectedService === service.id
+                        ? 'text-lp-primary'
+                        : 'text-lp-muted-fg group-hover:text-lp-primary'
                       }`}
                   >
                     {service.icon}
                   </div>
-                  <div className="flex-1 min-w-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold  text-slate-900 uppercase tracking-wide text-sm justify-center items-center">
-                        {service.name}
-                      </p>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-lp-fg text-sm">
+                      {service.name}
+                    </p>
+                    <p className="text-xs text-lp-muted-fg mt-0.5">
+                      {service.description}
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {selectedService === service.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600" />
-              )}
             </Card>
           ))}
         </div>

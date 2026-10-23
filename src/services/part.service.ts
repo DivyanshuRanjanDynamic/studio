@@ -2,8 +2,19 @@ import { z } from 'zod';
 import { ProjectRepository } from '@/repositories/project.repository';
 import { FileAccessRepository } from '@/repositories/file-access.repository';
 import { PartRepository } from '@/repositories/part.repository';
-import { QuotingService } from '@/services/quoting.service';
-import { buildCncQuoteRequest } from '@/lib/quoting/wizard-pricing';
+import { QuotingService, issueQuoteRef } from '@/services/quoting.service';
+import { PartAnalysisService } from '@/services/part-analysis.service';
+import {
+  buildCncQuoteRequest,
+  buildPrintQuoteRequest,
+  buildSheetQuoteRequest,
+  fitSheetRequestToAnalysis,
+} from '@/lib/quoting/wizard-pricing';
+import { wizardQuoteKind } from '@/lib/quoting/wizard-quote';
+import { generateSheetQuote } from '@/lib/quoting/sheet-metal';
+import { generatePrintQuote } from '@/lib/quoting/printing';
+import { PricingCalibrationRepository } from '@/repositories/pricing-calibration.repository';
+import { calibrateQuote, resolveMultiplier } from '@/lib/quoting/pricing-calibration';
 import { formatCncStock } from '@/lib/quoting/cnc-materials';
 import { isPartNameValid } from '@/lib/validation/part-name';
 import type { MechanicalPart, PartInstantQuote } from '@/models/project.model';
@@ -73,13 +84,112 @@ export type AddPartInput = z.infer<typeof addPartSchema>;
 const forbidden = (message: string) =>
   new AppError({ code: ErrorCode.FORBIDDEN, message, statusCode: 403 });
 
-async function priceCncPart(
-  userId: string,
-  input: AddPartInput
-): Promise<Result<{ quote: PartInstantQuote | null; note?: string }, AppError>> {
-  if (input.service !== 'cnc_machining' && input.service !== 'cnc_turning') {
-    return ok({ quote: null, note: 'Our engineers price this service when you send the RFQ.' });
+type PricedPart = { quote: PartInstantQuote | null; note?: string };
+
+const engineerNote = (message: string) =>
+  /engineer/i.test(message) ? message : `${message} — an engineer will price this part.`;
+
+const dfmSnapshot = (issues: ReadonlyArray<{ code: string; message: string; blocking: boolean }>) =>
+  issues.map((i) => ({ code: i.code, message: i.message, blocking: i.blocking }));
+
+/** The stored instant price for any service with an instant-quote engine */
+async function pricePart(userId: string, input: AddPartInput): Promise<Result<PricedPart, AppError>> {
+  const kind = wizardQuoteKind(input.service);
+  if (kind === 'cnc') return priceCncPart(userId, input);
+  if (kind === 'sheet') return priceSheetPart(userId, input);
+  if (kind === 'print') return pricePrintPart(userId, input);
+  return ok({ quote: null, note: 'Our engineers price this service when you send the RFQ.' });
+}
+
+async function priceSheetPart(userId: string, input: AddPartInput): Promise<Result<PricedPart, AppError>> {
+  if (!input.analysisId) {
+    return ok({ quote: null, note: 'Sheet metal analysis was not available, so an engineer will price this part.' });
   }
+  const built = buildSheetQuoteRequest({
+    materialId: input.material.id,
+    thicknessMm: input.material.thickness,
+    secondaryProcesses: input.secondaryProcesses,
+    coatingColor: input.coatingColor as never,
+    taps: input.taps,
+    quantity: input.quantity,
+  });
+  if (!built.priceable) return ok({ quote: null, note: built.reason });
+
+  const analysis = await PartAnalysisService.getOwnedSheetAnalysis(userId, input.analysisId);
+  if (!analysis.success) return err(analysis.error);
+
+  const { request, unpriced } = fitSheetRequestToAnalysis(analysis.data, built.request, built.unpriced);
+  const calibration = await PricingCalibrationRepository.getConfig();
+  const priced = generateSheetQuote(analysis.data, request, calibration.shopLoad);
+  if (!priced.success) return ok({ quote: null, note: engineerNote(priced.error.message) });
+
+  const q = calibrateQuote(priced.data, resolveMultiplier(calibration, 'sheet', request.materialId));
+  return ok({
+    quote: {
+      kind: 'sheet',
+      quoteRef: issueQuoteRef(),
+      analysisId: input.analysisId,
+      currency: 'INR',
+      pricePerPart: q.pricePerPart,
+      totalPrice: q.totalPrice,
+      quantity: input.quantity,
+      leadTimeDays: q.leadTimeDays,
+      materialId: request.materialId,
+      finishType: request.finishType,
+      thicknessMm: request.thicknessMm,
+      breakdown: q.breakdown,
+      hasBlockingIssues: q.hasBlockingIssues,
+      dfmIssues: dfmSnapshot(q.dfmIssues),
+      unpricedProcesses: unpriced,
+      pricedAt: new Date().toISOString(),
+      expiresAt: q.expiresAt,
+    },
+  });
+}
+
+async function pricePrintPart(userId: string, input: AddPartInput): Promise<Result<PricedPart, AppError>> {
+  if (!input.analysisId) {
+    return ok({ quote: null, note: '3D print analysis was not available, so an engineer will price this part.' });
+  }
+  const built = buildPrintQuoteRequest({
+    materialId: input.material.id,
+    secondaryProcesses: input.secondaryProcesses,
+    coatingColor: input.coatingColor as never,
+    quantity: input.quantity,
+  });
+  if (!built.priceable) return ok({ quote: null, note: built.reason });
+
+  const analysis = await PartAnalysisService.getOwnedPrintAnalysis(userId, input.analysisId);
+  if (!analysis.success) return err(analysis.error);
+
+  const calibration = await PricingCalibrationRepository.getConfig();
+  const priced = generatePrintQuote(analysis.data, built.request, calibration.shopLoad);
+  if (!priced.success) return ok({ quote: null, note: engineerNote(priced.error.message) });
+
+  const q = calibrateQuote(priced.data, resolveMultiplier(calibration, 'print', built.request.materialId));
+  return ok({
+    quote: {
+      kind: 'print',
+      quoteRef: issueQuoteRef(),
+      analysisId: input.analysisId,
+      currency: 'INR',
+      pricePerPart: q.pricePerPart,
+      totalPrice: q.totalPrice,
+      quantity: input.quantity,
+      leadTimeDays: q.leadTimeDays,
+      materialId: built.request.materialId,
+      finishType: built.request.finishType,
+      breakdown: q.breakdown,
+      hasBlockingIssues: q.hasBlockingIssues,
+      dfmIssues: dfmSnapshot(q.dfmIssues),
+      unpricedProcesses: built.unpriced,
+      pricedAt: new Date().toISOString(),
+      expiresAt: q.expiresAt,
+    },
+  });
+}
+
+async function priceCncPart(userId: string, input: AddPartInput): Promise<Result<PricedPart, AppError>> {
   if (!input.analysisId) {
     return ok({ quote: null, note: 'CNC analysis was not available, so an engineer will price this part.' });
   }
@@ -93,7 +203,9 @@ async function priceCncPart(
   });
   if (!pricing.priceable) return ok({ quote: null, note: pricing.reason });
 
-  const priced = await QuotingService.processStoredCncQuoteRequest(input.analysisId, pricing.request, userId);
+  const priced = await QuotingService.processStoredCncQuoteRequest(input.analysisId, pricing.request, userId, {
+    fitTaps: true,
+  });
   if (!priced.success) {
     // Missing/foreign analysis is a client error; geometry the engine can't price
     // (e.g. no standard stock) falls back to an engineer's quote.
@@ -106,6 +218,13 @@ async function priceCncPart(
   }
 
   const q = priced.data;
+  // Threads the analysed holes couldn't take were left out of the price — flag them.
+  const holesWanted = (pricing.request.taps ?? []).reduce((n, t) => n + t.count, 0);
+  const holesPriced = (q.parameters.taps ?? []).reduce((n, t) => n + t.count, 0);
+  const unpriced =
+    holesPriced < holesWanted && !pricing.unpriced.includes('tapping')
+      ? [...pricing.unpriced, 'tapping' as const]
+      : pricing.unpriced;
   return ok({
     quote: {
       quoteRef: q.quoteRef,
@@ -122,7 +241,7 @@ async function priceCncPart(
       stock: formatCncStock(q.analysis.stock),
       hasBlockingIssues: q.hasBlockingIssues,
       dfmIssues: q.dfmIssues.map((i) => ({ code: i.code, message: i.message, blocking: i.blocking })),
-      unpricedProcesses: pricing.unpriced,
+      unpricedProcesses: unpriced,
       pricedAt: new Date().toISOString(),
       expiresAt: q.expiresAt,
     },
@@ -156,8 +275,8 @@ export const PartService = {
       return err(forbidden('You can only add files you uploaded.'));
     }
 
-    // 3. Instant price (CNC) from the stored analysis
-    const priced = await priceCncPart(userId, input);
+    // 3. Instant price (CNC, sheet metal, FDM) from the stored analysis
+    const priced = await pricePart(userId, input);
     if (!priced.success) return err(priced.error);
 
     const nowIso = new Date().toISOString();

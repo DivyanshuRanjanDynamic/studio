@@ -17,7 +17,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LandingNav } from '@/components/LandingNav';
+import '@/components/home/landing.css';
+import { landingFontVars } from '@/components/home/fonts';
+import { cn } from '@/utils';
 import { Loader2, UserPlus, LogIn, ShieldCheck, Factory, User as UserIcon, Clock, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -497,63 +499,57 @@ function LoginPageContent() {
 
   if (isUserLoading || (user && !verificationState && !isPendingReview)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <Loader2 className="w-10 h-10 animate-spin text-[#2F5FA7]" />
+      <div className={cn('lp-root min-h-screen flex items-center justify-center', landingFontVars)}>
+        <Loader2 className="w-10 h-10 animate-spin text-lp-primary" />
       </div>
     );
   }
 
   if (verificationState) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-12">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
-        
-        {/* Back Button */}
+      <div className={cn('lp-root min-h-screen lp-hero-dots relative flex flex-col pt-12', landingFontVars)}>
         <div className="absolute top-8 left-8 z-50">
-          <Link 
-            href="/" 
-            className="flex items-center gap-2 text-blue-100 hover:text-[#2F5FA7] transition-colors group"
-          >
-            <div className="w-10 h-10 rounded-full border border-slate-100 bg-white flex items-center justify-center shadow-sm group-hover:border-blue-100 group-hover:shadow-md transition-all">
-              <ArrowLeft className="w-5 h-5" />
+          <Link href="/" className="lp-label-mono flex items-center gap-2 text-lp-muted-fg hover:text-lp-primary transition-colors group">
+            <div className="flex size-10 items-center justify-center border border-lp-border bg-lp-bg">
+              <ArrowLeft className="size-5" />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">Back to Hub</span>
+            Back to Hub
           </Link>
         </div>
         <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-          <Card className="w-full max-w-md bg-white border-slate-100 shadow-xl relative overflow-hidden text-center p-8 rounded-[2rem]">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
-            <div className="mx-auto w-16 h-16 bg-blue-50 border border-blue-100 flex items-center justify-center rounded-full mb-6 relative">
-              <ShieldCheck className="w-8 h-8 text-[#2F5FA7] relative z-10" />
+          <div className="w-full max-w-md border border-lp-border bg-lp-bg text-center p-8">
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
+            <div className="mx-auto flex size-16 items-center justify-center bg-lp-accent text-lp-primary mb-6">
+              <ShieldCheck className="size-8" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Check Your Inbox</h2>
-            <p className="text-blue-200 mb-8 font-medium leading-relaxed">
-              We've sent a verification link to{' '}
-              <strong className="text-[#2F5FA7]">{verificationState.email}</strong>.
+            <h2 className="text-2xl font-medium tracking-tight">Check Your Inbox</h2>
+            <p className="mt-2 text-sm text-lp-muted-fg">
+              We&apos;ve sent a verification link to{' '}
+              <strong className="text-lp-primary">{verificationState.email}</strong>.
             </p>
-            <div className="space-y-4">
+            <div className="mt-8 space-y-3">
               <Button
                 onClick={async () => {
                   await signOut(auth);
                   await fetch('/api/v1/auth/session', { method: 'DELETE' });
                   setVerificationState(null);
                 }}
-                className="w-full h-12 font-bold variant-outline border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full transition-all"
+                className="lp-label-mono w-full h-12 bg-lp-bg border border-lp-border text-lp-fg hover:bg-lp-accent rounded-sm"
               >
                 Back to Sign In
               </Button>
               <Button
                 onClick={handleResend}
                 disabled={resendCooldown > 0}
-                className="w-full h-12 font-bold gap-2 text-[#2F5FA7]"
                 variant="ghost"
+                className="lp-label-mono w-full h-12 text-lp-primary rounded-sm"
               >
                 {resendCooldown > 0
                   ? `Resend available in ${resendCooldown}s`
                   : 'Resend Verification Email'}
               </Button>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     );
@@ -561,65 +557,57 @@ function LoginPageContent() {
 
   if (isPendingReview) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 relative overflow-hidden flex flex-col pt-12">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-        
-        {/* Back Button */}
+      <div className={cn('lp-root min-h-screen lp-hero-dots relative flex flex-col pt-12', landingFontVars)}>
         <div className="absolute top-8 left-8 z-50">
-          <Link 
-            href="/" 
-            className="flex items-center gap-2 text-blue-100 hover:text-[#2F5FA7] transition-colors group"
-          >
-            <div className="w-10 h-10 rounded-full border border-slate-100 bg-white flex items-center justify-center shadow-sm group-hover:border-blue-100 group-hover:shadow-md transition-all">
-              <ArrowLeft className="w-5 h-5" />
+          <Link href="/" className="lp-label-mono flex items-center gap-2 text-lp-muted-fg hover:text-lp-primary transition-colors group">
+            <div className="flex size-10 items-center justify-center border border-lp-border bg-lp-bg">
+              <ArrowLeft className="size-5" />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">Back to Hub</span>
+            Back to Hub
           </Link>
         </div>
         <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-          <Card className="w-full max-w-md bg-white/70 backdrop-blur-xl border-white/40 shadow-2xl relative overflow-hidden text-center p-10 rounded-[2.5rem]">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 to-amber-600" />
+          <div className="w-full max-w-md border border-lp-border bg-lp-bg text-center p-10 relative">
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-amber-500" />
 
-            <div className="mx-auto w-20 h-20 bg-amber-50/50 border border-amber-100 flex items-center justify-center rounded-3xl mb-8 relative transform hover:rotate-6 transition-transform">
-              <Clock className="w-10 h-10 text-amber-500 relative z-10 drop-shadow-sm" />
-              <div className="absolute inset-0 bg-amber-200/20 blur-xl rounded-full" />
+            <div className="mx-auto flex size-20 items-center justify-center bg-amber-50 text-amber-500 mb-8">
+              <Clock className="size-10" />
             </div>
 
-            <h2 className="text-3xl font-black text-[#1E3A66] mb-3 tracking-tight">Review in Progress</h2>
+            <h2 className="text-3xl font-medium tracking-tight">Review in Progress</h2>
 
-            <p className="text-sm text-blue-200 mb-8 leading-relaxed px-2">
-              Our engineering team is currently verifying <strong className="text-[#2F5FA7]">{isPendingReview.name}&apos;s</strong> manufacturing capabilities. We maintain high standards to ensure quality across the network.
+            <p className="mt-3 text-sm text-lp-muted-fg leading-relaxed px-2">
+              Our engineering team is currently verifying <strong className="text-lp-primary">{isPendingReview.name}&apos;s</strong> manufacturing capabilities. We maintain high standards to ensure quality across the network.
             </p>
 
-            <div className="space-y-4 text-left border-y border-slate-100 py-8 mb-8">
-              <div className="flex gap-4 group">
+            <div className="mt-8 mb-8 space-y-4 text-left border-y border-lp-border py-8">
+              <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center relative z-10">
-                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  <div className="flex size-6 items-center justify-center bg-emerald-500 text-white rounded-full">
+                    <CheckCircle2 className="size-4" />
                   </div>
                   <div className="w-0.5 h-10 bg-emerald-100 mt-1" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
                     Profile Received
-                    <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-black uppercase tracking-widest">Done</span>
+                    <span className="lp-label-mono bg-emerald-50 text-emerald-600 px-2 py-0.5">Done</span>
                   </p>
-                  <p className="text-xs text-blue-200 font-medium">Your application for {isPendingReview.email} is safe with us.</p>
+                  <p className="text-xs text-lp-muted-fg">Your application for {isPendingReview.email} is safe with us.</p>
                 </div>
               </div>
-
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full bg-amber-100 border-2 border-amber-200 flex items-center justify-center relative z-10 animate-pulse">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                  <div className="flex size-6 items-center justify-center bg-amber-100 border-2 border-amber-200 rounded-full animate-pulse">
+                    <div className="size-2 bg-amber-500 rounded-full" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
                     Engineering Audit
-                    <span className="text-[10px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full font-black uppercase tracking-widest animate-pulse">Live</span>
+                    <span className="lp-label-mono bg-amber-50 text-amber-600 px-2 py-0.5 animate-pulse">Live</span>
                   </p>
-                  <p className="text-xs text-blue-200 font-medium">Verifying workshop precision and bandwidth.</p>
+                  <p className="text-xs text-lp-muted-fg">Verifying workshop precision and bandwidth.</p>
                 </div>
               </div>
             </div>
@@ -631,51 +619,36 @@ function LoginPageContent() {
                 setIsPendingReview(null);
               }}
               variant="outline"
-              className="w-full h-12 font-black uppercase tracking-[0.15em] text-[11px] border-slate-200 hover:bg-slate-50 text-blue-200 rounded-full transition-all active:scale-[0.98]"
+              className="lp-label-mono w-full h-12 border-lp-border text-lp-muted-fg hover:bg-lp-accent rounded-sm active:scale-[0.98]"
             >
               Securely Logout & Exit
             </Button>
-
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 overflow-hidden">
-                    <div className="w-full h-full bg-slate-200" />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Joined by 12 partners today</p>
-            </div>
-          </Card>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 relative flex flex-col">
-      {/* Back Button */}
+    <div className={cn('lp-root min-h-screen relative flex flex-col', landingFontVars)}>
       <div className="absolute top-8 left-8 z-50">
-        <Link 
-          href="/" 
-          className="flex items-center gap-2 text-blue-100 hover:text-[#2F5FA7] transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-full border border-slate-100 bg-white flex items-center justify-center shadow-sm group-hover:border-blue-100 group-hover:shadow-md transition-all">
-            <ArrowLeft className="w-5 h-5" />
+        <Link href="/" className="lp-label-mono flex items-center gap-2 text-lp-muted-fg hover:text-lp-primary transition-colors group">
+          <div className="flex size-10 items-center justify-center border border-lp-border bg-lp-bg">
+            <ArrowLeft className="size-5" />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest font-sans">Exit to Hub</span>
+          Exit to Hub
         </Link>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row">
         <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
-          <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="w-full max-w-md space-y-8">
             <div className="flex flex-col items-center gap-4 mb-2 lg:hidden">
               <div className="text-center space-y-2">
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+                <h1 className="text-3xl font-medium tracking-tight">
                   {loginRole === 'vendor' ? 'MechMaster Access' : 'Secure Access'}
                 </h1>
-                <p className="text-xs text-blue-200 font-bold uppercase tracking-widest leading-relaxed">
+                <p className="text-xs text-lp-muted-fg leading-relaxed">
                   {loginRole === 'vendor'
                     ? 'Connect your factory to our managed supply chain.'
                     : 'The precision manufacturing portal for innovators.'}
@@ -684,19 +657,19 @@ function LoginPageContent() {
             </div>
 
             {/* Role Toggle */}
-            <div className="mb-6 p-1 bg-slate-100/80 rounded-2xl flex relative max-w-[280px] mx-auto border border-slate-200">
+            <div className="mb-6 p-1 bg-lp-accent flex relative max-w-[280px] mx-auto border border-lp-border">
               <button
                 onClick={() => setLoginRole('customer')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all relative z-10 ${loginRole === 'customer' ? 'text-[#2F5FA7] bg-white shadow-sm' : 'text-blue-100 hover:text-slate-600'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 lp-label-mono transition-all relative z-10 ${loginRole === 'customer' ? 'text-lp-primary bg-lp-bg' : 'text-lp-muted-fg hover:text-lp-fg'}`}
               >
-                <UserIcon className="w-3.5 h-3.5" />
+                <UserIcon className="size-3.5" />
                 Customers
               </button>
               <button
                 onClick={() => setLoginRole('vendor')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all relative z-10 ${loginRole === 'vendor' ? 'text-[#2F5FA7] bg-white shadow-sm' : 'text-blue-100 hover:text-slate-600'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 lp-label-mono transition-all relative z-10 ${loginRole === 'vendor' ? 'text-lp-primary bg-lp-bg' : 'text-lp-muted-fg hover:text-lp-fg'}`}
               >
-                <Factory className="w-3.5 h-3.5" />
+                <Factory className="size-3.5" />
                 Vendors
               </button>
             </div>
@@ -705,16 +678,16 @@ function LoginPageContent() {
               defaultValue={searchParams.get('tab') === 'login' ? 'login' : 'register'}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100 border border-slate-200 p-1 rounded-2xl">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-lp-accent border border-lp-border p-1">
                 <TabsTrigger
                   value="register"
-                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-blue-200 uppercase tracking-widest text-[10px]"
+                  className="lp-label-mono data-[state=active]:bg-lp-bg data-[state=active]:text-lp-primary transition-all text-lp-muted-fg rounded-sm"
                 >
                   {loginRole === 'vendor' ? 'Join Portal' : 'Register'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="login"
-                  className="data-[state=active]:bg-white data-[state=active]:text-[#2F5FA7] data-[state=active]:shadow-sm font-bold rounded-xl transition-all text-blue-200 uppercase tracking-widest text-[10px]"
+                  className="lp-label-mono data-[state=active]:bg-lp-bg data-[state=active]:text-lp-primary transition-all text-lp-muted-fg rounded-sm"
                 >
                   Sign In
                 </TabsTrigger>
@@ -722,13 +695,13 @@ function LoginPageContent() {
 
               <TabsContent value="login">
                 {isForgotPassword ? (
-                  <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
+                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
                     <CardHeader>
-                      <CardTitle className="text-2xl font-bold text-slate-900">
+                      <CardTitle className="text-2xl font-medium tracking-tight">
                         Reset Password
                       </CardTitle>
-                      <CardDescription className="text-blue-200 font-medium leading-relaxed">
+                      <CardDescription className="text-lp-muted-fg leading-relaxed">
                         {resetEmailSent
                           ? 'Check your email for a reset link.'
                           : `Enter your ${loginRole === 'vendor' ? 'registered' : 'verified'} email to receive a recovery link.`}
@@ -738,10 +711,7 @@ function LoginPageContent() {
                       <form onSubmit={handleForgotPassword}>
                         <CardContent className="space-y-4">
                           <div className="space-y-2">
-                            <Label
-                              htmlFor="reset-email"
-                              className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                            >
+                            <Label htmlFor="reset-email" className="lp-label-mono text-lp-primary">
                               Work Email
                             </Label>
                             <Input
@@ -749,7 +719,7 @@ function LoginPageContent() {
                               name="email"
                               type="email"
                               placeholder="engineering@company.com"
-                              className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-blue-100 h-11 px-4 rounded-xl"
+                              className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
                               required
                             />
                           </div>
@@ -757,16 +727,16 @@ function LoginPageContent() {
                         <CardFooter className="flex flex-col gap-4">
                           <Button
                             type="submit"
-                            className="w-full h-12 font-bold bg-blue-600 hover:bg-[#1E3A66] text-white rounded-full shadow-lg shadow-blue-900/10 transition-all font-sans"
+                            className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
                             disabled={loading}
                           >
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                             Send Reset Link
                           </Button>
                           <Button
                             variant="ghost"
                             type="button"
-                            className="w-full text-blue-200 hover:text-[#2F5FA7] hover:bg-blue-50/50"
+                            className="w-full text-lp-muted-fg hover:text-lp-primary hover:bg-lp-accent rounded-sm"
                             onClick={() => setIsForgotPassword(false)}
                             disabled={loading}
                           >
@@ -779,7 +749,7 @@ function LoginPageContent() {
                         <Button
                           variant="outline"
                           type="button"
-                          className="w-full border-slate-200 hover:bg-slate-50 text-slate-700"
+                          className="w-full border-lp-border hover:bg-lp-accent text-lp-fg rounded-sm"
                           onClick={() => {
                             setIsForgotPassword(false);
                             setResetEmailSent(false);
@@ -791,13 +761,13 @@ function LoginPageContent() {
                     )}
                   </Card>
                 ) : (
-                  <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
+                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
                     <CardHeader>
-                      <CardTitle className="text-2xl font-bold text-slate-900">
+                      <CardTitle className="text-2xl font-medium tracking-tight">
                         {loginRole === 'vendor' ? 'Vendor Portal' : 'Customer Portal'}
                       </CardTitle>
-                      <CardDescription className="text-blue-200 font-medium leading-relaxed">
+                      <CardDescription className="text-lp-muted-fg leading-relaxed">
                         {loginRole === 'vendor'
                           ? 'Access your workshop orders and quoting tools.'
                           : 'The precision manufacturing portal for innovators.'}
@@ -806,10 +776,7 @@ function LoginPageContent() {
                     <form onSubmit={handleSignIn}>
                       <CardContent className="space-y-4">
                         <div className="space-y-2">
-                          <Label
-                            htmlFor="email"
-                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                          >
+                          <Label htmlFor="email" className="lp-label-mono text-lp-primary">
                             Work Email
                           </Label>
                           <Input
@@ -817,22 +784,19 @@ function LoginPageContent() {
                             name="email"
                             type="email"
                             placeholder="engineering@company.com"
-                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-blue-100 h-11 px-4 rounded-xl"
+                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
                             required
                           />
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Label
-                              htmlFor="password"
-                              className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                            >
+                            <Label htmlFor="password" className="lp-label-mono text-lp-primary">
                               Security Password
                             </Label>
                             <button
                               type="button"
                               onClick={() => setIsForgotPassword(true)}
-                              className="text-xs font-bold text-[#2F5FA7] hover:text-[#1E3A66] transition-colors tracking-wide"
+                              className="text-xs text-lp-primary hover:text-lp-primary/70 transition-colors"
                             >
                               Forgot password?
                             </button>
@@ -842,7 +806,7 @@ function LoginPageContent() {
                             name="password"
                             type="password"
                             placeholder="••••••••"
-                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-blue-100 h-11 px-4 rounded-xl"
+                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
                             required
                           />
                         </div>
@@ -850,34 +814,34 @@ function LoginPageContent() {
                       <CardFooter className="flex flex-col gap-4">
                         <Button
                           type="submit"
-                          className="w-full h-12 font-bold bg-blue-600 hover:bg-[#1E3A66] text-white rounded-full shadow-lg shadow-blue-900/10 transition-all font-sans"
+                          className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
                           disabled={loading}
                         >
                           {loading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 size-4 animate-spin" />
                           ) : (
-                            <LogIn className="mr-2 h-4 w-4" />
+                            <LogIn className="mr-2 size-4" />
                           )}
                           Log In to Hub
                         </Button>
                         <div className="relative w-full py-2">
                           <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-slate-100"></span>
+                            <span className="w-full border-t border-lp-border"></span>
                           </div>
-                          <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest font-mono">
-                            <span className="bg-white px-3 text-[#2F5FA7] border border-slate-100 rounded-full shadow-sm">
-                              Secure Authentication
+                          <div className="relative flex justify-center">
+                            <span className="lp-label-mono bg-lp-bg px-3 text-lp-muted-fg">
+                              Or continue with
                             </span>
                           </div>
                         </div>
                         <Button
                           variant="outline"
                           type="button"
-                          className="w-full h-12 bg-white hover:bg-slate-50 text-slate-700 border-slate-200 rounded-full font-bold text-sm gap-3 transition-all active:scale-[0.98] shadow-sm"
+                          className="w-full h-12 bg-lp-bg hover:bg-lp-accent text-lp-fg border-lp-border rounded-sm text-sm gap-3 transition-all active:scale-[0.98]"
                           onClick={handleGoogleSignIn}
                           disabled={loading}
                         >
-                          <GoogleIcon className="w-5 h-5" />
+                          <GoogleIcon className="size-5" />
                           Sign in with Google
                         </Button>
                       </CardFooter>
@@ -888,30 +852,30 @@ function LoginPageContent() {
 
               <TabsContent value="register">
                 {loginRole === 'vendor' ? (
-                  <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600" />
+                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
                     <CardHeader>
-                      <CardTitle className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                      <CardTitle className="text-2xl font-medium tracking-tight flex items-center gap-3">
                         Join as Partner
                       </CardTitle>
-                      <CardDescription className="text-blue-200 font-medium leading-relaxed">
+                      <CardDescription className="text-lp-muted-fg leading-relaxed">
                         Become a verified MechMaster. Scale your workshop and access global production RFQs.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pb-8">
                       <div className="space-y-4">
-                        <div className="flex gap-4 items-start bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100">
-                          <ShieldCheck className="w-6 h-6 text-indigo-600 shrink-0" />
+                        <div className="flex gap-4 items-start bg-lp-accent p-4 border border-lp-border">
+                          <ShieldCheck className="size-6 text-lp-primary shrink-0" />
                           <div>
-                            <p className="text-sm font-bold text-slate-900 shadow-sm-indigo">Vetted Network</p>
-                            <p className="text-xs text-slate-600">Join elite manufacturing partners verified for precision and trust.</p>
+                            <p className="text-sm font-medium">Vetted Network</p>
+                            <p className="text-xs text-lp-muted-fg">Join elite manufacturing partners verified for precision and trust.</p>
                           </div>
                         </div>
-                        <div className="flex gap-4 items-start bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                        <div className="flex gap-4 items-start bg-lp-accent p-4 border border-lp-border">
+                          <CheckCircle2 className="size-6 text-emerald-500 shrink-0" />
                           <div>
-                            <p className="text-sm font-bold text-slate-900">Exclusive Demand</p>
-                            <p className="text-xs text-slate-600">Access high-value projects directly from global innovators.</p>
+                            <p className="text-sm font-medium">Exclusive Demand</p>
+                            <p className="text-xs text-lp-muted-fg">Access high-value projects directly from global innovators.</p>
                           </div>
                         </div>
                       </div>
@@ -919,42 +883,38 @@ function LoginPageContent() {
                     <CardFooter>
                       <Button
                         onClick={() => router.push('/onboard')}
-                        className="w-full h-12 font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 group"
+                        className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
                       >
                         Apply for MechMaster Role
-                        <UserPlus className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        <UserPlus className="size-4 group-hover:translate-x-0.5 transition-transform" />
                       </Button>
                     </CardFooter>
                   </Card>
                 ) : (
-                  <Card className="bg-white border-slate-100 shadow-xl relative overflow-hidden rounded-[2rem]">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600" />
+                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
                     <CardHeader>
-                      <CardTitle className="text-2xl font-bold text-slate-900">
+                      <CardTitle className="text-2xl font-medium tracking-tight">
                         Create Hub Account
                       </CardTitle>
-                      <CardDescription className="text-blue-200 font-medium leading-relaxed">
+                      <CardDescription className="text-lp-muted-fg leading-relaxed">
                         Join the managed manufacturing network.
                       </CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSignUp}>
                       <CardContent className="space-y-4">
-                        {/* Account Type Confirmation */}
-                        <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
-                          <UserIcon className="w-4 h-4 text-[#2F5FA7]" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#2F5FA7]">
+                        <div className="flex items-center gap-2 p-3 bg-lp-accent border border-lp-border">
+                          <UserIcon className="size-4 text-lp-primary" />
+                          <span className="lp-label-mono text-lp-primary">
                             Account Type:
                           </span>
-                          <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                          <span className="lp-label-mono text-lp-fg">
                             Innovator
                           </span>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
+                          <CheckCircle2 className="size-4 text-emerald-500 ml-auto" />
                         </div>
                         <div className="space-y-2">
-                          <Label
-                            htmlFor="reg-name"
-                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                          >
+                          <Label htmlFor="reg-name" className="lp-label-mono text-lp-primary">
                             Full Name
                           </Label>
                           <Input
@@ -962,15 +922,12 @@ function LoginPageContent() {
                             name="fullName"
                             type="text"
                             placeholder="John Doe"
-                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-blue-100 h-11 px-4 rounded-xl"
+                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
                             required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label
-                            htmlFor="reg-email"
-                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                          >
+                          <Label htmlFor="reg-email" className="lp-label-mono text-lp-primary">
                             Work Email
                           </Label>
                           <Input
@@ -978,15 +935,12 @@ function LoginPageContent() {
                             name="email"
                             type="email"
                             placeholder="name@organization.com"
-                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-blue-100 h-11 px-4 rounded-xl"
+                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
                             required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label
-                            htmlFor="reg-password"
-                            className="text-slate-700 font-bold text-xs uppercase tracking-wider"
-                          >
+                          <Label htmlFor="reg-password" className="lp-label-mono text-lp-primary">
                             Create Password
                           </Label>
                           <Input
@@ -994,26 +948,26 @@ function LoginPageContent() {
                             name="password"
                             type="password"
                             placeholder="Min. 8 characters"
-                            className="bg-slate-50 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/10 text-slate-900 placeholder:text-blue-100 h-11 px-4 rounded-xl"
+                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
                             minLength={8}
                             required
                           />
                         </div>
-                        <div className="pt-2 flex items-center gap-2 text-[10px] text-blue-100 font-bold uppercase tracking-tight">
-                          <ShieldCheck className="w-4 h-4 text-[#2F5FA7]" />
+                        <div className="pt-2 flex items-center gap-2 lp-label-mono text-lp-muted-fg">
+                          <ShieldCheck className="size-4 text-lp-primary" />
                           All accounts subject to verification & NDA protocols.
                         </div>
                       </CardContent>
                       <CardFooter className="flex flex-col gap-4">
                         <Button
                           type="submit"
-                          className="w-full h-12 font-bold bg-blue-600 hover:bg-[#1E3A66] text-white rounded-full shadow-lg shadow-blue-900/10 transition-all font-sans"
+                          className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
                           disabled={loading}
                         >
                           {loading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 size-4 animate-spin" />
                           ) : (
-                            <UserPlus className="mr-2 h-4 w-4" />
+                            <UserPlus className="mr-2 size-4" />
                           )}
                           Register as Innovator
                         </Button>
@@ -1034,45 +988,37 @@ function LoginPageContent() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-slate-950/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-lp-ink/90 via-lp-ink/40 to-lp-ink/20" />
 
           <div className="absolute bottom-24 left-24 right-24 space-y-6 z-20">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-              <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">
-                Industry 4.0 Verified
-              </span>
+            <div className="lp-label-mono inline-flex items-center gap-2 px-3 py-1 border border-lp-primary/30 bg-lp-primary/10 backdrop-blur-xl text-lp-primary">
+              <span className="size-2 bg-lp-primary rounded-full animate-ping" />
+              Industry 4.0 Verified
             </div>
 
-            <h2 className="text-4xl font-black text-white leading-[1.05] tracking-tight uppercase">
+            <h2 className="text-4xl font-medium text-white leading-[1.05] tracking-tight">
               The Hub of <br />
-              <span className="text-blue-500">Managed</span> <br />
+              <span className="font-lp-serif italic opacity-70">Managed</span> <br />
               Manufacturing.
             </h2>
 
-            <p className="text-blue-100 text-md font-medium max-w-sm leading-relaxed">
-              Experience the future of on-demand production with MechHub's secure, automated supply
+            <p className="text-white/60 text-md max-w-sm leading-relaxed">
+              Experience the future of on-demand production with MechHub&apos;s secure, automated supply
               chain network.
             </p>
 
             <div className="pt-8 grid grid-cols-3 gap-8 border-t border-white/10">
               <div>
-                <div className="text-white text-xl font-black">99.9%</div>
-                <div className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                  Quality Yield
-                </div>
+                <div className="text-white text-xl font-medium">99.9%</div>
+                <div className="lp-label-mono text-white/40">Quality Yield</div>
               </div>
               <div>
-                <div className="text-white text-xl font-black">24h</div>
-                <div className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                  Rapid Response
-                </div>
+                <div className="text-white text-xl font-medium">24h</div>
+                <div className="lp-label-mono text-white/40">Rapid Response</div>
               </div>
               <div>
-                <div className="text-white text-xl font-black">ISO</div>
-                <div className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-                  Certified Ops
-                </div>
+                <div className="text-white text-xl font-medium">ISO</div>
+                <div className="lp-label-mono text-white/40">Certified Ops</div>
               </div>
             </div>
           </div>
@@ -1085,8 +1031,8 @@ function LoginPageContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-10 h-10 text-[#2F5FA7] animate-spin" />
+      <div className={cn('lp-root min-h-screen flex items-center justify-center', landingFontVars)}>
+        <Loader2 className="size-10 text-lp-primary animate-spin" />
       </div>
     }>
       <LoginPageContent />

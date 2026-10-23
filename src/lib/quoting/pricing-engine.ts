@@ -1,17 +1,13 @@
 // ═══════════════════════════════════════════════════
-// Pricing Engine — Core IP. Exact formulas from Architecture.md
+// Pricing Engine — CNC pricing plus the finish and turnaround rules every
+// engine shares (sheet-metal.ts and printing.ts price laser and FDM).
 // Adapted for INR pricing and Indian manufacturing.
 // Pure functions. Zero framework dependencies. Fully testable.
 // ═══════════════════════════════════════════════════
 
 import type {
-  Material,
-  Machine,
-  ParsedGeometry,
   FinishType,
   TurnaroundType,
-  QuoteResult,
-  QuoteBreakdown,
   QuantityTier,
   AnyQuoteResult,
   CncAnalysis,
@@ -21,154 +17,57 @@ import type {
   CncQuoteRequest,
   CncQuoteResult,
   CncShopRates,
+  SheetQuoteResult,
 } from '@/types/quoting';
 import { type Result, ok, err } from '@/utils/result';
 import { AppError, ErrorCode } from '@/utils/errors';
-import { getMaterialById, getFinishRate, getTurnaroundOption, LASER_MACHINE } from './materials';
+import { getMaterialById, getFinishRate, getTurnaroundOption } from './materials';
 import { calcQuantityMultiplier } from './quantity-tiers';
-import { runDFMChecks, hasBlockingIssues } from './dfm-checks';
+import { hasBlockingIssues } from './dfm-checks';
 import { DEFAULT_CNC_SHOP_RATES, getCncMaterialData } from './cnc-materials';
 import { calcCncTappingCost } from './tapping';
 
-// ═══ Configuration constants ═══
+// ═══ Shared by every engine ═══
 
-const TARGET_MARGIN = 0.42;
-const MIN_ORDER_INR = 2900;
-const BASE_SETUP_COST_INR = 1200;
-const COMPLEX_SURCHARGE_INR = 500;
-const LEAD_IN_TIME_S = 2.5;
-
-const MIN_UNIT_PRICE: Record<string, number> = {
-  laser_cut_fiber: 180,
-  laser_cut_co2: 120,
-  waterjet: 500,
-  plasma: 100,
-  cnc_machining_3axis: 400,
-  cnc_machining_5axis: 800,
-  sheet_metal_bending: 250,
-  cnc_turning: 300,
-};
-
-// ═══ Cost Component Calculations ═══
+/** Smallest CNC order line (₹), before turnaround */
+export const MIN_ORDER_INR = 2900;
 
 /**
- * Material cost per part.
- * Volume → mass → raw cost + waste surcharge from nesting efficiency.
+ * Finish cost per part when the finisher's minimum is a lot charge: area × rate
+ * per part (with batch discounts), but never less than the minimum spread over the batch.
  */
-export function calcMaterialCost(
-  geometry: ParsedGeometry,
-  material: Material,
-  thicknessMm: number,
-  quantity: number
-): number {
-  const volumeCm3 = (geometry.areaMm2 * thicknessMm) / 1000;
-  const massKg = (volumeCm3 * material.densityGCm3) / 1000;
-  const rawCost = massKg * material.pricePerKg;
-
-  const sheetArea = material.sheetWidthMm * material.sheetHeightMm;
-  const boundingArea = geometry.boundingBox.widthMm * geometry.boundingBox.heightMm;
-
-  // Nesting efficiency improves with quantity
-  const nestingEfficiency = Math.min(0.85, 0.45 + quantity * 0.004);
-  const effectiveArea = boundingArea / nestingEfficiency;
-  const sheetsPerPart = effectiveArea / sheetArea;
-  const sheetCost = sheetsPerPart * material.pricePerSheet;
-  const wasteSurcharge = Math.max(0, sheetCost - rawCost);
-
-  return rawCost + wasteSurcharge;
-}
-
-/**
- * Cut time cost per part.
- * Speed factor from thickness, complexity penalty, pierce time.
- */
-export function calcCutCost(
-  geometry: ParsedGeometry,
-  material: Material,
-  thicknessMm: number,
-  machine: Machine
-): number {
-  const speedFactor = 1.0 / (1 + 0.28 * thicknessMm);
-  const effectiveSpeed = machine.maxSpeedMmS * speedFactor;
-  const complexityPenalty = 1.0 + geometry.complexityScore * 0.12;
-  const cutTimeS = (geometry.cutLengthMm / effectiveSpeed) * complexityPenalty;
-  const pierceTimeS = geometry.holeCount * machine.pierceTimeS;
-  const totalTimeS = cutTimeS + pierceTimeS + LEAD_IN_TIME_S;
-
-  let cutCost = (totalTimeS / 3600) * machine.hourlyRate;
-
-  // Complexity surcharge for high node count
-  if (geometry.nodeCount > 500) {
-    const complexitySurcharge = ((geometry.nodeCount - 500) / 100) * 0.025;
-    cutCost *= 1 + complexitySurcharge;
-  }
-
-  // Bulk nesting credit for 100+ identical parts with good aspect ratio
-  if (geometry.boundingBox.aspectRatio < 3.0 && geometry.boundingBox.aspectRatio > 0) {
-    // Credit increases gradually from 0% at 1pc to 8% at 100+pc
-    const nestingCreditPct = Math.min(0.08, Math.max(0, (100 - 1) * 0.0008));
-    cutCost *= 1 - nestingCreditPct;
-  }
-
-  return cutCost;
-}
-
-/**
- * Setup cost per part. Fixed per job, amortized by quantity.
- */
-export function calcSetupCost(quantity: number, complexityScore: number): number {
-  let setupTotal = BASE_SETUP_COST_INR;
-
-  if (complexityScore > 5) {
-    setupTotal += COMPLEX_SURCHARGE_INR;
-  }
-
-  return setupTotal / quantity;
-}
-
-/**
- * Finish cost per part.
- * Surface area × rate, with batch discounts.
- */
-export function calcFinishCost(
-  geometry: ParsedGeometry,
-  finishType: FinishType,
-  quantity: number
-): number {
-  // Surface area = both faces (edge area negligible for sheet metal)
-  return calcFinishCostForArea(geometry.areaMm2 * 2, finishType, quantity);
-}
-
-/** Finish cost per part for a known wetted surface area. */
-export function calcFinishCostForArea(
+export function calcBatchFinishCost(
   surfaceAreaMm2: number,
   finishType: FinishType,
   quantity: number
 ): number {
+  if (finishType === 'none') return 0;
   const finish = getFinishRate(finishType);
+  let perPart = surfaceAreaMm2 * finish.costPerMm2;
+  if (quantity >= 50) perPart *= 0.7;
+  else if (quantity >= 10) perPart *= 0.82;
+  return Math.max(perPart, finish.minCost / Math.max(1, quantity));
+}
 
-  if (finishType === 'none') {
-    return 0;
-  }
+/** Shop load assumed until an admin sets one (Admin → Pricing Calibration) */
+export const DEFAULT_SHOP_LOAD = 0.65;
+/** Rush and Same-day orders surge above this shop load… */
+export const SURGE_START = 0.85;
+/** …by this much per unit of load: +30% at a full shop */
+const SURGE_SLOPE = 2;
 
-  let costPerPart = Math.max(finish.minCost, surfaceAreaMm2 * finish.costPerMm2);
-
-  // Batch discounts for finishing
-  if (quantity >= 50) {
-    costPerPart *= 0.7;
-  } else if (quantity >= 10) {
-    costPerPart *= 0.82;
-  }
-
-  return costPerPart;
+/** Surge factor on Rush / Same-day work at a shop load (1 = none) */
+export function calcSurge(shopUtilization: number): number {
+  return shopUtilization > SURGE_START ? 1 + (shopUtilization - SURGE_START) * SURGE_SLOPE : 1;
 }
 
 /**
- * Rush multiplier with dynamic surge pricing.
+ * Rush multiplier with dynamic surge pricing: Rush and Same-day orders cost
+ * more when the shop is busy. The load is set by an admin.
  */
 export function calcRushMultiplier(
   turnaround: TurnaroundType,
-  shopUtilization: number = 0.65
+  shopUtilization: number = DEFAULT_SHOP_LOAD
 ): number {
   const option = getTurnaroundOption(turnaround);
   if (!option) {
@@ -176,135 +75,10 @@ export function calcRushMultiplier(
   }
 
   const base = option.multiplier;
-
-  // Dynamic surge when shop is busy
-  if (shopUtilization > 0.85 && (turnaround === 'rush_1d' || turnaround === 'same_day')) {
-    const surge = 1.0 + (shopUtilization - 0.85) * 2.0;
-    return base * surge;
+  if (turnaround === 'rush_1d' || turnaround === 'same_day') {
+    return base * calcSurge(shopUtilization);
   }
-
   return base;
-}
-
-// ═══ Master Quote Generation ═══
-
-/**
- * Generates a complete quote from inputs.
- * Returns Result<QuoteResult, AppError> — never throws.
- */
-export function generateQuote(
-  materialId: string,
-  thicknessMm: number,
-  finishType: FinishType,
-  quantity: number,
-  turnaround: TurnaroundType,
-  geometry: ParsedGeometry,
-  shopUtilization: number = 0.65
-): Result<QuoteResult, AppError> {
-  // ── Validate material exists ──
-  const material = getMaterialById(materialId);
-  if (!material) {
-    return err(
-      new AppError({
-        code: ErrorCode.INVALID_MATERIAL,
-        message: `Material not found: ${materialId}`,
-        statusCode: 400,
-        context: { materialId },
-      })
-    );
-  }
-
-  // ── Validate thickness ──
-  if (!material.availableThicknesses.includes(thicknessMm)) {
-    return err(
-      new AppError({
-        code: ErrorCode.INVALID_THICKNESS,
-        message: `Thickness ${thicknessMm}mm not available for ${material.name}`,
-        statusCode: 400,
-        context: { materialId, thicknessMm, available: material.availableThicknesses },
-      })
-    );
-  }
-
-  // ── Validate finish ──
-  if (!material.availableFinishes.includes(finishType)) {
-    return err(
-      new AppError({
-        code: ErrorCode.INVALID_FINISH,
-        message: `Finish "${finishType}" not available for ${material.name}`,
-        statusCode: 400,
-        context: { materialId, finishType, available: material.availableFinishes },
-      })
-    );
-  }
-
-  // ── Run DFM checks ──
-  const machine = LASER_MACHINE;
-  const dfmIssues = runDFMChecks(geometry, material, thicknessMm, machine);
-  const blocking = hasBlockingIssues(dfmIssues);
-
-  // ── Core cost components ──
-  const materialCost = calcMaterialCost(geometry, material, thicknessMm, quantity);
-  const cutCost = calcCutCost(geometry, material, thicknessMm, machine);
-  const setupCost = calcSetupCost(quantity, geometry.complexityScore);
-  const finishCost = calcFinishCost(geometry, finishType, quantity);
-
-  const baseCostPerPart = materialCost + cutCost + setupCost + finishCost;
-
-  // ── Modifiers ──
-  const qtyMultiplier = calcQuantityMultiplier(quantity);
-  const rushMultiplier = calcRushMultiplier(turnaround, shopUtilization);
-
-  let pricePerPart = baseCostPerPart * qtyMultiplier * rushMultiplier * (1 + TARGET_MARGIN);
-
-  // ── Minimum unit price ──
-  const minPrice = MIN_UNIT_PRICE[material.process] ?? 180;
-  pricePerPart = Math.max(pricePerPart, minPrice);
-
-  // ── Minimum order value ──
-  let totalPrice = pricePerPart * quantity;
-  if (totalPrice < MIN_ORDER_INR) {
-    totalPrice = MIN_ORDER_INR;
-    pricePerPart = MIN_ORDER_INR / quantity;
-  }
-
-  // ── Lead time ──
-  const turnaroundOption = getTurnaroundOption(turnaround);
-  const leadTimeDays = turnaroundOption?.days ?? 3;
-
-  // ── Build quote reference ──
-  const quoteRef = `MH-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-
-  const breakdown: QuoteBreakdown = {
-    materialCost: Math.round(materialCost * 100) / 100,
-    cutCost: Math.round(cutCost * 100) / 100,
-    setupCost: Math.round(setupCost * 100) / 100,
-    finishCost: Math.round(finishCost * 100) / 100,
-    quantityMultiplier: Math.round(qtyMultiplier * 10000) / 10000,
-    rushMultiplier: Math.round(rushMultiplier * 10000) / 10000,
-    marginPct: TARGET_MARGIN,
-  };
-
-  const result: QuoteResult = {
-    pricePerPart: Math.round(pricePerPart),
-    totalPrice: Math.round(totalPrice),
-    leadTimeDays,
-    breakdown,
-    dfmIssues,
-    hasBlockingIssues: blocking,
-    expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
-    quoteRef,
-    parameters: {
-      materialId,
-      thicknessMm,
-      finishType,
-      quantity,
-      turnaround,
-    },
-    geometry,
-  };
-
-  return ok(result);
 }
 
 // ═══ CNC Machining Branch ═══
@@ -366,7 +140,7 @@ export function generateCncQuote(
   analysis: CncAnalysis,
   request: CncQuoteRequest,
   rates: CncShopRates = DEFAULT_CNC_SHOP_RATES,
-  shopUtilization: number = 0.65
+  shopUtilization: number = DEFAULT_SHOP_LOAD
 ): Result<CncQuoteResult, AppError> {
   const { materialId, finishType, quantity, turnaround } = request;
 
@@ -462,7 +236,7 @@ export function generateCncQuote(
   const setupCost = ((analysis.setupTimeMin / 60) * rates.setupRatePerHour) / quantity;
   const programmingCost =
     ((analysis.programmingTimeMin / 60) * rates.programmingRatePerHour) / quantity;
-  const finishCost = calcFinishCostForArea(analysis.part.surfaceAreaMm2, finishType, quantity);
+  const finishCost = calcBatchFinishCost(analysis.part.surfaceAreaMm2, finishType, quantity);
 
   // ── Tapping: requested threads, checked against the analysed holes ──
   const tapping = calcCncTappingCost(analysis, request.taps, cncData.machinabilityGroup, process, rates);
@@ -471,22 +245,19 @@ export function generateCncQuote(
   }
   const tappingCost = tapping.data.machineCostPerPart * learningFactor + tapping.data.wearCostPerPart;
 
-  const baseCostPerPart =
-    materialCost + machiningCost + setupCost + programmingCost + finishCost + tappingCost;
+  const baseCostPerPart = materialCost + machiningCost + setupCost + programmingCost;
 
   // ── Modifiers ──
   const rushMultiplier = calcRushMultiplier(turnaround, shopUtilization);
-  let pricePerPart = baseCostPerPart * rushMultiplier * (1 + rates.marginPct);
+  const markup = rushMultiplier * (1 + rates.marginPct);
 
-  // ── Minimum unit price ──
-  pricePerPart = Math.max(pricePerPart, MIN_UNIT_PRICE[process] ?? 400);
-
-  // ── Minimum order value ──
-  let totalPrice = pricePerPart * quantity;
-  if (totalPrice < MIN_ORDER_INR) {
-    totalPrice = MIN_ORDER_INR;
-    pricePerPart = MIN_ORDER_INR / quantity;
-  }
+  // ── Order minimum — no per-part floor; tapping and the finish are added on top ──
+  // Parts are priced from cost; the order minimum (scaled by turnaround, so Economy
+  // and Rush still apply) covers the job, and extras show even on a minimum-priced order.
+  const partPrice = baseCostPerPart * markup;
+  const totalPrice =
+    Math.max(partPrice * quantity, MIN_ORDER_INR * rushMultiplier) + (tappingCost + finishCost) * markup * quantity;
+  const pricePerPart = totalPrice / quantity;
 
   const turnaroundOption = getTurnaroundOption(turnaround);
   const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -520,9 +291,14 @@ export function generateCncQuote(
   });
 }
 
-/** True for quotes produced by generateCncQuote (they carry the analysis). */
+/** True for quotes produced by generateCncQuote (sheet quotes carry an analysis too). */
 export function isCncQuote(quote: AnyQuoteResult): quote is CncQuoteResult {
-  return 'analysis' in quote;
+  return 'analysis' in quote && 'process' in quote;
+}
+
+/** True for laser quotes priced by generateSheetQuote */
+export function isSheetQuoteResult(quote: AnyQuoteResult): quote is SheetQuoteResult {
+  return 'kind' in quote && quote.kind === 'sheet';
 }
 
 const CNC_TIER_QUANTITIES = [1, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
@@ -534,11 +310,12 @@ const CNC_TIER_QUANTITIES = [1, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
 export function getCncTierTable(
   analysis: CncAnalysis,
   request: CncQuoteRequest,
-  rates: CncShopRates = DEFAULT_CNC_SHOP_RATES
+  rates: CncShopRates = DEFAULT_CNC_SHOP_RATES,
+  shopUtilization: number = DEFAULT_SHOP_LOAD
 ): readonly QuantityTier[] {
   const tiers: { quantity: number; pricePerPart: number; totalPrice: number }[] = [];
   for (const quantity of CNC_TIER_QUANTITIES) {
-    const result = generateCncQuote(analysis, { ...request, quantity }, rates);
+    const result = generateCncQuote(analysis, { ...request, quantity }, rates, shopUtilization);
     if (!result.success) {
       return [];
     }

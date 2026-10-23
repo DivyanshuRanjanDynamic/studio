@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LandingNav } from '@/components/LandingNav';
-import { Footer } from '@/components/Footer';
+import { V2Shell } from '@/components/V2Shell';
 import { Button } from '@/components/ui/button';
 import {
   ChevronDown,
@@ -62,8 +61,7 @@ export default function Ar500Page() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
-      <LandingNav />
+    <V2Shell noFooter>
 
       {/* 2. Cinematic Hero Section - Blue & White Theme */}
       <section className="relative min-h-[600px] bg-blue-600 flex items-center overflow-hidden">
@@ -556,7 +554,6 @@ export default function Ar500Page() {
         </div>
       </section>
 
-      <Footer />
-    </main>
+    </V2Shell>
   );
 }

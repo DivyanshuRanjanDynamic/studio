@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateQuote } from './pricing-engine';
+import { legacyLaserQuote } from './__fixtures__/legacy-laser-quote';
 import { ErrorCode } from '@/utils/errors';
-import type { ParsedGeometry } from '@/types/quoting';
 
 // An in-memory stand-in for the Admin SDK — no Firestore project is contacted.
 const store = new Map<string, Record<string, unknown>>();
@@ -20,27 +19,13 @@ vi.mock('@/lib/firebase-admin', () => ({
 }));
 vi.mock('@/firebase/config', () => ({ db: {} }));
 
-const geometry: ParsedGeometry = {
-  cutLengthMm: 600,
-  areaMm2: 10000,
-  boundingBox: { widthMm: 100, heightMm: 100, aspectRatio: 1 },
-  holeCount: 2,
-  complexityScore: 2,
-  nodeCount: 20,
-  minFeatureSizeMm: 5,
-  minSlotWidthMm: 5,
-  edgeToHoleDistanceMm: 5,
-  hasOpenPaths: false,
-};
 
 describe('QuotesRepository (Admin SDK path)', () => {
   beforeEach(() => store.clear());
 
   it('round-trips a quote: same fields back, storage-only fields stripped', async () => {
     const { QuotesRepository } = await import('@/lib/firebase/repositories/quotes');
-    const q = generateQuote('ms_a36', 2, 'none', 1, 'standard_3d', geometry);
-    if (!q.success) throw new Error('fixture quote failed');
-    const quote = { ...q.data, quoteRef: 'MH-ROUNDTRIP2' };
+    const quote = legacyLaserQuote({ quoteRef: 'MH-ROUNDTRIP2' });
 
     const saved = await QuotesRepository.saveQuote(quote, 'user_1');
     expect(saved.success).toBe(true);

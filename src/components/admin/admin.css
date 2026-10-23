@@ -1,0 +1,466 @@
+/*
+ * Admin panel design system — layered on the landing tokens from components/home/landing.css
+ * (.lp-root). Everything is prefixed `adm-` so it cannot leak into other pages.
+ */
+
+.adm-dots {
+  background-image: radial-gradient(color-mix(in oklab, oklch(var(--lp-foreground)) 14%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Type ─────────────────────────────────────────────────────────────────── */
+
+.adm-mono {
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.adm-serif {
+  font-family: var(--lp-font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: oklch(var(--lp-primary));
+  letter-spacing: -0.01em;
+}
+
+.adm-title {
+  font-size: clamp(2.5rem, 5.2vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+}
+
+.adm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: oklch(var(--lp-primary));
+  color: oklch(var(--lp-primary-foreground));
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────────────── */
+
+.adm-panel {
+  background: oklch(100% 0 0);
+  border: 1px solid oklch(var(--lp-border));
+}
+
+.adm-row {
+  transition:
+    background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adm-row:hover {
+  background-color: color-mix(in oklab, oklch(var(--lp-accent)) 40%, oklch(100% 0 0));
+  box-shadow: inset 2px 0 0 oklch(var(--lp-primary));
+}
+
+.adm-row-title {
+  transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adm-row:hover .adm-row-title,
+.adm-card:hover .adm-row-title {
+  color: oklch(var(--lp-primary));
+}
+
+.adm-card {
+  background: oklch(100% 0 0);
+  border: 1px solid oklch(var(--lp-border));
+  transition:
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.adm-card:hover {
+  border-color: oklch(var(--lp-primary));
+  box-shadow: 0 18px 40px -24px color-mix(in oklab, oklch(var(--lp-primary)) 55%, transparent);
+  transform: translateY(-2px);
+}
+
+.adm-tile {
+  background: oklch(var(--lp-muted));
+  padding: 12px;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────────────── */
+
+.adm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid currentColor;
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.adm-chip-green { color: oklch(52% 0.14 155); }
+.adm-chip-red { color: oklch(58% 0.22 27); }
+.adm-chip-amber {
+  color: oklch(42% 0.09 65);
+  border-color: oklch(78% 0.15 75);
+  background: oklch(78% 0.15 75 / 0.2);
+}
+.adm-chip-blue {
+  color: oklch(var(--lp-primary));
+  border-color: color-mix(in oklab, oklch(var(--lp-primary)) 40%, transparent);
+  background: oklch(var(--lp-accent));
+}
+.adm-chip-ink {
+  color: oklch(var(--lp-foreground));
+  border-color: color-mix(in oklab, oklch(var(--lp-foreground)) 80%, transparent);
+}
+.adm-chip-muted {
+  color: oklch(var(--lp-muted-foreground));
+  border-color: oklch(var(--lp-border));
+}
+
+/* ── Controls ─────────────────────────────────────────────────────────────── */
+
+.adm-select {
+  appearance: none;
+  height: 36px;
+  padding: 0 32px 0 10px;
+  border: 1px solid oklch(var(--lp-border));
+  border-radius: 0;
+  background-color: oklch(var(--lp-background));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230b0d12' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  color: oklch(var(--lp-foreground));
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adm-select:hover,
+.adm-select:focus-visible {
+  border-color: oklch(var(--lp-foreground));
+  outline: none;
+}
+
+.adm-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.adm-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid oklch(var(--lp-border));
+  border-radius: 0;
+  background: oklch(100% 0 0);
+  color: oklch(var(--lp-foreground));
+  font-size: 14px;
+  transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adm-input:hover,
+.adm-input:focus {
+  border-color: oklch(var(--lp-foreground));
+  outline: none;
+}
+
+textarea.adm-input {
+  height: auto;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.adm-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.adm-btn-primary {
+  background: oklch(var(--lp-primary));
+  color: oklch(var(--lp-primary-foreground));
+}
+
+.adm-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px -10px oklch(var(--lp-primary));
+}
+
+.adm-btn-ink {
+  background: oklch(var(--lp-ink));
+  color: oklch(var(--lp-ink-foreground));
+}
+
+.adm-btn-ink:hover {
+  background: oklch(var(--lp-primary));
+}
+
+.adm-btn-ghost {
+  border-color: color-mix(in oklab, oklch(var(--lp-foreground)) 80%, transparent);
+  color: oklch(var(--lp-foreground));
+  background: transparent;
+}
+
+.adm-btn-ghost:hover {
+  background: oklch(var(--lp-foreground));
+  color: oklch(var(--lp-background));
+}
+
+.adm-btn-success {
+  background: oklch(55% 0.15 155);
+  color: oklch(99% 0 0);
+}
+
+.adm-btn-success:hover {
+  background: oklch(48% 0.14 155);
+}
+
+.adm-filter {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid oklch(var(--lp-border));
+  background: oklch(100% 0 0);
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adm-filter:hover {
+  border-color: oklch(var(--lp-foreground));
+}
+
+.adm-filter[data-active='true'] {
+  background: oklch(var(--lp-ink));
+  border-color: oklch(var(--lp-ink));
+  color: oklch(var(--lp-ink-foreground));
+}
+
+.adm-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    oklch(var(--lp-primary)) 0 var(--fill, 50%),
+    oklch(var(--lp-border)) var(--fill, 50%) 100%
+  );
+  cursor: pointer;
+}
+
+.adm-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: oklch(var(--lp-primary));
+  border: 2px solid oklch(100% 0 0);
+  box-shadow: 0 0 0 1px oklch(var(--lp-primary));
+  transition: transform 0.15s;
+}
+
+.adm-range::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+.adm-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: oklch(var(--lp-primary));
+  border: 2px solid oklch(100% 0 0);
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────── */
+
+.adm-fade-up {
+  animation: adm-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.adm-word {
+  display: inline-block;
+  animation: adm-word-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.adm-bar {
+  transform-origin: left;
+  animation: adm-bar-grow 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.adm-overlay {
+  animation: adm-fade 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.adm-drawer {
+  animation: adm-slide-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.adm-pop {
+  animation: adm-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes adm-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes adm-word-up {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(45%);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+@keyframes adm-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes adm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes adm-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes adm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Cursor (precise pointers only) ───────────────────────────────────────── */
+
+.adm-cursor-ring,
+.adm-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.adm-cursor-ring {
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 1px solid oklch(48% 0.24 264 / 0.7);
+  transition:
+    opacity 0.3s,
+    width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    margin 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s;
+}
+
+.adm-cursor-ring.is-hover {
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  background-color: oklch(48% 0.24 264 / 0.08);
+}
+
+.adm-cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background: oklch(48% 0.24 264);
+}
+
+.adm-cursor-on .adm-cursor-ring,
+.adm-cursor-on .adm-cursor-dot {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-fade-up,
+  .adm-word,
+  .adm-bar,
+  .adm-overlay,
+  .adm-drawer,
+  .adm-pop {
+    animation: none !important;
+  }
+
+  .adm-cursor-ring,
+  .adm-cursor-dot {
+    display: none;
+  }
+}

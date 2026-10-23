@@ -100,40 +100,44 @@ export function MechMasterDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="border-b pb-4">
+      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto bg-white border-l border-lp-border font-lp-sans">
+        <SheetHeader className="border-b border-lp-border pb-4">
           <div className="flex items-center justify-between pr-6">
             <div>
-              <SheetTitle>MechMaster Profile</SheetTitle>
-              <SheetDescription>
+              <SheetTitle className="text-[28px] font-normal tracking-tight">MechMaster Profile</SheetTitle>
+              <SheetDescription className="text-sm text-lp-muted-fg mt-0.5">
                 Manage verified partner details and manufacturing capabilities.
               </SheetDescription>
             </div>
             {!isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
-                <Edit3 className="w-4 h-4" /> Edit
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="adm-btn adm-btn-ghost h-9 px-3 rounded-none"
+              >
+                <Edit3 className="w-3.5 h-3.5" /> Edit
               </Button>
             )}
           </div>
         </SheetHeader>
 
         <div className="mt-6 space-y-6 pb-20">
-          {/* Header Section */}
           <div className="flex items-center justify-between">
             {isEditing ? (
-              <div className="space-y-2 w-full">
-                <Label className="text-[10px] uppercase font-bold text-blue-200">Company Name</Label>
+              <div className="space-y-1.5 w-full">
+                <Label className="adm-mono font-normal text-lp-muted-fg">Company Name</Label>
                 <Input
                   value={editData.teamName || ''}
                   onChange={(e) => setEditData({ ...editData, teamName: e.target.value })}
-                  className="font-bold text-lg h-10"
+                  className="font-semibold text-lg h-10 rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
                 />
               </div>
             ) : (
-              <h3 className="text-xl font-bold text-slate-900">{vendor.teamName}</h3>
+              <h3 className="text-[22px] font-normal tracking-tight">{vendor.teamName}</h3>
             )}
             {!isEditing && (
-              <Badge className={vendor.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'}>
+              <Badge className={`adm-chip rounded-none bg-transparent font-normal hover:bg-transparent ${vendor.isActive ? 'adm-chip-green' : 'adm-chip-muted'}`}>
                 {vendor.isActive ? 'Active' : 'Inactive'}
               </Badge>
             )}
@@ -148,6 +152,7 @@ export function MechMasterDetailDrawer({
                 <Input
                   value={editData.fullName || ''}
                   onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
+                  className="rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
                 />
               }
             />
@@ -158,7 +163,8 @@ export function MechMasterDetailDrawer({
               editNode={
                 <Input
                   value={editData.email || ''}
-                  disabled // Email usually shouldn't be changed here easily
+                  disabled
+                  className="rounded-none border-lp-border bg-lp-muted text-lp-muted-fg"
                 />
               }
             />
@@ -170,6 +176,7 @@ export function MechMasterDetailDrawer({
                 <Input
                   value={editData.phone || ''}
                   onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                  className="rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
                 />
               }
             />
@@ -181,6 +188,7 @@ export function MechMasterDetailDrawer({
                 <Input
                   value={editData.gstNumber || ''}
                   onChange={(e) => setEditData({ ...editData, gstNumber: e.target.value })}
+                  className="rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
                 />
               }
             />
@@ -197,35 +205,35 @@ export function MechMasterDetailDrawer({
                   max="5"
                   value={editData.rating ?? ''}
                   onChange={(e) => setEditData({ ...editData, rating: parseFloat(e.target.value) })}
+                  className="rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
                 />
               }
             />
           </div>
 
-          {/* Workshop Address */}
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold">
+            <p className="adm-mono text-lp-muted-fg">
               Workshop Address
             </p>
             {isEditing ? (
               <Input
                 value={editData.location || ''}
                 onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                className="rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
               />
             ) : (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 leading-5 text-slate-700 shadow-sm">
+              <div className="border-l-2 border-lp-border bg-lp-muted p-3 leading-5 text-lp-fg text-sm">
                 {vendor.location}
               </div>
             )}
           </div>
 
-          {/* Capabilities */}
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold">
+            <p className="adm-mono text-lp-muted-fg">
               Manufacturing Capabilities
             </p>
             {isEditing ? (
-              <div className="grid grid-cols-2 gap-2 p-3 border rounded-lg bg-slate-50/50">
+              <div className="grid grid-cols-2 gap-2 p-3 border border-lp-border bg-lp-bg">
                 {VENDOR_CAPABILITIES.map((cap) => (
                   <div key={cap} className="flex items-center gap-2">
                     <Checkbox
@@ -233,30 +241,29 @@ export function MechMasterDetailDrawer({
                       checked={editData.specializations?.includes(cap)}
                       onCheckedChange={() => toggleCap(cap)}
                     />
-                    <label htmlFor={`edit-cap-${cap}`} className="text-xs cursor-pointer">
+                    <label htmlFor={`edit-cap-${cap}`} className="text-xs cursor-pointer text-lp-fg">
                       {cap}
                     </label>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {vendor.specializations?.length > 0 ? (
                   vendor.specializations.map((cap) => (
-                    <Badge key={cap} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100">
+                    <Badge key={cap} className="adm-chip adm-chip-blue rounded-none font-normal hover:bg-lp-accent">
                       {cap}
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-blue-100 italic">No capabilities listed</span>
+                  <span className="text-lp-muted-fg italic text-sm">No capabilities listed</span>
                 )}
               </div>
             )}
           </div>
 
-          {/* Portfolio/Bio */}
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.15em] text-blue-200 font-semibold">
+            <p className="adm-mono text-lp-muted-fg">
               Business Intelligence & Experience
             </p>
             {isEditing ? (
@@ -264,20 +271,20 @@ export function MechMasterDetailDrawer({
                 value={editData.portfolio || ''}
                 onChange={(e) => setEditData({ ...editData, portfolio: e.target.value })}
                 placeholder="Describe workshop machinery, experience, and scale..."
-                className="h-32"
+                className="h-32 rounded-none border-lp-border bg-white shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-lp-fg transition-colors"
               />
             ) : (
-              <div className="rounded-lg border border-slate-200 bg-white p-3 text-slate-700 leading-relaxed min-h-[100px] shadow-sm">
+              <div className="border-l-2 border-lp-border bg-lp-muted p-3 text-lp-fg leading-relaxed min-h-[100px] text-sm">
                 {vendor.portfolio || 'No profile description provided.'}
               </div>
             )}
           </div>
 
           {isEditing && (
-            <div className="flex items-center gap-4 p-4 bg-amber-50 rounded-xl border border-amber-100">
+            <div className="flex items-center gap-4 p-4 border-l-2 border-[oklch(78%_0.15_75)] bg-[oklch(78%_0.15_75/0.12)]">
               <div className="flex-1 space-y-1">
-                <Label htmlFor="isActive" className="text-amber-900 font-bold">In-Market Visibility</Label>
-                <p className="text-[10px] text-amber-700 uppercase font-bold tracking-tight">Enable visibility for customer matching</p>
+                <Label htmlFor="isActive" className="text-amber-900 font-semibold text-sm">In-Market Visibility</Label>
+                <p className="text-[11px] text-amber-700 font-medium">Enable visibility for customer matching</p>
               </div>
               <Checkbox
                 id="isActive"
@@ -289,16 +296,21 @@ export function MechMasterDetailDrawer({
         </div>
 
         {isEditing && (
-          <div className="fixed bottom-0 right-0 w-full sm:max-w-xl bg-white border-t p-4 flex gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+          <div className="fixed bottom-0 right-0 w-full sm:max-w-xl bg-white border-t border-lp-border p-4 flex gap-3">
             <Button
-              className="flex-1 gap-2 bg-[#1E3A66] hover:bg-[#1E3A66]/90"
+              className="adm-btn adm-btn-primary h-11 flex-1 rounded-none"
               onClick={handleSave}
               disabled={isSaving}
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Changes
             </Button>
-            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>
+            <Button
+              variant="ghost"
+              onClick={() => setIsEditing(false)}
+              disabled={isSaving}
+              className="adm-btn adm-btn-ghost h-11 rounded-none"
+            >
               Cancel
             </Button>
           </div>
@@ -321,10 +333,10 @@ function InfoField({
 }) {
   return (
     <div className="space-y-1">
-      <p className="text-[10px] uppercase tracking-[0.15em] text-blue-200 font-bold">
+      <p className="adm-mono text-lp-muted-fg">
         {label}
       </p>
-      {isEditing && editNode ? editNode : <p className="text-slate-800 font-medium">{value}</p>}
+      {isEditing && editNode ? editNode : <p className="text-lp-fg">{value}</p>}
     </div>
   );
 }

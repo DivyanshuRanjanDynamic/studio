@@ -52,6 +52,26 @@ describe('CNC Pricing Engine', () => {
     expect(hundred.pricePerPart).toBeLessThan(one.pricePerPart);
   });
 
+  it('charges the finish minimum once per lot, not per part', () => {
+    // Anodize min is ₹750 a lot. It used to apply to every part (₹615/₹525 at 10/100),
+    // so batch prices dropped: now area × rate (20,665 mm² × ₹0.0048) after batch discounts.
+    const finished = (quantity: number) =>
+      quote(bracketAnalysis, { finishType: 'anodize_color', quantity }).breakdown.finishCost;
+    expect(finished(1)).toBe(750);
+    expect(finished(10)).toBeCloseTo(20665.45 * 0.0048 * 0.82, 1);
+    expect(finished(100)).toBeCloseTo(20665.45 * 0.0048 * 0.7, 1);
+  });
+
+  it('adds the finish on top of the minimum order', () => {
+    // A one-off sits at the ₹2900 minimum, which used to absorb most of the ₹750
+    // anodize lot charge (₹3206 → ₹3965).
+    const bare = quote(bracketAnalysis, { quantity: 1 });
+    const anodised = quote(bracketAnalysis, { quantity: 1, finishType: 'anodize_color' });
+    expect(bare.totalPrice).toBe(2900);
+    const markup = anodised.breakdown.rushMultiplier * (1 + anodised.breakdown.marginPct);
+    expect(anodised.totalPrice).toBeCloseTo(2900 + 750 * markup, -1);
+  });
+
   it('applies only half the standard quantity discount to cycle time', () => {
     expect(calcCncLearningFactor(1)).toBe(1);
     expect(calcCncLearningFactor(100)).toBeCloseTo(1 - 0.5 * (1 - 0.695), 4);

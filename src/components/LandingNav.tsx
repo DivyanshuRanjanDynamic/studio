@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Search,
   ChevronDown,
+  ChevronRight,
   Package,
   Layers,
   Pencil,
@@ -23,6 +24,7 @@ import { signOut } from 'firebase/auth';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useQuoteCartContext } from '@/context/QuoteCartContext';
 import { CartSidebar } from '@/components/CartSidebar';
 import {
   DropdownMenu,
@@ -38,7 +40,7 @@ import { getDashboardHrefByRole } from '@/lib/roles';
 
 const NAV_LINKS = [
   { href: '/quote/instant', label: 'Instant Quote' },
-  { href: '/#materials', label: 'Materials' },
+  { href: '/materials', label: 'Materials' },
   { href: '/shop', label: 'Shop' },
 ];
 
@@ -57,6 +59,7 @@ export function LandingNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { totalItems, setIsCartOpen } = useCart();
+  const quoteCart = useQuoteCartContext();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -133,22 +136,20 @@ export function LandingNav() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out overflow-x-hidden ${
-          isNavFloated ? 'mx-0 top-0' : 'mx-0 top-0'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out overflow-x-hidden ${isNavFloated ? 'mx-0 top-0' : 'mx-0 top-0'
+          }`}
       >
         <div
-          className={`relative flex items-center justify-between px-4 md:px-6 h-[68px] transition-all duration-500 ease-in-out ${
-            isNavFloated
-              ? 'bg-white/80 backdrop-blur-xl border-b border-slate-100 mx-auto'
-              : 'bg-white/80 backdrop-blur-xl border-b border-slate-100 mx-auto'
-          }`}
+          className={`relative flex items-center justify-between px-4 md:px-6 h-[68px] transition-all duration-500 ease-in-out ${isNavFloated
+            ? 'bg-white/80 backdrop-blur-xl border-b border-slate-100 mx-auto'
+            : 'bg-white/80 backdrop-blur-xl border-b border-slate-100 mx-auto'
+            }`}
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 z-10 shrink-0">
             <div className="relative">
               <Image
-                src="/mechhub.png"
+                src="/mechhub-logo-small.svg"
                 alt="MechHub Logo"
                 width={30}
                 height={30}
@@ -175,11 +176,10 @@ export function LandingNav() {
             />
 
             <Link
-              href="/#services"
+              href="/services"
               onMouseEnter={() => handleMouseEnter(-2)}
-              className={`relative px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200 ${
-                activeIndex === -2 ? 'text-[#2F5FA7]' : 'text-[#64748B] hover:text-[#2F5FA7]'
-              }`}
+              className={`relative px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200 ${activeIndex === -2 ? 'text-[#2F5FA7]' : 'text-[#64748B] hover:text-[#2F5FA7]'
+                }`}
             >
               Services
             </Link>
@@ -192,9 +192,8 @@ export function LandingNav() {
                   navRefs.current[i] = el;
                 }}
                 onMouseEnter={() => handleMouseEnter(i)}
-                className={`relative px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200 ${
-                  activeIndex === i ? 'text-[#2F5FA7]' : 'text-[#64748B] hover:text-[#2F5FA7]'
-                }`}
+                className={`relative px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200 ${activeIndex === i ? 'text-[#2F5FA7]' : 'text-[#64748B] hover:text-[#2F5FA7]'
+                  }`}
               >
                 {link.label}
               </Link>
@@ -205,14 +204,20 @@ export function LandingNav() {
           <div className="flex items-center gap-2 z-10">
             {/* Cart Toggle */}
             <button
-              onClick={() => setIsCartOpen(true)}
+              onClick={() => {
+                if (quoteCart.itemCount > 0 && totalItems === 0) {
+                  quoteCart.setIsDrawerOpen(true);
+                } else {
+                  setIsCartOpen(true);
+                }
+              }}
               className="relative p-2.5 sm:p-2 rounded-full hover:bg-slate-50 text-[#64748B] hover:text-[#2F5FA7] transition-all group"
               aria-label="View Cart"
             >
               <ShoppingCart className="w-5 h-5 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
-              {totalItems > 0 && (
+              {(totalItems + quoteCart.itemCount) > 0 && (
                 <span className="absolute top-0.5 right-0.5 sm:-top-0.5 sm:-right-0.5 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-in zoom-in duration-300">
-                  {totalItems}
+                  {totalItems + quoteCart.itemCount}
                 </span>
               )}
             </button>
@@ -233,39 +238,67 @@ export function LandingNav() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl p-1.5 mt-2"
+                      sideOffset={8}
+                      className="w-60 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-[0_20px_45px_-12px_rgba(15,23,42,0.12),0_0_0_1px_rgba(15,23,42,0.04)]"
                     >
+                      <div className="px-3 py-2.5 mb-1 bg-slate-50/80 rounded-lg border border-slate-100">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Signed in as</p>
+                        <p className="text-xs font-semibold text-slate-900 truncate mt-0.5">{displayName}</p>
+                        {user.email && (
+                          <p className="text-[11px] text-slate-500 truncate font-mono mt-0.5">{user.email}</p>
+                        )}
+                      </div>
+
                       <Link href={dashboardHref}>
-                        <DropdownMenuItem className="cursor-pointer gap-2.5 px-2 py-2 rounded-lg text-sm text-zinc-300 hover:text-white focus:bg-white/5 focus:text-white">
-                          <LayoutDashboard className="w-4 h-4 text-zinc-400" /> Dashboard
+                        <DropdownMenuItem className="group flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-100/80 focus:bg-slate-100/80 focus:text-slate-950 cursor-pointer transition-all duration-150 outline-none select-none">
+                          <div className="flex items-center gap-2.5">
+                            <LayoutDashboard className="h-4 w-4 text-slate-400 transition-colors duration-150 group-hover:text-blue-600 group-hover:scale-105" />
+                            <span>Dashboard</span>
+                          </div>
+                          <ChevronRight className="h-3 w-3 text-slate-300 opacity-0 -translate-x-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-blue-600" />
                         </DropdownMenuItem>
                       </Link>
                       <Link href="/profile">
-                        <DropdownMenuItem className="cursor-pointer gap-2.5 px-2 py-2 rounded-lg text-sm text-zinc-300 hover:text-white focus:bg-white/5 focus:text-white">
-                          <UserIcon className="w-4 h-4 text-zinc-400" /> My Profile
+                        <DropdownMenuItem className="group flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-100/80 focus:bg-slate-100/80 focus:text-slate-950 cursor-pointer transition-all duration-150 outline-none select-none">
+                          <div className="flex items-center gap-2.5">
+                            <UserIcon className="h-4 w-4 text-slate-400 transition-colors duration-150 group-hover:text-blue-600 group-hover:scale-105" />
+                            <span>My Profile</span>
+                          </div>
+                          <ChevronRight className="h-3 w-3 text-slate-300 opacity-0 -translate-x-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-blue-600" />
                         </DropdownMenuItem>
                       </Link>
                       {role === 'customer' && (
                         <>
-                          <div className="border-t border-white/10 my-1" />
+                          <div className="my-1 border-t border-slate-100" />
                           <Link href="/dashboard?tab=shop_orders">
-                            <DropdownMenuItem className="cursor-pointer gap-2.5 px-2 py-2 rounded-lg text-sm text-zinc-300 hover:text-white focus:bg-white/5 focus:text-white">
-                              <Package className="w-4 h-4 text-zinc-400" /> My Orders
+                            <DropdownMenuItem className="group flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-100/80 focus:bg-slate-100/80 focus:text-slate-950 cursor-pointer transition-all duration-150 outline-none select-none">
+                              <div className="flex items-center gap-2.5">
+                                <Package className="h-4 w-4 text-slate-400 transition-colors duration-150 group-hover:text-blue-600 group-hover:scale-105" />
+                                <span>My Orders</span>
+                              </div>
+                              <ChevronRight className="h-3 w-3 text-slate-300 opacity-0 -translate-x-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-blue-600" />
                             </DropdownMenuItem>
                           </Link>
                           <Link href="/dashboard?tab=designs">
-                            <DropdownMenuItem className="cursor-pointer gap-2.5 px-2 py-2 rounded-lg text-sm text-zinc-300 hover:text-white focus:bg-white/5 focus:text-white">
-                              <Pencil className="w-4 h-4 text-zinc-400" /> My Designs
+                            <DropdownMenuItem className="group flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-100/80 focus:bg-slate-100/80 focus:text-slate-950 cursor-pointer transition-all duration-150 outline-none select-none">
+                              <div className="flex items-center gap-2.5">
+                                <Pencil className="h-4 w-4 text-slate-400 transition-colors duration-150 group-hover:text-blue-600 group-hover:scale-105" />
+                                <span>My Designs</span>
+                              </div>
+                              <ChevronRight className="h-3 w-3 text-slate-300 opacity-0 -translate-x-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-blue-600" />
                             </DropdownMenuItem>
                           </Link>
-                          <div className="border-t border-white/10 my-1" />
                         </>
                       )}
+                      <div className="my-1 border-t border-slate-100" />
                       <DropdownMenuItem
-                        className="cursor-pointer gap-2.5 px-2 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-300"
+                        className="group flex items-center justify-between w-full px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50/80 focus:bg-red-50/80 focus:text-red-600 cursor-pointer transition-all duration-150 outline-none select-none"
                         onClick={handleSignOut}
                       >
-                        <LogOut className="w-4 h-4" /> Sign Out
+                        <div className="flex items-center gap-2.5">
+                          <LogOut className="h-4 w-4 text-slate-400 transition-colors duration-150 group-hover:text-red-600" />
+                          <span>Sign Out</span>
+                        </div>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -294,9 +327,8 @@ export function LandingNav() {
         </div>
 
         <div
-          className={`md:hidden overflow-y-auto transition-all duration-300 ease-in-out ${
-            mobileOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
-          }`}
+          className={`md:hidden overflow-y-auto transition-all duration-300 ease-in-out ${mobileOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
+            }`}
         >
           <div
             className={`mx-2 mt-1 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-100 shadow-[0_8px_32px_rgba(0,0,0,0.1)] p-4 flex flex-col gap-1`}
@@ -306,9 +338,9 @@ export function LandingNav() {
             </div>
             <div className="flex flex-col gap-1 px-1">
               {[
-                { label: 'Services', href: '/#services', icon: Settings },
+                { label: 'Services', href: '/services', icon: Settings },
                 { label: 'Instant Quote', href: '/quote/instant', icon: Zap },
-                { label: 'Materials', href: '/#materials', icon: Layers },
+                { label: 'Materials', href: '/materials', icon: Layers },
                 { label: 'Shop', href: '/shop', icon: ShoppingCart },
               ].map((link) => (
                 <Link

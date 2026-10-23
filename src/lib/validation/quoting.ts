@@ -189,6 +189,84 @@ export const cncQuoteCreateSchema = z.object({
 
 export type CncQuoteCreateInput = z.infer<typeof cncQuoteCreateSchema>;
 
+// ═══ Sheet metal — mirrors SheetAnalysis from POST /internal/analyze-sheet ═══
+
+const tapRequestsSchema = z
+  .array(z.object({ tapId: z.string().min(1).max(20), count: z.number().int().min(1).max(500) }))
+  .max(20)
+  .optional();
+
+export const sheetAnalysisSchema = z.object({
+  version: z.string().min(1),
+  units: z.literal('mm'),
+  thicknessMm: z.number().finite().positive().max(50),
+  volumeMm3: z.number().finite().positive(),
+  surfaceAreaMm2: z.number().finite().positive(),
+  flatAreaMm2: z.number().finite().positive(),
+  cutLengthMm: nonNeg,
+  pierces: z.number().int().min(1),
+  holes: z.array(z.object({ diameterMm: z.number().finite().positive(), count: z.number().int().min(1) })),
+  bends: z.array(
+    z.object({ angleDeg: nonNeg, radiusMm: nonNeg, lengthMm: nonNeg })
+  ),
+  boundingBox: z.object({ x: nonNeg, y: nonNeg, z: nonNeg }),
+  isFlat: z.boolean(),
+  bodyCount: z.number().int().min(1),
+  analysisMs: nonNeg,
+  profileOnly: z.boolean().optional(),
+});
+
+export const sheetQuoteRequestSchema = z.object({
+  materialId: z.string().min(1).max(40),
+  thicknessMm: z.number().finite().positive().max(50),
+  finishType: finishTypeSchema,
+  quantity: z.number().int().min(1).max(10000),
+  turnaround: turnaroundSchema,
+  taps: tapRequestsSchema,
+  bendingSelected: z.boolean().optional(),
+});
+
+export const sheetQuoteCreateSchema = z.object({
+  analysisId: z.string().min(1).max(64),
+  request: sheetQuoteRequestSchema,
+});
+
+// ═══ FDM printing — mirrors PrintAnalysis from POST /internal/analyze-print ═══
+
+const printUpAxisSchema = z.enum(['+x', '-x', '+y', '-y', '+z', '-z']);
+
+export const printAnalysisSchema = z.object({
+  version: z.string().min(1),
+  units: z.literal('mm'),
+  volumeMm3: z.number().finite().positive(),
+  surfaceAreaMm2: z.number().finite().positive(),
+  triangleCount: z.number().int().min(4),
+  orientations: z
+    .array(
+      z.object({
+        up: printUpAxisSchema,
+        sizeMm: z.object({ x: nonNeg, y: nonNeg, z: nonNeg }),
+        supportVolumeMm3: nonNeg,
+      })
+    )
+    .min(1)
+    .max(6),
+  analysisMs: nonNeg,
+});
+
+export const printQuoteRequestSchema = z.object({
+  materialId: z.string().min(1).max(40),
+  finishType: finishTypeSchema,
+  quantity: z.number().int().min(1).max(10000),
+  turnaround: turnaroundSchema,
+});
+
+/** POST /api/v1/quote/part/analyze — a wizard upload analysed for sheet or print pricing */
+export const partAnalyzeSchema = z.object({
+  fileKey: z.string().min(1).max(512),
+  kind: z.enum(['sheet', 'print']),
+});
+
 /** POST /api/v1/quote/cnc/upload-intent */
 export const cncUploadIntentSchema = z.object({
   fileName: z.string().min(1).max(255),

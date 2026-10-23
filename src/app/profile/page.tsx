@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { LandingNav } from '@/components/LandingNav';
+import { V2Shell } from '@/components/V2Shell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,19 +156,19 @@ export default function ProfilePage() {
 
   if (isUserLoading || isProfileLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#2F5FA7]" />
-      </div>
+      <V2Shell>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="size-10 animate-spin text-lp-primary" />
+        </div>
+      </V2Shell>
     );
   }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#F6F8FC] text-slate-900">
-      <LandingNav />
-
-      <main className="container mx-auto px-4 py-8 md:py-10">
+    <V2Shell noFooter>
+      <main className="mx-auto max-w-[1400px] px-4 sm:px-5 py-8 md:py-10">
         <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2F5FA7] mb-3">
             Account Settings
@@ -480,6 +480,6 @@ export default function ProfilePage() {
           </section>
         </div>
       </main>
-    </div>
+    </V2Shell>
   );
 }

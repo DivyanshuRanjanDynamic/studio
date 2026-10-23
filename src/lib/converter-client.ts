@@ -1,5 +1,6 @@
-import type { CncAnalysis } from '@/types/quoting';
-import { cncAnalysisSchema } from '@/lib/validation/quoting';
+import type { ZodType } from 'zod';
+import type { CncAnalysis, PrintAnalysis, SheetAnalysis } from '@/types/quoting';
+import { cncAnalysisSchema, printAnalysisSchema, sheetAnalysisSchema } from '@/lib/validation/quoting';
 import { Result, ok, err } from '@/utils/result';
 import { AppError, ErrorCode } from '@/utils/errors';
 import { logger } from '@/utils/logger';
@@ -24,17 +25,21 @@ function unavailable(message: string, context: Record<string, unknown>): AppErro
 }
 
 /**
- * POST {converter}/internal/analyze-cnc — the converter downloads the STEP file
- * from `fileUrl` (a short-lived presigned S3 URL) and returns the CNC analysis.
+ * POST {converter}{path} — the converter downloads the file from `fileUrl`
+ * (a short-lived presigned S3 URL) and returns its analysis, validated here.
  */
-export async function analyzeCncFromUrl(
+async function postAnalysis<T>(
+  path: string,
   fileUrl: string,
-  fileName: string
-): Promise<Result<CncAnalysis, AppError>> {
+  fileName: string,
+  schema: ZodType<unknown>,
+  label: string,
+  hint: string
+): Promise<Result<T, AppError>> {
   const token = process.env.CONVERTER_SERVICE_TOKEN;
   if (!token) {
     logger.error({ event: 'Converter: CONVERTER_SERVICE_TOKEN is not set' });
-    return err(unavailable('CNC analysis is not configured on this server.', { fileName }));
+    return err(unavailable(`${label} is not configured on this server.`, { fileName }));
   }
 
   const controller = new AbortController();
@@ -42,7 +47,7 @@ export async function analyzeCncFromUrl(
 
   let res: Response;
   try {
-    res = await fetch(`${converterBaseUrl()}/internal/analyze-cnc`, {
+    res = await fetch(`${converterBaseUrl()}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ fileUrl, fileName }),
@@ -51,12 +56,10 @@ export async function analyzeCncFromUrl(
     });
   } catch (e) {
     const timedOut = e instanceof Error && e.name === 'AbortError';
-    logger.error({ event: 'Converter: request failed', fileName, timedOut });
+    logger.error({ event: 'Converter: request failed', path, fileName, timedOut });
     return err(
       unavailable(
-        timedOut
-          ? 'CNC analysis timed out. Try a simpler or smaller STEP file.'
-          : 'The CAD analysis service is unavailable. Please try again shortly.',
+        timedOut ? `${label} timed out. ${hint}` : 'The CAD analysis service is unavailable. Please try again shortly.',
         { fileName }
       )
     );
@@ -69,8 +72,9 @@ export async function analyzeCncFromUrl(
     const detail = typeof body.detail === 'string' ? body.detail : null;
 
     // Auth/config problems are ours, not the customer's — don't echo them.
-    if (res.status === 401 || res.status === 503) {
-      logger.error({ event: 'Converter: rejected service call', status: res.status, detail });
+    // 404/405 = this converter build lacks the route (deployed image older than the app).
+    if (res.status === 401 || res.status === 503 || res.status === 404 || res.status === 405) {
+      logger.error({ event: 'Converter: rejected service call', path, status: res.status, detail });
       return err(unavailable('The CAD analysis service is unavailable. Please try again shortly.', { fileName }));
     }
 
@@ -85,16 +89,16 @@ export async function analyzeCncFromUrl(
     return err(
       new AppError({
         code,
-        message: detail ?? `CNC analysis failed (${res.status})`,
+        message: detail ?? `${label} failed (${res.status})`,
         statusCode: res.status >= 500 ? 502 : res.status,
         context: { fileName },
       })
     );
   }
 
-  const parsed = cncAnalysisSchema.safeParse(await res.json().catch(() => null));
+  const parsed = schema.safeParse(await res.json().catch(() => null));
   if (!parsed.success) {
-    logger.error({ event: 'Converter: unexpected analysis shape', fileName });
+    logger.error({ event: 'Converter: unexpected analysis shape', path, fileName });
     return err(
       new AppError({
         code: ErrorCode.PARSE_FAILED,
@@ -104,5 +108,56 @@ export async function analyzeCncFromUrl(
       })
     );
   }
-  return ok(parsed.data as CncAnalysis);
+  return ok(parsed.data as T);
+}
+
+/** CNC: stock, setups, machining times and holes from a STEP file */
+export function analyzeCncFromUrl(fileUrl: string, fileName: string): Promise<Result<CncAnalysis, AppError>> {
+  return postAnalysis<CncAnalysis>(
+    '/internal/analyze-cnc',
+    fileUrl,
+    fileName,
+    cncAnalysisSchema,
+    'CNC analysis',
+    'Try a simpler or smaller STEP file.'
+  );
+}
+
+/** Sheet metal: thickness, flat blank, cut length, pierces, holes and bends from a STEP file */
+export async function analyzeSheetFromUrl(fileUrl: string, fileName: string): Promise<Result<SheetAnalysis, AppError>> {
+  const result = await postAnalysis<SheetAnalysis>(
+    '/internal/analyze-sheet',
+    fileUrl,
+    fileName,
+    sheetAnalysisSchema,
+    'Sheet metal analysis',
+    'Try a simpler or smaller STEP file.'
+  );
+  // The converter rejects machined blocks etc. with "... doesn't look like sheet metal".
+  // Tag those so the wizard can point to another service instead of offering a retry.
+  if (!result.success && result.error.statusCode === 422 && NOT_SHEET_DETAIL.test(result.error.message)) {
+    return err(
+      new AppError({
+        code: ErrorCode.NOT_SHEET_METAL,
+        message: result.error.message,
+        statusCode: 422,
+        context: { fileName },
+      })
+    );
+  }
+  return result;
+}
+
+const NOT_SHEET_DETAIL = /look like sheet metal/i;
+
+/** FDM printing: volume, area and per-orientation bed size + support from STEP/STL/OBJ */
+export function analyzePrintFromUrl(fileUrl: string, fileName: string): Promise<Result<PrintAnalysis, AppError>> {
+  return postAnalysis<PrintAnalysis>(
+    '/internal/analyze-print',
+    fileUrl,
+    fileName,
+    printAnalysisSchema,
+    '3D print analysis',
+    'Try a lighter mesh or a smaller file.'
+  );
 }

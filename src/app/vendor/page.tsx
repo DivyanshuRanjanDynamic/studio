@@ -439,7 +439,7 @@ export default function VendorPortal() {
 
       <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-[#020617]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <Image src="/mechhub.png" alt="MechHub Logo" width={60} height={60} />
+          <Image src="/mechhub-logo.svg" alt="MechHub Logo" width={60} height={60} />
           <span className=" font-bold text-lg text-white tracking-widest uppercase mt-1">
             MechMaster Workspace
           </span>

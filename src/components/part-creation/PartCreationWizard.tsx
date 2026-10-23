@@ -32,11 +32,13 @@ import { QuantityStep } from './QuantityStep';
 import { ThreadConfigSidebar } from './ThreadConfigSidebar';
 import { InstantQuoteStep } from './InstantQuoteStep';
 import { useWizardCncAnalysis } from '@/hooks/use-wizard-cnc-analysis';
-import { buildCncQuoteRequest } from '@/lib/quoting/wizard-pricing';
-import { generateCncQuote, getCncTierTable } from '@/lib/quoting/pricing-engine';
-import { findTapCandidates } from '@/lib/quoting/tapping';
+import { useWizardPartAnalysis } from '@/hooks/use-wizard-part-analysis';
+import { usePricingCalibration } from '@/hooks/use-pricing-calibration';
+import { priceWizardPart, wizardQuoteKind, type WizardAnalysis } from '@/lib/quoting/wizard-quote';
+import { findTapCandidates, mergeCoaxialHoles } from '@/lib/quoting/tapping';
 import { addPartToProject } from '@/services/quoteApi.service';
 import { isPartNameValid } from '@/lib/validation/part-name';
+import { landingFontVars } from '@/components/home/fonts';
 import { STLViewer } from '@/components/viewer/STLViewer';
 import { FlatPatternViewer } from '@/components/viewer/FlatPatternViewer';
 import { convertStepFile, stlBase64ToBuffer } from '@/services/stepConverter.service';
@@ -106,7 +108,13 @@ export function PartCreationWizard({
 
   // CAD State (Persistent across steps)
   const [stlBuffer, setStlBuffer] = useState<ArrayBuffer | null>(null);
-  const [conversionResult, setConversionResult] = useState<ConversionResult | null>(null);
+  const [rawConversionResult, setConversionResult] = useState<ConversionResult | null>(null);
+  // The preview lists split half-cylinders as separate holes; merge them once per result
+  const conversionResult = useMemo(
+    () =>
+      rawConversionResult && { ...rawConversionResult, holes: mergeCoaxialHoles(rawConversionResult.holes) },
+    [rawConversionResult]
+  );
   const [isConverting, setIsConverting] = useState(false);
   const [viewMode, setViewMode] = useState<'2D' | '3D'>('3D');
   const [supportsBoth, setSupportsBoth] = useState(false);
@@ -135,35 +143,54 @@ export function PartCreationWizard({
   // Memoized selections for viewer performance
   const selectedIndices = useMemo(() => selectedTaps.map(t => t.holeIndex), [selectedTaps]);
 
-  // ── Instant CNC costing: server-side analysis of the uploaded STEP file ──
-  const isCnc = selectedService === 'cnc_machining' || selectedService === 'cnc_turning';
+  // ── Instant costing: server-side analysis of the upload (CNC, sheet metal, FDM) ──
+  const quoteKind = wizardQuoteKind(selectedService);
+  const isCnc = quoteKind === 'cnc';
   const cncAnalysis = useWizardCncAnalysis(uploadedFile?.fileUrl, uploadedFile?.fileName, isCnc);
+  const partAnalysis = useWizardPartAnalysis(
+    uploadedFile?.fileUrl,
+    uploadedFile?.fileName,
+    quoteKind === 'sheet' || quoteKind === 'print' ? quoteKind : null
+  );
+  const analysisState = isCnc ? cncAnalysis : partAnalysis;
 
   // Holes a standard tap fits — highlighted when tapping is on
   const tapCandidates = useMemo(() => findTapCandidates(conversionResult?.holes), [conversionResult]);
   const tappableIndices = useMemo(() => tapCandidates.map((c) => c.holeIndex), [tapCandidates]);
 
   // Live price from the same engine the server uses when the part is added
+  const calibration = usePricingCalibration();
   const pricing = useMemo(() => {
-    if (!isCnc || !cncAnalysis.analysis || !selectedMaterial) return null;
-    const built = buildCncQuoteRequest({
-      materialId: selectedMaterial.id,
-      secondaryProcesses,
-      coatingColor,
-      taps: selectedTaps,
-      quantity,
-    });
-    if (!built.priceable) return { quote: null, reason: built.reason, unpriced: [], request: null };
-    const result = generateCncQuote(cncAnalysis.analysis, built.request);
-    return result.success
-      ? { quote: result.data, reason: null, unpriced: built.unpriced, request: built.request }
-      : { quote: null, reason: result.error.message, unpriced: built.unpriced, request: built.request };
-  }, [isCnc, cncAnalysis.analysis, selectedMaterial, secondaryProcesses, coatingColor, selectedTaps, quantity]);
+    if (!selectedMaterial) return null;
+    const source: WizardAnalysis | null =
+      isCnc && cncAnalysis.analysis
+        ? { kind: 'cnc', analysis: cncAnalysis.analysis }
+        : partAnalysis.handle
+          ? partAnalysis.handle
+          : null;
+    if (!source) return null;
+    return priceWizardPart(
+      source,
+      {
+        material: selectedMaterial,
+        secondaryProcesses,
+        coatingColor,
+        taps: selectedTaps,
+        quantity,
+      },
+      calibration
+    );
+  }, [isCnc, cncAnalysis.analysis, partAnalysis.handle, selectedMaterial, secondaryProcesses, coatingColor, selectedTaps, quantity, calibration]);
 
-  const tierPrices = useMemo(() => {
-    if (!cncAnalysis.analysis || !pricing?.request) return [];
-    return getCncTierTable(cncAnalysis.analysis, { ...pricing.request, quantity: 1 });
-  }, [cncAnalysis.analysis, pricing?.request]);
+  const tierPrices = pricing?.tiers ?? [];
+
+  // Stable: FileUploadStep runs effects that depend on these
+  const handleConversionComplete = useCallback((buffer: ArrayBuffer, result: ConversionResult) => {
+    setStlBuffer(buffer);
+    setConversionResult(result);
+  }, []);
+  const handleConversionStart = useCallback(() => setIsConverting(true), []);
+  const handleConversionEnd = useCallback(() => setIsConverting(false), []);
 
   const handleApplySuggestedTaps = useCallback(() => {
     setSelectedTaps(tapCandidates.map((c) => ({ holeIndex: c.holeIndex, tapType: c.suggestedTapId })));
@@ -252,7 +279,7 @@ export function PartCreationWizard({
       case 'quote':
         // Parts without an instant price can still be added (engineer-priced on RFQ),
         // but not while the analysis is still running.
-        return !(isCnc && cncAnalysis.status === 'analyzing');
+        return !(quoteKind && analysisState.status === 'analyzing');
       default:
         return false;
     }
@@ -302,6 +329,17 @@ export function PartCreationWizard({
     if (prevIndex >= 0) {
       setCurrentStep(STEPS[prevIndex].id);
     }
+  };
+
+  // A part the sheet analysis rejects (e.g. a machined block) can still be priced
+  // instantly as CNC: keep the upload, drop the sheet-only choices, pick a CNC material.
+  const handleSwitchToCnc = () => {
+    setSelectedService('cnc_machining');
+    setSelectedMaterial(null);
+    setSecondaryProcesses([]);
+    setCoatingColor(null);
+    setSelectedTaps([]);
+    setCurrentStep('material');
   };
 
   const handleSecondaryProcessToggle = (process: SecondaryProcess) => {
@@ -398,7 +436,7 @@ export function PartCreationWizard({
         ...(conversionResult?.boundingBox ? { dimensions: conversionResult.boundingBox } : {}),
         quantity,
         ...(discountTier ? { discountTier } : {}),
-        ...(cncAnalysis.analysisId ? { analysisId: cncAnalysis.analysisId } : {}),
+        ...(analysisState.analysisId ? { analysisId: analysisState.analysisId } : {}),
         ...(conversionResult
           ? {
               preview: {
@@ -487,12 +525,9 @@ export function PartCreationWizard({
               setConversionResult(null);
             }}
             selectedService={selectedService}
-            onConversionComplete={(buffer: ArrayBuffer, result: ConversionResult) => {
-              setStlBuffer(buffer);
-              setConversionResult(result);
-            }}
-            onConversionStart={() => setIsConverting(true)}
-            onConversionEnd={() => setIsConverting(false)}
+            onConversionComplete={handleConversionComplete}
+            onConversionStart={handleConversionStart}
+            onConversionEnd={handleConversionEnd}
           />
         );
       case 'material':
@@ -547,10 +582,12 @@ export function PartCreationWizard({
       case 'quote':
         return (
           <InstantQuoteStep
-            isCnc={isCnc}
-            analysisStatus={cncAnalysis.status}
-            analysisError={cncAnalysis.error}
-            onRetryAnalysis={cncAnalysis.retry}
+            kind={quoteKind}
+            analysisStatus={analysisState.status}
+            analysisError={analysisState.error}
+            analysisErrorCode={isCnc ? null : partAnalysis.errorCode}
+            onRetryAnalysis={analysisState.retry}
+            onSwitchToCnc={quoteKind === 'sheet' ? handleSwitchToCnc : undefined}
             quote={pricing?.quote ?? null}
             unavailableReason={pricing?.reason ?? null}
             unpricedProcesses={pricing?.unpriced ?? []}
@@ -565,65 +602,63 @@ export function PartCreationWizard({
 
   const content = (
     <div className={cn(
-      "flex flex-col bg-white overflow-hidden font-sans text-slate-600",
+      "flex flex-col bg-lp-card overflow-hidden font-lp-sans text-lp-muted-fg",
       standalone ? "h-screen w-full" : "h-full flex flex-col"
     )}>
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="h-20 px-8 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md z-20">
+      <div className="h-20 px-8 border-b border-lp-border flex items-center justify-between shrink-0 bg-lp-card/80 backdrop-blur-md z-20">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Box className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-sm bg-lp-primary flex items-center justify-center shadow-sm">
+              <Box className="w-5 h-5 text-lp-primary-fg" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest leading-none mb-1">
+              <h2 className="text-sm font-bold text-lp-fg uppercase tracking-widest leading-none mb-1">
                 Design Configurator
               </h2>
-              <p className="text-[10px] font-black text-[#2F5FA7] uppercase tracking-widest leading-none">
+              <p className="lp-label-mono text-lp-primary leading-none">
                 Industrial Engineering Suite
               </p>
             </div>
           </div>
 
-          <Separator orientation="vertical" className="h-8 bg-slate-200" />
+          <Separator orientation="vertical" className="h-8 bg-lp-border" />
 
-          {/* Stepper HUD - Improved responsiveness */}
-          <div className="flex items-center gap-6 overflow-x-auto no-scrollbar px-4 flex-1">
+          {/* Stepper HUD */}
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-4 flex-1">
             {STEPS.map((step, idx) => (
               <div
                 key={step.id}
                 className={cn(
-                  'flex items-center gap-2.5 transition-all duration-300',
-                  idx <= currentStepIndex ? 'opacity-100' : 'opacity-30'
+                  'flex items-center gap-2 transition-all duration-300',
+                  idx <= currentStepIndex ? 'opacity-100' : 'opacity-40'
                 )}
               >
                 <div
                   className={cn(
-                    'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black transition-all border shadow-sm',
+                    'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border',
                     idx === currentStepIndex
-                      ? 'bg-white border-[#2F5FA7] text-[#2F5FA7] ring-4 ring-blue-50'
+                      ? 'bg-lp-card border-lp-primary text-lp-primary ring-4 ring-lp-primary/10'
                       : idx < currentStepIndex
-                        ? 'bg-blue-600 border-[#2F5FA7] text-white'
-                        : 'bg-slate-50 border-slate-200 text-blue-100'
+                        ? 'bg-lp-primary border-lp-primary text-lp-primary-fg'
+                        : 'bg-lp-accent border-lp-border text-lp-muted-fg'
                   )}
                 >
                   {idx < currentStepIndex ? <CheckCircle className="w-3.5 h-3.5" /> : idx + 1}
                 </div>
                 <span
                   className={cn(
-                    'hidden lg:block text-[10px] font-black uppercase tracking-widest transition-colors',
-                    idx === currentStepIndex ? 'text-slate-900' : 'text-blue-100'
+                    'hidden lg:block lp-label-mono transition-colors',
+                    idx === currentStepIndex ? 'text-lp-fg' : 'text-lp-muted-fg'
                   )}
                 >
                   {step.label}
                 </span>
                 {idx < STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      'ml-2 w-1.5 h-1.5 rounded-full',
-                      idx < currentStepIndex ? 'bg-[#2F5FA7]' : 'bg-slate-200'
-                    )}
-                  />
+                  <span className={cn(
+                    'ml-1 text-xs',
+                    idx < currentStepIndex ? 'text-lp-primary' : 'text-lp-border'
+                  )}>——</span>
                 )}
               </div>
             ))}
@@ -635,7 +670,7 @@ export function PartCreationWizard({
           size="icon"
           onClick={() => handleClose()}
           disabled={isSubmitting}
-          className="ml-10 h-8 w-8 rounded-lg text-blue-100 hover:bg-slate-50 transition-colors"
+          className="ml-10 h-8 w-8 rounded-sm text-lp-muted-fg hover:bg-lp-accent transition-colors"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -644,7 +679,7 @@ export function PartCreationWizard({
       {/* ── Main Work Area ──────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden force-no-horizontal-scroll">
         {/* LEFT: Persistent Viewer (If file uploaded) */}
-        <div className="flex-1 bg-slate-50 border-r border-slate-100 relative overflow-hidden flex items-center justify-center">
+        <div className="flex-1 bg-lp-bg border-r border-lp-border relative overflow-hidden flex items-center justify-center">
           {/* Show FlatPatternViewer on bending step when flat pattern is available */}
           {currentStep === 'bending' && conversionResult?.flatPattern ? (
             <FlatPatternViewer
@@ -693,13 +728,13 @@ export function PartCreationWizard({
               {/* Floating 2D/3D Toggle UI */}
               {supportsBoth && (
                 <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30">
-                  <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-xl rounded-full p-1.5 flex items-center gap-1">
+                  <div className="bg-lp-card/90 backdrop-blur-md border border-lp-border shadow-sm rounded-full p-1.5 flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                        viewMode === '3D' ? "bg-blue-600 text-white shadow-lg" : "text-blue-100 hover:text-slate-600"
+                        "h-8 px-5 rounded-full lp-label-mono transition-all",
+                        viewMode === '3D' ? "bg-lp-primary text-lp-primary-fg shadow-sm" : "text-lp-muted-fg hover:text-lp-fg"
                       )}
                       onClick={() => setViewMode('3D')}
                     >
@@ -709,8 +744,8 @@ export function PartCreationWizard({
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-8 px-5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                        viewMode === '2D' ? "bg-blue-600 text-white shadow-lg" : "text-blue-100 hover:text-slate-600"
+                        "h-8 px-5 rounded-full lp-label-mono transition-all",
+                        viewMode === '2D' ? "bg-lp-primary text-lp-primary-fg shadow-sm" : "text-lp-muted-fg hover:text-lp-fg"
                       )}
                       onClick={() => setViewMode('2D')}
                     >
@@ -722,20 +757,20 @@ export function PartCreationWizard({
 
               {/* Floating Model Tags */}
               <div className="absolute top-14 left-6 flex flex-col gap-2">
-                <div className="px-3 py-1.5 bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg shadow-sm">
-                  <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest mb-0.5">
+                <div className="px-3 py-1.5 bg-lp-card/90 backdrop-blur-md border border-lp-border rounded-sm shadow-sm">
+                  <p className="lp-label-mono text-lp-muted-fg mb-0.5">
                     Part Name
                   </p>
-                  <p className="text-[10px] font-black text-slate-900 uppercase truncate max-w-[200px]">
+                  <p className="text-xs font-bold text-lp-fg uppercase truncate max-w-[200px]">
                     {partName || 'Unit-01'}
                   </p>
                 </div>
                 {conversionResult && (
-                  <div className="px-3 py-3bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg shadow-sm animate-in fade-in slide-in-from-left-2 duration-500">
-                    <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest mb-0.5">
+                  <div className="px-3 py-1.5 bg-lp-card/90 backdrop-blur-md border border-lp-border rounded-sm shadow-sm animate-in fade-in slide-in-from-left-2 duration-500">
+                    <p className="lp-label-mono text-lp-muted-fg mb-0.5">
                       Dimensions
                     </p>
-                    <p className="text-[10px] font-black text-slate-900 uppercase">
+                    <p className="text-xs font-bold text-lp-fg">
                       {conversionResult.boundingBox.x} × {conversionResult.boundingBox.y} ×{' '}
                       {conversionResult.boundingBox.z} mm
                     </p>
@@ -744,23 +779,28 @@ export function PartCreationWizard({
               </div>
 
               {/* Live instant price / costing status */}
-              {isCnc && (
+              {quoteKind && (
                 <div className="absolute top-14 right-6 z-20">
-                  {cncAnalysis.status === 'analyzing' ? (
-                    <div className="px-3 py-2 bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg shadow-sm flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 text-[#2F5FA7] animate-spin" />
-                      <p className="text-[9px] font-black text-[#2F5FA7] uppercase tracking-widest">Costing analysis…</p>
+                  {analysisState.status === 'analyzing' ? (
+                    <div className="px-3 py-2 bg-lp-card/90 backdrop-blur-md border border-lp-border rounded-sm shadow-sm flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 text-lp-primary animate-spin" />
+                      <p className="lp-label-mono text-lp-primary">Costing analysis…</p>
                     </div>
-                  ) : cncAnalysis.status === 'error' ? (
-                    <div className="px-3 py-2 bg-white/90 backdrop-blur-md border border-red-200 rounded-lg shadow-sm flex items-center gap-2">
-                      <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-                      <p className="text-[9px] font-black text-red-600 uppercase tracking-widest">Costing unavailable</p>
+                  ) : analysisState.status === 'error' ? (
+                    <div className="px-3 py-2 bg-lp-card/90 backdrop-blur-md border border-red-200 rounded-sm shadow-sm max-w-[280px]">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                        <p className="lp-label-mono text-red-600">Costing unavailable</p>
+                      </div>
+                      {analysisState.error && (
+                        <p className="mt-1 text-[10px] leading-snug text-red-600/80">{analysisState.error}</p>
+                      )}
                     </div>
                   ) : pricing?.quote ? (
-                    <div className="px-4 py-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 text-right" data-testid="live-price">
-                      <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest">Live price · {quantity} pcs</p>
-                      <p className="text-lg font-black text-white leading-tight">{inr(pricing.quote.totalPrice)}</p>
-                      <p className="text-[9px] font-bold text-blue-100">{inr(pricing.quote.pricePerPart)} / part</p>
+                    <div className="px-4 py-2.5 bg-lp-primary rounded-sm shadow-sm text-right" data-testid="live-price">
+                      <p className="lp-label-mono text-lp-primary-fg/70">Live price · {quantity} pcs</p>
+                      <p className="text-lg font-bold text-lp-primary-fg leading-tight">{inr(pricing.quote.totalPrice)}</p>
+                      <p className="text-[9px] font-bold text-lp-primary-fg/70">{inr(pricing.quote.pricePerPart)} / part</p>
                     </div>
                   ) : null}
                 </div>
@@ -770,22 +810,22 @@ export function PartCreationWizard({
             </div>
           ) : isConverting ? (
             <div className="flex flex-col items-center gap-4">
-              <Loader2 className="w-8 h-8 text-[#2F5FA7] animate-spin" />
-              <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest">
+              <Loader2 className="w-8 h-8 text-lp-primary animate-spin" />
+              <p className="lp-label-mono text-lp-muted-fg">
                 Processing Geometry...
               </p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4 max-w-sm text-center">
-              <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-200">
-                <Box className="w-6 h-6 text-slate-300" />
+              <div className="w-16 h-16 rounded-sm bg-lp-accent flex items-center justify-center border-2 border-dashed border-lp-border">
+                <Box className="w-6 h-6 text-lp-muted-fg" />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-900 uppercase tracking-widest mb-2">
-                  Model Workspace
+                <p className="text-sm text-lp-fg mb-1">
+                  Model <span className="font-lp-serif italic text-lp-primary">workspace</span>
                 </p>
-                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest leading-relaxed">
-                  Your design will appear here once the CAD file is analyzed.
+                <p className="lp-label-mono text-lp-muted-fg leading-relaxed">
+                  Your design appears here once the CAD file is analysed
                 </p>
               </div>
             </div>
@@ -793,19 +833,19 @@ export function PartCreationWizard({
         </div>
 
         {/* RIGHT: Sidebar Configurator */}
-        <div className="w-full md:w-[420px] bg-white flex flex-col shrink-0 border-l border-slate-100 overflow-hidden">
+        <div className="w-full md:w-[420px] bg-lp-card flex flex-col shrink-0 border-l border-lp-border overflow-hidden">
           <div className="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
             {renderStepContent()}
           </div>
 
           {/* Navigation Footer (Floating in Sidebar) */}
-          <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex items-center gap-3">
+          <div className="p-6 border-t border-lp-border bg-lp-accent/50 flex items-center gap-3">
             {currentStepIndex > 0 && (
               <Button
                 variant="outline"
                 onClick={handleBack}
                 disabled={isSubmitting}
-                className="h-12 w-12 p-0 flex items-center justify-center border-slate-200 text-slate-600 rounded-xl hover:bg-white transition-all shadow-sm"
+                className="h-12 w-12 p-0 flex items-center justify-center border-lp-border text-lp-fg rounded-sm hover:bg-lp-card transition-all shadow-sm"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -815,7 +855,7 @@ export function PartCreationWizard({
               <Button
                 onClick={handleNext}
                 disabled={!canProceed() || isSubmitting}
-                className="h-12 flex-1 tracking-widest uppercase text-[10px] font-black bg-blue-600 hover:bg-[#1E3A66] text-white shadow-xl shadow-blue-500/20 transition-all border-none rounded-xl flex items-center justify-center gap-2 group"
+                className="h-12 flex-1 lp-label-mono bg-lp-primary hover:bg-lp-primary/80 text-lp-primary-fg shadow-sm transition-all border-none rounded-sm flex items-center justify-center gap-2 group"
               >
                 Next Step
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -824,7 +864,7 @@ export function PartCreationWizard({
               <Button
                 onClick={handleSubmit}
                 disabled={!canProceed() || isSubmitting}
-                className="h-12 flex-1 tracking-widest uppercase text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-500/20 transition-all border-none rounded-xl flex items-center justify-center gap-2"
+                className="h-12 flex-1 lp-label-mono bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all border-none rounded-sm flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -868,7 +908,7 @@ export function PartCreationWizard({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        "w-full h-[95vh] p-0 overflow-hidden bg-white border-0 shadow-2xl flex flex-col rounded-[32px] transition-all duration-500",
+        `lp-root ${landingFontVars} w-full h-[95vh] p-0 overflow-hidden bg-lp-card border-0 shadow-sm flex flex-col rounded-sm transition-all duration-500`,
         currentStep === 'secondary' && secondaryProcesses.includes('tapping')
           ? "max-w-[95vw] lg:max-w-[1600px]"
           : "max-w-[95vw] lg:max-w-[1280px]"

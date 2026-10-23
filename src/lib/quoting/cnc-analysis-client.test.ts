@@ -72,6 +72,25 @@ describe('analyzeCncFromUrl (server → converter)', () => {
   });
 });
 
+describe('analyzeSheetFromUrl (server → converter)', () => {
+  const S3_URL = 'https://mechhub-cad.s3.amazonaws.com/part-analysis/u/k/p.step?sig=1';
+
+  it('tags parts that are not sheet metal so the wizard can suggest CNC', async () => {
+    vi.stubEnv('CONVERTER_SERVICE_TOKEN', 'svc-token');
+    const { analyzeSheetFromUrl } = await import('@/lib/converter-client');
+
+    const detail = "No constant sheet thickness found — this part doesn't look like sheet metal.";
+    fetchMock.mockResolvedValueOnce(json(422, { detail }));
+    const block = await analyzeSheetFromUrl(S3_URL, 'p.step');
+    expect(block.success === false && block.error.code).toBe(ErrorCode.NOT_SHEET_METAL);
+    expect(block.success === false && block.error.message).toBe(detail);
+
+    fetchMock.mockResolvedValueOnce(json(422, { detail: 'STEP file contains no solid bodies.' }));
+    const broken = await analyzeSheetFromUrl(S3_URL, 'p.step');
+    expect(broken.success === false && broken.error.code).toBe(ErrorCode.PARSE_FAILED);
+  });
+});
+
 describe('analyzeCncPart (browser → MechHub → S3)', () => {
   const file = new File(['ISO-10303-21;'], 'bracket.step');
   const intent = {

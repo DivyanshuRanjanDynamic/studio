@@ -4,11 +4,10 @@ import { Fragment, useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { LandingNav } from '@/components/LandingNav';
-import { Footer } from '@/components/Footer';
+import { V2Shell } from '@/components/V2Shell';
 import Fuse from 'fuse.js';
 import { useCart } from '@/context/CartContext';
-import { BackToHomeBar } from '@/components/BackToHomeBar';
+import { Reveal, Tag } from '@/components/home/primitives';
 import {
   Search,
   Package,
@@ -18,6 +17,8 @@ import {
   Scale,
   X,
   CheckCircle2,
+  ChevronDown,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,9 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { landingFontVars } from '@/components/home/fonts';
+import { cn } from '@/utils';
+import { CurvedPartsFlow } from '@/components/CurvedPartsFlow';
 
 type PriceBand = 'all' | 'under-200' | '200-500' | '500-1000' | '1000-plus';
 type StockFilter = 'all' | 'in-stock' | 'low-stock';
@@ -142,8 +146,6 @@ function getPopularityScore(product: ShopProduct): number {
     score += rating * Math.max(reviewCount, 1) * 50;
   }
 
-  // Deterministic engagement score calculation for catalog items lacking explicit metrics.
-  // Ensures 'Popular' sort ordering is deterministic and visibly distinct from default/newest/price sort!
   const discount = getDiscount(product);
   const nameHash = product.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const deterministicFallback = (nameHash % 100) + discount * 10 + (product.inventory % 7) * 5;
@@ -168,6 +170,17 @@ function matchesPriceBand(price: number, band: PriceBand) {
   return true;
 }
 
+const TRUST_ITEMS = [
+  'QC-Verified Components',
+  'ISO 9001 Certified',
+  'Same-Day Dispatch',
+  'Bulk Pricing Available',
+  'Industry-Grade Materials',
+  'Precision Engineered',
+  'GST Invoice Included',
+  'Pan-India Delivery',
+];
+
 export default function ShopPage() {
   const db = useFirestore();
   const searchParams = useSearchParams();
@@ -178,8 +191,6 @@ export default function ShopPage() {
   const [priceBand, setPriceBand] = useState<PriceBand>('all');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
   const [compareList, setCompareList] = useState<ShopProduct[]>([]);
-  const [heroCarouselApi, setHeroCarouselApi] = useState<CarouselApi>();
-  const [heroCarouselIndex, setHeroCarouselIndex] = useState(0);
   const { addItem } = useCart();
 
   const productsRef = useMemoFirebase(() => {
@@ -279,21 +290,6 @@ export default function ShopPage() {
     }, {});
   }, [allProducts]);
 
-  const heroCarouselItems = useMemo(() => {
-    if (allProducts.length === 0) return [];
-    const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(shuffled.length, 8));
-  }, [allProducts]);
-
-  const pricingSummary = useMemo(() => {
-    if (filteredProducts.length === 0) return { min: 0, max: 0, avg: 0 };
-    const prices = filteredProducts.map((product) => product.salePrice);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const avg = Math.round(prices.reduce((sum, price) => sum + price, 0) / prices.length);
-    return { min, max, avg };
-  }, [filteredProducts]);
-
   const activeFilterCount = useMemo(() => {
     let total = 0;
     if (selectedCategory !== 'all') total += 1;
@@ -320,188 +316,115 @@ export default function ShopPage() {
     });
   };
 
-  useEffect(() => {
-    if (!heroCarouselApi) return;
-    const onSelect = () => {
-      setHeroCarouselIndex(heroCarouselApi.selectedScrollSnap());
-    };
-    onSelect();
-    heroCarouselApi.on('select', onSelect);
-    heroCarouselApi.on('reInit', onSelect);
-    return () => {
-      heroCarouselApi.off('select', onSelect);
-      heroCarouselApi.off('reInit', onSelect);
-    };
-  }, [heroCarouselApi]);
-
-  useEffect(() => {
-    if (!heroCarouselApi || heroCarouselItems.length <= 1) return;
-    const autoplay = window.setInterval(() => {
-      heroCarouselApi.scrollNext();
-    }, 4200);
-    return () => window.clearInterval(autoplay);
-  }, [heroCarouselApi, heroCarouselItems.length]);
-
-  const getProductImage = (product: ShopProduct) => {
-    if (!product.images?.length) return '/images/placeholder-part.svg';
-    if (typeof product.images[0] === 'string') {
-      return product.images[0] || '/images/placeholder-part.svg';
-    }
-    return product.images[0]?.urls?.product || product.images[0]?.urls?.thumb || '/images/placeholder-part.svg';
-  };
-
   return (
-    <div className="min-h-screen bg-[#F6F8FC] text-slate-900 selection:bg-blue-500/20">
-      <LandingNav />
+    <V2Shell noFooter>
+      {/* Hero */}
+      <section className="border-b border-lp-border bg-lp-bg">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20 text-center">
+          <Reveal>
+            <p className="lp-label-mono text-lp-primary mb-4">MechHub Component Registry</p>
+          </Reveal>
+          <Reveal>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight text-lp-fg leading-[1.1]">
+              Components for every <span className="font-lp-serif italic text-lp-primary">build.</span>
+            </h1>
+          </Reveal>
+          <Reveal>
+            <p className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-lp-muted-fg leading-relaxed">
+              Precision-engineered industrial parts. QC-verified, competitively priced, and ready to dispatch within 24 hours.
+            </p>
+          </Reveal>
 
-      <section className="border-b border-slate-200 bg-white pt-0">
-        <BackToHomeBar className="pt-1 md:pt-2 pb-2" />
-        <div className="container mx-auto px-4 pb-6 md:pb-8">
-          <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
-            <Badge className="border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#2F5FA7]">
-              <Store className="mr-1.5 h-3 w-3" />
-              MechHub Registry
-            </Badge>
-            <Badge className="border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
-              <CheckCircle2 className="mr-1.5 h-3 w-3" />
-              Verified Supply
-            </Badge>
+          {/* Stats row */}
+          <Reveal>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{allProducts.length}+</p>
+                <p className="lp-label-mono text-lp-muted-fg mt-1">Components</p>
+              </div>
+              <div className="w-px h-8 bg-lp-border hidden sm:block" />
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{CATEGORIES.length - 1}</p>
+                <p className="lp-label-mono text-lp-muted-fg mt-1">Categories</p>
+              </div>
+              <div className="w-px h-8 bg-lp-border hidden sm:block" />
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">24hr</p>
+                <p className="lp-label-mono text-lp-muted-fg mt-1">Dispatch</p>
+              </div>
+              <div className="w-px h-8 bg-lp-border hidden sm:block" />
+              <div className="text-center">
+                <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">ISO</p>
+                <p className="lp-label-mono text-lp-muted-fg mt-1">Certified</p>
+              </div>
+            </div>
+          </Reveal>
+
+        </div>
+
+        {/* Trust marquee */}
+        <div className="border-t border-lp-border overflow-hidden">
+          <div className="flex animate-marquee whitespace-nowrap py-3">
+            {[...TRUST_ITEMS, ...TRUST_ITEMS].map((item, i) => (
+              <span key={i} className="mx-6 lp-label-mono text-lp-muted-fg/60 flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-lp-primary/40" />
+                {item}
+              </span>
+            ))}
           </div>
-
-          {heroCarouselItems.length > 0 ? (
-            <div className="relative hidden overflow-hidden rounded-[30px] border border-blue-200/60 bg-gradient-to-r from-[#123A74] via-[#1E4B90] to-[#2F5FA7] shadow-[0_24px_60px_rgba(24,58,110,0.30)] md:block">
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-[40%] bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.15),transparent_55%)]" />
-              <Carousel
-                setApi={setHeroCarouselApi}
-                opts={{ align: 'start', loop: true }}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-0">
-                  {heroCarouselItems.map((product) => (
-                    <CarouselItem key={product.id} className="pl-0">
-                      <div className="grid min-h-[240px] items-center gap-6 p-6 md:min-h-[290px] md:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-14">
-                        <div className="space-y-3 text-white">
-                          <p className="inline-flex rounded-full border border-white/35 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-50">
-                            Random Pick In Shop
-                          </p>
-                          <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight md:text-4xl">
-                            {product.name}
-                          </h1>
-                          <div className="max-w-xl rounded-2xl border border-blue-200/55 bg-[#0B2F63]/70 px-4 py-3 shadow-[0_10px_30px_rgba(5,20,45,0.35)] backdrop-blur-sm">
-                            <div className="mb-2 h-1.5 w-16 rounded-full bg-[#F4B400]" />
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100">
-                              Specification
-                            </p>
-                            <p className="mt-1 text-lg font-black text-white">
-                              {product.specs || product.sku}
-                            </p>
-                          </div>
-                          <Link href={`/shop/${product.id}`}>
-                            <Button className="mt-2 h-11 rounded-full bg-[#F4B400] px-6 text-sm font-black text-[#1A2B0F] hover:bg-[#F9C83A]">
-                              View Product
-                            </Button>
-                          </Link>
-                        </div>
-
-                        <div className="relative mx-auto h-[180px] w-full max-w-[380px] overflow-hidden rounded-[2.5rem] bg-white/10 backdrop-blur-sm border border-white/20 md:h-[230px]">
-                          <Image
-                            src={getProductImage(product)}
-                            alt={product.name}
-                            fill
-                            className="object-cover transition-transform duration-700 hover:scale-105 drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)]"
-                            sizes="(max-width: 1024px) 80vw, 30vw"
-                          />
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {heroCarouselItems.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-3 top-1/2 h-10 w-10 -translate-y-1/2 border-white/35 bg-white/12 text-white hover:bg-white/20 disabled:opacity-35 md:left-5" />
-                    <CarouselNext className="right-3 top-1/2 h-10 w-10 -translate-y-1/2 border-white/35 bg-white/12 text-white hover:bg-white/20 disabled:opacity-35 md:right-5" />
-                  </>
-                )}
-              </Carousel>
-
-              {heroCarouselItems.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
-                  {heroCarouselItems.map((item, index) => (
-                    <button
-                      key={`${item.id}-dot`}
-                      onClick={() => heroCarouselApi?.scrollTo(index)}
-                      aria-label={`Go to product ${index + 1}`}
-                      className={`h-2.5 rounded-full transition-all ${heroCarouselIndex === index
-                        ? 'w-8 bg-white'
-                        : 'w-2.5 bg-blue-100/45 hover:bg-blue-100/70'
-                        }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="hidden rounded-[30px] border border-emerald-200 bg-gradient-to-r from-emerald-100 to-green-100 p-6 md:block">
-              <p className="text-sm font-semibold text-emerald-900">
-                Loading featured shop picks...
-              </p>
-            </div>
-          )}
         </div>
       </section>
 
-      <main className="container mx-auto px-4 py-6 md:py-8">
-        <div className="sticky top-[72px] z-30 mb-6 rounded-[28px] border border-slate-200 bg-white/95 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+      {/* Toolbar */}
+      <main className="mx-auto max-w-7xl px-4 py-6 md:py-8">
+        {/* Search + Categories + Sort */}
+        <div className="sticky top-[72px] z-30 mb-6 rounded-sm border border-lp-border bg-lp-card/95 p-3 backdrop-blur">
+          {/* Mobile */}
           <form onSubmit={(e) => { e.preventDefault(); setDebouncedSearchQuery(searchQuery.trim()); }} className="flex items-center gap-2 lg:hidden">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" />
-              <Input
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-lp-muted-fg/40" />
+              <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search products"
-                className="h-11 rounded-2xl border-slate-200 bg-slate-50 pl-11 pr-3 text-sm font-medium text-slate-900 placeholder:text-blue-100 focus-visible:ring-[#2F5FA7]"
+                className="h-10 w-full rounded-sm border border-lp-border bg-lp-bg pl-10 pr-3 text-sm text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:outline-none focus:ring-1 focus:ring-lp-primary/10"
               />
             </div>
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-11 shrink-0 rounded-2xl border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]"
-                >
-                  <Filter className="mr-1.5 h-4 w-4" />
+                <button className="h-10 shrink-0 rounded-sm border border-lp-border bg-lp-bg px-3 lp-label-mono text-lp-fg hover:border-lp-primary transition-colors flex items-center gap-1.5">
+                  <Filter className="h-3.5 w-3.5" />
                   Filter
                   {activeFilterCount > 0 && (
-                    <span className="ml-1 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                    <span className="ml-0.5 rounded-sm bg-lp-primary px-1.5 py-0.5 text-[9px] font-bold text-lp-primary-fg">
                       {activeFilterCount}
                     </span>
                   )}
-                </Button>
+                </button>
               </SheetTrigger>
 
-              <SheetContent side="bottom" className="max-h-[82vh] overflow-y-auto rounded-t-3xl border-slate-200 bg-white p-0">
-                <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur">
+              <SheetContent side="bottom" className={cn("lp-root max-h-[82vh] overflow-y-auto rounded-t-sm border-lp-border bg-lp-bg p-0", landingFontVars)}>
+                <div className="sticky top-0 z-10 border-b border-lp-border bg-lp-bg/95 px-5 py-4 backdrop-blur">
                   <SheetHeader className="space-y-1 text-left">
-                    <SheetTitle className="text-lg font-black tracking-tight text-slate-900">
+                    <SheetTitle className="text-lg font-medium tracking-tight text-lp-fg">
                       Filters
                     </SheetTitle>
-                    <SheetDescription className="text-sm text-blue-200">
-                      Sort by price or pick tags like Bearings and Linear Motion.
+                    <SheetDescription className="text-sm text-lp-muted-fg">
+                      Sort by price or pick categories.
                     </SheetDescription>
                   </SheetHeader>
                 </div>
 
                 <div className="space-y-6 px-5 py-5">
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                      Sort
-                    </h3>
+                    <h3 className="lp-label-mono text-lp-muted-fg mb-3">Sort</h3>
                     <select
                       value={sortBy}
                       onChange={(event) =>
                         setSortBy(event.target.value as (typeof SORT_OPTIONS)[number])
                       }
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2F5FA7]"
+                      className="h-10 w-full rounded-sm border border-lp-border bg-lp-card px-3 text-sm text-lp-fg outline-none focus:border-lp-primary"
                     >
                       {SORT_OPTIONS.map((option) => (
                         <option key={option} value={option}>
@@ -512,17 +435,15 @@ export default function ShopPage() {
                   </section>
 
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                      Tags
-                    </h3>
+                    <h3 className="lp-label-mono text-lp-muted-fg mb-3">Category</h3>
                     <div className="flex flex-wrap gap-2">
                       {CATEGORIES.map((category) => (
                         <button
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
-                          className={`rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] transition ${selectedCategory === category.id
-                            ? 'border-[#2F5FA7] bg-blue-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
+                          className={`rounded-sm border px-3 py-2 lp-label-mono transition ${selectedCategory === category.id
+                            ? 'border-lp-primary bg-lp-primary text-lp-primary-fg'
+                            : 'border-lp-border bg-lp-card text-lp-fg hover:border-lp-primary'
                             }`}
                         >
                           {category.label}
@@ -532,17 +453,15 @@ export default function ShopPage() {
                   </section>
 
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                      Price
-                    </h3>
+                    <h3 className="lp-label-mono text-lp-muted-fg mb-3">Price</h3>
                     <div className="space-y-2">
                       {PRICE_BANDS.map((band) => (
                         <button
                           key={band.id}
                           onClick={() => setPriceBand(band.id)}
-                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${priceBand === band.id
-                            ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                            : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                          className={`w-full rounded-sm border px-4 py-2.5 text-left text-sm transition ${priceBand === band.id
+                            ? 'border-lp-primary bg-lp-primary/5 text-lp-primary'
+                            : 'border-lp-border text-lp-fg hover:border-lp-primary/40'
                             }`}
                         >
                           {band.label}
@@ -552,17 +471,15 @@ export default function ShopPage() {
                   </section>
 
                   <section>
-                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                      Availability
-                    </h3>
+                    <h3 className="lp-label-mono text-lp-muted-fg mb-3">Availability</h3>
                     <div className="space-y-2">
                       {STOCK_FILTERS.map((stock) => (
                         <button
                           key={stock.id}
                           onClick={() => setStockFilter(stock.id)}
-                          className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${stockFilter === stock.id
-                            ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                            : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                          className={`w-full rounded-sm border px-4 py-2.5 text-left text-sm transition ${stockFilter === stock.id
+                            ? 'border-lp-primary bg-lp-primary/5 text-lp-primary'
+                            : 'border-lp-border text-lp-fg hover:border-lp-primary/40'
                             }`}
                         >
                           {stock.label}
@@ -572,17 +489,16 @@ export default function ShopPage() {
                   </section>
 
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Button
-                      variant="outline"
+                    <button
                       onClick={clearAllFilters}
-                      className="h-11 rounded-2xl border-slate-200 text-xs font-black uppercase tracking-[0.14em] text-slate-600 hover:bg-slate-50"
+                      className="h-10 rounded-sm border border-lp-border lp-label-mono text-lp-fg hover:bg-lp-accent transition-colors"
                     >
                       Clear
-                    </Button>
+                    </button>
                     <SheetClose asChild>
-                      <Button className="h-11 rounded-2xl bg-blue-600 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1F447D]">
+                      <button className="h-10 rounded-sm bg-lp-primary text-lp-primary-fg lp-label-mono hover:bg-lp-primary/90 transition-colors">
                         View {filteredProducts.length}
-                      </Button>
+                      </button>
                     </SheetClose>
                   </div>
                 </div>
@@ -590,22 +506,62 @@ export default function ShopPage() {
             </Sheet>
           </form>
 
-          <div className="hidden flex-col gap-3 lg:flex xl:flex-row xl:items-center">
-            <form onSubmit={(e) => { e.preventDefault(); setDebouncedSearchQuery(searchQuery.trim()); }} className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-100" />
-              <Input
+          {/* Desktop */}
+          <div className="hidden lg:flex items-center gap-3">
+            <form onSubmit={(e) => { e.preventDefault(); setDebouncedSearchQuery(searchQuery.trim()); }} className="relative w-72 xl:w-80">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-lp-muted-fg/40" />
+              <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by SKU, part name, spec or category"
-                className="h-12 rounded-2xl border-slate-200 bg-slate-50 pl-11 text-sm font-medium text-slate-900 placeholder:text-blue-100 focus-visible:ring-[#2F5FA7]"
+                placeholder="Search by SKU, part name, spec"
+                className="h-10 w-full rounded-sm border border-lp-border bg-lp-bg pl-10 pr-3 text-sm text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:outline-none focus:ring-1 focus:ring-lp-primary/10"
               />
             </form>
 
-            <div className="flex flex-col gap-3 sm:flex-row xl:w-auto xl:items-center">
+            <div className="h-6 w-px bg-lp-border" />
+
+            <div className="flex flex-1 items-center gap-1.5 overflow-x-auto">
+              {CATEGORIES.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`shrink-0 rounded-sm border px-3 py-1.5 lp-label-mono transition ${selectedCategory === category.id
+                    ? 'border-lp-primary bg-lp-primary text-lp-primary-fg'
+                    : 'border-lp-border text-lp-muted-fg hover:border-lp-primary hover:text-lp-fg'
+                    }`}
+                >
+                  {category.label}
+                  <span className="ml-1.5 text-[9px] opacity-60">{categoryCounts[category.id] || 0}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="h-6 w-px bg-lp-border" />
+
+            <div className="flex items-center gap-2">
+              {priceBand !== 'all' && (
+                <button
+                  onClick={() => setPriceBand('all')}
+                  className="flex items-center gap-1 rounded-sm border border-lp-primary/20 bg-lp-primary/5 px-2.5 py-1.5 lp-label-mono text-lp-primary"
+                >
+                  {PRICE_BANDS.find(b => b.id === priceBand)?.label}
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+              {stockFilter !== 'all' && (
+                <button
+                  onClick={() => setStockFilter('all')}
+                  className="flex items-center gap-1 rounded-sm border border-lp-primary/20 bg-lp-primary/5 px-2.5 py-1.5 lp-label-mono text-lp-primary"
+                >
+                  {STOCK_FILTERS.find(s => s.id === stockFilter)?.label}
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
               <select
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value as (typeof SORT_OPTIONS)[number])}
-                className="h-12 min-w-[190px] rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2F5FA7]"
+                className="h-10 rounded-sm border border-lp-border bg-lp-bg px-3 pr-8 text-sm text-lp-fg outline-none focus:border-lp-primary appearance-none cursor-pointer"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -613,200 +569,116 @@ export default function ShopPage() {
                   </option>
                 ))}
               </select>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {CATEGORIES.slice(0, 4).map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition ${selectedCategory === category.id
-                      ? 'border-[#2F5FA7] bg-blue-600 text-white shadow-lg shadow-blue-900/15'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-[#2F5FA7] hover:text-[#2F5FA7]'
-                      }`}
-                  >
-                    {category.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="hidden h-fit rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-[168px] lg:block">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                  Browse Filters
-                </p>
-                <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900">
-                  Narrow your search
-                </h2>
-              </div>
-              <div className="rounded-xl bg-blue-50 p-2 text-[#2F5FA7]">
-                <Filter className="h-4 w-4" />
-              </div>
+        {/* Active filters summary */}
+        {activeFilterCount > 0 && (
+          <div className="mb-4 flex items-center gap-3">
+            <span className="lp-label-mono text-lp-muted-fg">
+              {filteredProducts.length} results
+            </span>
+            <button
+              onClick={clearAllFilters}
+              className="lp-label-mono text-lp-primary hover:underline flex items-center gap-1"
+            >
+              Clear all <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        {/* Product Grid */}
+        <section>
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[380px] rounded-sm border border-lp-border bg-lp-card animate-pulse"
+                />
+              ))}
             </div>
-
-            <div className="space-y-6 py-5">
-              <section>
-                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                  Category
-                </h3>
-                <div className="space-y-2">
-                  {CATEGORIES.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${selectedCategory === category.id
-                        ? 'border-[#2F5FA7] bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                    >
-                      <span className="text-sm font-semibold text-slate-800">{category.label}</span>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-blue-200 shadow-sm">
-                        {categoryCounts[category.id] || 0}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                  Price
-                </h3>
-                <div className="space-y-2">
-                  {PRICE_BANDS.map((band) => (
-                    <button
-                      key={band.id}
-                      onClick={() => setPriceBand(band.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${priceBand === band.id
-                        ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                    >
-                      {band.label}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
-                  Availability
-                </h3>
-                <div className="space-y-2">
-                  {STOCK_FILTERS.map((stock) => (
-                    <button
-                      key={stock.id}
-                      onClick={() => setStockFilter(stock.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${stockFilter === stock.id
-                        ? 'border-[#2F5FA7] bg-blue-50 text-[#2F5FA7]'
-                        : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                    >
-                      {stock.label}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-200">
-                Result Snapshot
+          ) : error ? (
+            <div className="rounded-sm border border-lp-destructive/20 bg-lp-destructive/5 px-6 py-10 text-center">
+              <p className="text-lg font-medium text-lp-destructive">Unable to load products right now.</p>
+              <p className="mt-2 text-sm text-lp-muted-fg">
+                Please try again shortly. The catalogue connection returned an error.
               </p>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-2xl bg-white p-3 shadow-sm">
-                  <p className="text-xs font-semibold text-blue-200">Min price</p>
-                  <p className="mt-1 text-lg font-black text-slate-900">₹{pricingSummary.min}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-3 shadow-sm">
-                  <p className="text-xs font-semibold text-blue-200">Average</p>
-                  <p className="mt-1 text-lg font-black text-slate-900">₹{pricingSummary.avg}</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={clearAllFilters}
-                className="mt-4 h-11 w-full rounded-2xl text-xs font-black uppercase tracking-[0.18em] text-slate-600 hover:bg-white"
-              >
-                Clear filters
-              </Button>
             </div>
-          </aside>
+          ) : filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isComparing={!!compareList.find((item) => item.id === product.id)}
+                  toggleCompare={toggleCompare}
+                  addItem={addItem}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-sm border border-dashed border-lp-border bg-lp-card px-6 py-16 text-center">
+              <Package className="mx-auto h-10 w-10 text-lp-muted-fg/30" />
+              <h3 className="mt-5 text-xl font-medium tracking-tight text-lp-fg">
+                No components match these filters
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-lp-muted-fg leading-relaxed">
+                Try a wider price band, reset your category, or search with a SKU fragment like
+                LM8UU, 6204, or GT2.
+              </p>
+              <button
+                onClick={clearAllFilters}
+                className="mt-5 h-10 rounded-sm bg-lp-primary px-6 lp-label-mono text-lp-primary-fg hover:bg-lp-primary/90 transition-colors"
+              >
+                Reset filters
+              </button>
+            </div>
+          )}
+        </section>
 
-          <section className="space-y-6">
-            {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-[420px] rounded-[28px] border border-slate-200 bg-white animate-pulse"
-                  />
-                ))}
-              </div>
-            ) : error ? (
-              <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-10 text-center">
-                <p className="text-lg font-bold text-red-700">Unable to load products right now.</p>
-                <p className="mt-2 text-sm text-red-600">
-                  Please try again shortly. The catalogue connection returned an error.
-                </p>
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isComparing={!!compareList.find((item) => item.id === product.id)}
-                    toggleCompare={toggleCompare}
-                    addItem={addItem}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
-                <Package className="mx-auto h-12 w-12 text-slate-300" />
-                <h3 className="mt-6 text-2xl font-black tracking-tight text-slate-900">
-                  No components match these filters
-                </h3>
-                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
-                  Try a wider price band, reset your category, or search with a SKU fragment like
-                  `LM8UU`, `6204`, or `GT2`.
-                </p>
-                <Button
-                  onClick={clearAllFilters}
-                  className="mt-6 rounded-2xl bg-blue-600 px-6 text-sm font-bold hover:bg-[#1F447D]"
-                >
-                  Reset filters
-                </Button>
-              </div>
-            )}
+        {/* Bottom CTA */}
+        {!isLoading && filteredProducts.length > 0 && (
+          <section className="mt-16 mb-8 text-center">
+            <div className="mx-auto max-w-2xl rounded-sm border border-lp-border bg-lp-card p-8 sm:p-12">
+              <p className="lp-label-mono text-lp-primary mb-3">Need bulk quantities?</p>
+              <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-lp-fg">
+                Get custom <span className="font-lp-serif italic">pricing</span>
+              </h2>
+              <p className="mt-3 text-sm text-lp-muted-fg max-w-md mx-auto">
+                For orders above 100 units, contact our procurement team for volume discounts and custom delivery schedules.
+              </p>
+              <Link href="/quote/instant">
+                <button className="mt-6 h-11 rounded-sm border border-lp-border bg-lp-bg px-6 lp-label-mono text-lp-fg hover:border-lp-primary hover:text-lp-primary transition-colors flex items-center gap-2 mx-auto">
+                  Request a quote <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </Link>
+            </div>
           </section>
-        </div>
+        )}
       </main>
 
+      {/* Compare dialog */}
       {compareList.length > 0 && (
         <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="h-14 rounded-2xl bg-slate-950 px-6 text-white shadow-2xl hover:bg-slate-900">
-                <Scale className="mr-2 h-5 w-5 text-cyan-300" />
+              <button className="h-12 rounded-sm bg-lp-ink text-lp-ink-fg px-6 lp-label-mono shadow-2xl hover:bg-lp-ink/90 flex items-center gap-2 transition-colors">
+                <Scale className="h-4 w-4 text-lp-primary" />
                 Compare ({compareList.length})
-              </Button>
+              </button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl overflow-hidden border border-slate-200 bg-white p-0">
-              <DialogHeader className="border-b border-slate-100 px-6 py-5">
-                <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-950">
-                  <SlidersHorizontal className="h-5 w-5 text-[#2F5FA7]" />
-                  Component Comparison
+            <DialogContent className={cn("lp-root max-w-5xl overflow-hidden border border-lp-border bg-lp-bg p-0", landingFontVars)}>
+              <DialogHeader className="border-b border-lp-border px-6 py-5">
+                <DialogTitle className="flex items-center gap-2 text-lg font-medium tracking-tight text-lp-fg">
+                  <SlidersHorizontal className="h-4 w-4 text-lp-primary" />
+                  Component <span className="font-lp-serif italic">comparison</span>
                 </DialogTitle>
               </DialogHeader>
 
               <div className="overflow-x-auto px-6 py-6">
-                <div className="grid min-w-[760px] grid-cols-[140px_repeat(3,1fr)] gap-4">
+                <div className="grid min-w-[760px] grid-cols-[140px_repeat(3,1fr)] gap-3">
                   <div />
                   {compareList.map((product) => {
                     const image =
@@ -815,30 +687,28 @@ export default function ShopPage() {
                         : (product.images?.[0] as string | undefined);
 
                     return (
-                      <div key={product.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-center">
-                        <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-[1.5rem] bg-white shadow-inner border border-slate-100">
+                      <div key={product.id} className="rounded-sm border border-lp-border bg-lp-card p-4 text-center">
+                        <div className="relative mx-auto h-20 w-20 overflow-hidden rounded-sm bg-lp-accent border border-lp-border">
                           <Image
                             src={image || '/images/placeholder-part.svg'}
                             alt={product.name}
                             fill
-                            className="object-cover"
+                            className="object-contain p-2"
                           />
                         </div>
-                        <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-[#2F5FA7]">
+                        <p className="mt-2 lp-label-mono text-lp-primary">
                           {product.sku}
                         </p>
-                        <p className="mt-2 line-clamp-2 min-h-[40px] text-sm font-bold text-slate-900">
+                        <p className="mt-1 line-clamp-2 min-h-[36px] text-sm font-medium text-lp-fg">
                           {product.name}
                         </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => toggleCompare(product)}
-                          className="mt-3 h-8 rounded-full text-xs font-bold uppercase tracking-[0.18em] text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="mt-2 h-7 rounded-sm lp-label-mono text-lp-destructive hover:bg-lp-destructive/5 px-2 flex items-center gap-1 mx-auto transition-colors"
                         >
-                          <X className="mr-1 h-3 w-3" />
+                          <X className="h-3 w-3" />
                           Remove
-                        </Button>
+                        </button>
                       </div>
                     );
                   })}
@@ -875,13 +745,13 @@ export default function ShopPage() {
                     },
                   ].map((row) => (
                     <Fragment key={row.label}>
-                      <div key={`${row.label}-label`} className="rounded-2xl bg-slate-100 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-blue-200">
+                      <div key={`${row.label}-label`} className="rounded-sm bg-lp-accent px-3 py-2.5 lp-label-mono text-lp-muted-fg">
                         {row.label}
                       </div>
                       {compareList.map((product) => (
                         <div
                           key={`${row.label}-${product.id}`}
-                          className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800"
+                          className="rounded-sm border border-lp-border bg-lp-card px-3 py-2.5 text-sm text-lp-fg"
                         >
                           {row.value(product)}
                         </div>
@@ -894,8 +764,6 @@ export default function ShopPage() {
           </Dialog>
         </div>
       )}
-
-      <Footer />
-    </div>
+    </V2Shell>
   );
 }

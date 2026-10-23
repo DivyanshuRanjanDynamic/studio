@@ -3,33 +3,15 @@
 // ═══════════════════════════════════════════════════
 
 /** Material definition with pricing data */
+/** A machining material. Stock prices live in lib/quoting/material-prices.ts */
 export interface Material {
   readonly id: string;
   readonly name: string;
   readonly alloy: string;
-  readonly process: ProcessType;
   readonly densityGCm3: number;
-  readonly pricePerKg: number; // INR
-  readonly pricePerSheet: number; // INR
-  readonly sheetWidthMm: number;
-  readonly sheetHeightMm: number;
-  readonly availableThicknesses: readonly number[]; // mm
-  readonly kerfWidthMm: number;
   readonly availableFinishes: readonly FinishType[];
-  readonly hardnessFactor: number;
   readonly isActive: boolean;
 }
-
-/** Manufacturing process types */
-export type ProcessType =
-  | 'laser_cut_fiber'
-  | 'laser_cut_co2'
-  | 'waterjet'
-  | 'plasma'
-  | 'cnc_machining_3axis'
-  | 'cnc_machining_5axis'
-  | 'sheet_metal_bending'
-  | 'cnc_turning';
 
 /** Available surface finishes */
 export type FinishType =
@@ -96,18 +78,7 @@ export interface DFMIssue {
   readonly affectedFeature?: string;
 }
 
-/** Machine data for cost calculation */
-export interface Machine {
-  readonly id: string;
-  readonly process: ProcessType;
-  readonly maxSpeedMmS: number;
-  readonly pierceTimeS: number;
-  readonly hourlyRate: number; // INR
-  readonly bedWidthMm: number;
-  readonly bedHeightMm: number;
-}
-
-/** Quote pricing breakdown */
+/** Legacy laser quote breakdown (quotes saved before laser pricing read the real file) */
 export interface QuoteBreakdown {
   readonly materialCost: number;
   readonly cutCost: number;
@@ -151,8 +122,11 @@ export interface QuantityTier {
   readonly savingsPercent: number;
 }
 
-/** Any priced quote — laser (sheet) or CNC (analysis-backed) */
-export type AnyQuoteResult = QuoteResult | CncQuoteResult;
+/**
+ * Any saved quote. Laser quotes are SheetQuoteResult; QuoteResult is the legacy
+ * laser format, kept so quotes saved before the switch still open from share links.
+ */
+export type AnyQuoteResult = QuoteResult | CncQuoteResult | SheetQuoteResult;
 
 /** Cart item for multi-part orders */
 export interface QuoteCartItem {
@@ -296,6 +270,8 @@ export interface CncQuoteBreakdown {
   readonly quantityMultiplier: number;
   readonly rushMultiplier: number;
   readonly marginPct: number;
+  /** Admin calibration factor applied to the final price (absent = 1.00) */
+  readonly calibrationMultiplier?: number;
 }
 
 export interface CncQuoteRequest {
@@ -327,4 +303,165 @@ export interface CncQuoteResult {
   readonly quoteRef: string;
   readonly parameters: CncQuoteRequest;
   readonly analysis: CncAnalysis;
+}
+
+// ═══════════════════════════════════════════════════
+// Sheet metal — laser cutting + press-brake bending + tapping
+// Mirrors POST /internal/analyze-sheet on the CAD converter
+// ═══════════════════════════════════════════════════
+
+/** Through holes in the sheet, grouped by diameter (depth is the sheet thickness) */
+export interface SheetHoleGroup {
+  readonly diameterMm: number;
+  readonly count: number;
+}
+
+export interface SheetBend {
+  readonly angleDeg: number;
+  readonly radiusMm: number;
+  /** Length of the bend line — what the press brake has to form */
+  readonly lengthMm: number;
+}
+
+/** Material-agnostic sheet analysis: one upload prices every material, thickness and quantity */
+export interface SheetAnalysis {
+  readonly version: string;
+  readonly units: 'mm';
+  /** Constant wall thickness detected in the model */
+  readonly thicknessMm: number;
+  readonly volumeMm3: number;
+  readonly surfaceAreaMm2: number;
+  /** Developed (unfolded) blank area = volume / thickness */
+  readonly flatAreaMm2: number;
+  /** Laser path = edge-wall area / thickness (outer profile + every cut-out) */
+  readonly cutLengthMm: number;
+  /** Laser starts: 1 for the outer profile + 1 per internal cut-out */
+  readonly pierces: number;
+  readonly holes: readonly SheetHoleGroup[];
+  readonly bends: readonly SheetBend[];
+  readonly boundingBox: { readonly x: number; readonly y: number; readonly z: number };
+  /** No bends: the bounding box is the exact blank size */
+  readonly isFlat: boolean;
+  /** Read from a 2D profile (DXF): thickness is the customer's choice, not the model's */
+  readonly profileOnly?: boolean;
+  readonly bodyCount: number;
+  readonly analysisMs: number;
+}
+
+/** Laser-cutting behaviour family (speed table + machine) */
+export type SheetCutFamily = 'mild_steel' | 'stainless' | 'aluminium' | 'acrylic' | 'mdf' | 'plywood' | 'balsa';
+
+export interface SheetQuoteRequest {
+  /** Wizard material id, e.g. 'ss-304' */
+  readonly materialId: string;
+  readonly thicknessMm: number;
+  readonly finishType: FinishType;
+  readonly quantity: number;
+  readonly turnaround: TurnaroundType;
+  readonly taps?: readonly CncTapRequest[];
+  /** Customer ticked Bending — only changes the note; bends in the model are always priced */
+  readonly bendingSelected?: boolean;
+}
+
+export interface SheetQuoteBreakdown {
+  readonly materialCost: number;
+  readonly cutCost: number;
+  /** CAM nesting + sheet loading, amortised per part */
+  readonly laserSetupCost: number;
+  readonly bendingCost: number;
+  readonly tappingCost: number;
+  readonly tappedHoles: number;
+  readonly finishCost: number;
+  readonly cutTimeMin: number;
+  readonly bendCount: number;
+  readonly bendTimeMin: number;
+  readonly sheetUtilisation: number;
+  readonly quantityMultiplier: number;
+  readonly rushMultiplier: number;
+  readonly marginPct: number;
+  /** Admin calibration factor applied to the final price (absent = 1.00) */
+  readonly calibrationMultiplier?: number;
+}
+
+export interface SheetQuoteResult {
+  readonly kind: 'sheet';
+  readonly pricePerPart: number;
+  readonly totalPrice: number;
+  readonly leadTimeDays: number;
+  readonly breakdown: SheetQuoteBreakdown;
+  readonly dfmIssues: readonly DFMIssue[];
+  readonly hasBlockingIssues: boolean;
+  readonly expiresAt: number;
+  readonly quoteRef: string;
+  readonly parameters: SheetQuoteRequest;
+  readonly analysis: SheetAnalysis;
+}
+
+// ═══════════════════════════════════════════════════
+// FDM 3D printing — mirrors POST /internal/analyze-print
+// ═══════════════════════════════════════════════════
+
+export type PrintUpAxis = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
+
+/** The part laid on the bed with this axis pointing up */
+export interface PrintOrientation {
+  readonly up: PrintUpAxis;
+  readonly sizeMm: { readonly x: number; readonly y: number; readonly z: number };
+  /** Volume between overhangs (> 45°) and the bed, before support density */
+  readonly supportVolumeMm3: number;
+}
+
+export interface PrintAnalysis {
+  readonly version: string;
+  readonly units: 'mm';
+  readonly volumeMm3: number;
+  readonly surfaceAreaMm2: number;
+  readonly triangleCount: number;
+  readonly orientations: readonly PrintOrientation[];
+  readonly analysisMs: number;
+}
+
+export interface PrintQuoteRequest {
+  /** Wizard material id, e.g. 'petg' */
+  readonly materialId: string;
+  readonly finishType: FinishType;
+  readonly quantity: number;
+  readonly turnaround: TurnaroundType;
+}
+
+export interface PrintQuoteBreakdown {
+  readonly materialCost: number;
+  readonly machineCost: number;
+  readonly labourCost: number;
+  /** Slicing + plate prep, amortised per part */
+  readonly setupCost: number;
+  readonly finishCost: number;
+  readonly massG: number;
+  readonly printTimeMin: number;
+  readonly supportVolumeMm3: number;
+  readonly orientation: PrintUpAxis;
+  readonly quantityMultiplier: number;
+  readonly rushMultiplier: number;
+  readonly marginPct: number;
+  /** Admin calibration factor applied to the final price (absent = 1.00) */
+  readonly calibrationMultiplier?: number;
+}
+
+/** A stored sheet/print analysis the wizard prices from (POST /api/v1/quote/part/analyze) */
+export type PartAnalysisHandle =
+  | { readonly kind: 'sheet'; readonly analysisId: string; readonly analysis: SheetAnalysis }
+  | { readonly kind: 'print'; readonly analysisId: string; readonly analysis: PrintAnalysis };
+
+export interface PrintQuoteResult {
+  readonly kind: 'print';
+  readonly pricePerPart: number;
+  readonly totalPrice: number;
+  readonly leadTimeDays: number;
+  readonly breakdown: PrintQuoteBreakdown;
+  readonly dfmIssues: readonly DFMIssue[];
+  readonly hasBlockingIssues: boolean;
+  readonly expiresAt: number;
+  readonly quoteRef: string;
+  readonly parameters: PrintQuoteRequest;
+  readonly analysis: PrintAnalysis;
 }

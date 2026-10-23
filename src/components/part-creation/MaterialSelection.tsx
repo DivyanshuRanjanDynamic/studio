@@ -86,11 +86,11 @@ export function MaterialSelection({
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h3 className="text-lg font-black uppercase tracking-wide text-slate-900 mb-1">
-          Select Material
+        <h3 className="text-2xl text-lp-fg mb-1">
+          Select <span className="font-lp-serif italic text-lp-primary">material</span>
         </h3>
-        <p className="text-[10px] uppercase tracking-widest font-bold text-blue-100">
-          Choose stock for {selectedService.replace(/_/g, ' ')}
+        <p className="lp-label-mono text-lp-muted-fg">
+          Stock for {selectedService.replace(/_/g, ' ')}
         </p>
       </div>
 
@@ -98,11 +98,11 @@ export function MaterialSelection({
         {serviceData.categories.map((category) => (
           <div key={category.name} className="space-y-4">
             <div className="flex items-center gap-2 px-1">
-              <div className="h-px flex-1 bg-slate-100" />
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2F5FA7] whitespace-nowrap">
+              <div className="h-px flex-1 bg-lp-border" />
+              <h4 className="lp-label-mono text-lp-primary whitespace-nowrap">
                 {category.name}
               </h4>
-              <div className="h-px flex-1 bg-slate-100" />
+              <div className="h-px flex-1 bg-lp-border" />
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -113,10 +113,10 @@ export function MaterialSelection({
                 return (
                   <div key={material.id} className="space-y-3">
                     <Card
-                      className={`cursor-pointer transition-all duration-300 overflow-hidden group ${
+                      className={`cursor-pointer transition-all duration-300 overflow-hidden group rounded-sm ${
                         isSelected
-                          ? 'bg-blue-50 border-[#2F5FA7] shadow-[0_8px_20px_rgba(47,95,167,0.12)] ring-1 ring-[#2F5FA7]/20'
-                          : 'bg-white border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                          ? 'bg-lp-accent border-lp-primary shadow-sm ring-1 ring-lp-primary/20'
+                          : 'bg-lp-card border-lp-border hover:border-lp-primary/40 hover:bg-lp-accent'
                       }`}
                       onClick={() =>
                         onSelect({ id: material.id, name: material.name, grade: material.grade })
@@ -125,10 +125,10 @@ export function MaterialSelection({
                       <div className="p-4">
                         <div className="flex items-center gap-4">
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm shrink-0 transition-colors ${
+                            className={`w-10 h-10 rounded-sm flex items-center justify-center border shadow-sm shrink-0 transition-colors ${
                               isSelected
-                                ? 'bg-blue-600 text-white border-[#2F5FA7]'
-                                : 'bg-slate-50 text-[#2F5FA7] border-slate-100 group-hover:bg-white'
+                                ? 'bg-lp-primary text-lp-primary-fg border-lp-primary'
+                                : 'bg-lp-accent text-lp-primary border-lp-border group-hover:bg-lp-card'
                             }`}
                           >
                             <Layers3 className="w-5 h-5" />
@@ -137,27 +137,24 @@ export function MaterialSelection({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <div>
-                                <p className="font-bold text-slate-900 uppercase tracking-wide text-xs">
+                                <p className="font-bold text-lp-fg text-sm">
                                   {material.name}
                                 </p>
-                                <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold mt-0.5">
+                                <p className="text-xs text-lp-muted-fg mt-0.5">
                                   Grade: {material.grade}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 {isSelected && !material.thicknesses && (
-                                  <Badge className="bg-blue-600 text-white text-[8px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 border-none">
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    Selected
-                                  </Badge>
+                                  <CheckCircle className="w-4 h-4 text-lp-primary" />
                                 )}
                                 <button
                                   type="button"
                                   aria-label={`More info about ${material.name}`}
-                                  className={`h-7 w-7 rounded-md border flex items-center justify-center transition-colors ${
+                                  className={`h-7 w-7 rounded-sm border flex items-center justify-center transition-colors ${
                                     isInfoOpen
-                                      ? 'bg-blue-50 border-blue-200 text-[#2F5FA7]'
-                                      : 'bg-white border-slate-200 text-blue-200 hover:border-blue-200 hover:text-[#2F5FA7]'
+                                      ? 'bg-lp-accent border-lp-primary text-lp-primary'
+                                      : 'bg-lp-card border-lp-border text-lp-muted-fg hover:border-lp-primary hover:text-lp-primary'
                                   }`}
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -173,8 +170,8 @@ export function MaterialSelection({
                             </div>
 
                             {isInfoOpen && (
-                              <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2.5">
-                                <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                              <div className="mt-3 rounded-sm border border-lp-border bg-lp-accent px-3 py-2.5">
+                                <p className="text-xs text-lp-fg leading-relaxed">
                                   {getMaterialInfo(material)}
                                 </p>
                               </div>
@@ -187,7 +184,7 @@ export function MaterialSelection({
                     {/* Thickness Selection - Conditionally Rendered when material is selected and has thicknesses */}
                     {isSelected && material.thicknesses && (
                       <div className="pl-14 pr-2 pb-2 space-y-3 animate-in slide-in-from-top-2 duration-300 transition-all">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2F5FA7] flex items-center gap-2">
+                        <p className="lp-label-mono text-lp-primary flex items-center gap-2">
                           <CheckCircle className="w-3 h-3" /> Select Available Thickness (MM)
                         </p>
 
@@ -226,10 +223,10 @@ export function MaterialSelection({
                                   ...(material as any), // Pass capabilities down
                                 })
                               }
-                              className={`h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-bold border transition-all ${
+                              className={`h-10 rounded-sm flex flex-col items-center justify-center text-[10px] font-bold border transition-all ${
                                 selectedMaterial.thickness === thickness
-                                  ? 'bg-blue-600 text-white border-[#2F5FA7] shadow-md shadow-blue-500/20'
-                                  : 'bg-white border-slate-200 text-blue-200 hover:border-blue-200 hover:text-[#2F5FA7]'
+                                  ? 'bg-lp-primary text-lp-primary-fg border-lp-primary shadow-sm'
+                                  : 'bg-lp-card border-lp-border text-lp-muted-fg hover:border-lp-primary hover:text-lp-primary'
                               }`}
                             >
                               <span>{thickness}</span>

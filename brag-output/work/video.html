@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MechHub brag</title>
+<style>
+@font-face { font-family: Geist; src: url(assets/geist-latin.woff2) format('woff2'); font-weight: 300 600; }
+@font-face { font-family: GeistMono; src: url(assets/geist-mono-latin.woff2) format('woff2'); font-weight: 400 500; }
+@font-face { font-family: ISerif; src: url(assets/instrument-serif-latin.woff2) format('woff2'); font-style: normal; }
+@font-face { font-family: ISerif; src: url(assets/instrument-serif-italic-latin.woff2) format('woff2'); font-style: italic; }
+
+:root {
+  --bg: oklch(99% 0.002 260);
+  --fg: oklch(16% 0.01 265);
+  --card: oklch(95.5% 0.005 260);
+  --primary: oklch(48% 0.24 264);
+  --primary-lite: oklch(72% 0.15 264);
+  --muted-fg: oklch(50% 0.02 260);
+  --accent: oklch(92% 0.04 264);
+  --border: oklch(90% 0.008 260);
+  --ink: oklch(12% 0.005 265);
+  --serif-accent: color-mix(in oklab, oklch(48% 0.24 264) 55%, oklch(50% 0.02 260));
+  --emerald: #10b981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; }
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(color-mix(in oklab, var(--fg) 13%, transparent) 1.6px, transparent 1.6px);
+  background-size: 34px 34px;
+  color: var(--fg);
+  font-family: Geist, system-ui, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+.scene { position: absolute; inset: 0; opacity: 0; overflow: hidden; }
+.abs { position: absolute; }
+.mono { font-family: GeistMono, ui-monospace, monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+.serif { font-family: ISerif, Georgia, serif; font-style: italic; font-weight: 400; }
+.accent-serif { font-family: ISerif, Georgia, serif; font-style: italic; color: var(--serif-accent); }
+.w { display: inline-block; white-space: pre; will-change: transform, opacity, filter; }
+.tag {
+  display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 2px;
+  background: var(--primary); color: white; font-family: GeistMono, monospace; font-size: 20px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.lbl { font-size: 15px; font-weight: 600; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.16em; }
+svg.i { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* ── Scene 1: blueprint ─────────────────────────── */
+#s1 { background: var(--ink); }
+#s1grid {
+  position: absolute; inset: -200px;
+  background-image:
+    linear-gradient(oklch(48% 0.24 264 / 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(48% 0.24 264 / 0.22) 1px, transparent 1px),
+    linear-gradient(oklch(48% 0.24 264 / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(48% 0.24 264 / 0.09) 1px, transparent 1px);
+  background-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px;
+}
+#s1vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 40% 50%, transparent 30%, oklch(8% 0.005 265 / 0.85) 100%); }
+#s1draw { left: 250px; top: 230px; width: 620px; height: 620px; transform-origin: 50% 50%; }
+#s1draw svg { width: 100%; height: 100%; overflow: visible; }
+.bp { fill: none; stroke: var(--primary-lite); stroke-width: 2.2; }
+.bp-thin { fill: none; stroke: var(--primary-lite); stroke-width: 1; opacity: 0.55; }
+.bp-dim { fill: none; stroke: oklch(80% 0.06 264); stroke-width: 1.1; }
+.bp-txt { fill: oklch(86% 0.05 264); font-family: GeistMono, monospace; font-size: 15px; letter-spacing: 0.06em; }
+#s1file { left: 268px; top: 168px; color: oklch(86% 0.06 264); font-size: 22px; display: flex; gap: 12px; align-items: center; }
+#s1hud { left: 268px; top: 872px; color: oklch(70% 0.05 264); font-size: 16px; }
+#s1part { left: 362px; top: 222px; height: 640px; width: auto; transform-origin: 50% 60%; filter: drop-shadow(0 40px 50px oklch(48% 0.24 264 / 0.35)); }
+#s1glow { left: 560px; top: 540px; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%,-50%);
+  background: radial-gradient(circle, oklch(97% 0.04 264) 0%, oklch(75% 0.15 264 / 0.75) 30%, transparent 70%); }
+#s1text { left: 1010px; top: 330px; color: white; font-size: 150px; line-height: 1.06; letter-spacing: -0.03em; font-weight: 400; }
+#s1text .dxf { font-family: GeistMono, monospace; font-size: 128px; letter-spacing: -0.02em; color: var(--primary-lite); }
+#s1text .metal { font-family: ISerif, serif; font-style: italic; font-size: 176px; color: oklch(80% 0.11 264); }
+
+/* ── Scene 2: hero ──────────────────────────────── */
+#s2nav { left: 96px; right: 96px; top: 46px; height: 50px; display: flex; align-items: center; justify-content: space-between; font-size: 21px; }
+#s2nav .logo { display: flex; align-items: center; gap: 14px; font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+#s2nav .logo img { width: 44px; height: 44px; border-radius: 6px; }
+#s2nav .links { display: flex; gap: 40px; }
+#s2head { left: 0; right: 0; top: 150px; text-align: center; font-size: 140px; line-height: 1.02; letter-spacing: -0.035em; }
+#s2head .line { display: block; }
+#s2strip { left: 0; top: 640px; height: 330px; display: flex; align-items: center; gap: 110px; }
+#s2strip img { height: 270px; width: auto; filter: drop-shadow(0 30px 30px rgba(0,0,40,0.18)); }
+.s2foot { top: 985px; font-size: 18px; line-height: 1.5; }
+
+/* ── Scenes 3–5: product panels ─────────────────── */
+.cap { left: 100px; top: 300px; width: 580px; }
+.cap h2 { margin-top: 34px; font-size: 104px; line-height: 0.98; letter-spacing: -0.035em; font-weight: 400; }
+.cap p { margin-top: 30px; font-size: 25px; line-height: 1.4; color: var(--muted-fg); max-width: 520px; }
+.panel { left: 720px; width: 1100px; }
+.btn-primary { background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 2px; }
+
+#s3title { font-size: 62px; font-weight: 600; letter-spacing: -0.02em; text-transform: uppercase; }
+#s3sub { margin-top: 10px; font-size: 24px; color: var(--muted-fg); font-weight: 500; }
+.stepper { position: relative; width: 760px; height: 112px; margin: 40px auto 0; }
+.stepper .track { position: absolute; left: 30px; right: 30px; top: 30px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.stepper .fill { height: 100%; background: var(--primary); width: 0; }
+.stepper .st { position: absolute; top: 0; width: 60px; display: flex; flex-direction: column; align-items: center; }
+.stepper .sq { width: 60px; height: 60px; border-radius: 2px; border: 2.5px solid var(--border); background: var(--card); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 20px; color: var(--muted-fg); }
+.stepper .sq.on { background: var(--primary); border-color: var(--primary); color: white; }
+.stepper .nm { margin-top: 14px; font-size: 16px; color: var(--muted-fg); }
+.stepper .nm.on { color: var(--primary); }
+#s3drop { position: absolute; left: 0; top: 380px; width: 1100px; height: 330px; border: 3px dashed var(--border); background: var(--card); border-radius: 2px; text-align: center; }
+#s3drop .ic { width: 104px; height: 104px; margin: 40px auto 26px; background: var(--accent); border: 1px solid var(--border); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--primary); box-shadow: 0 10px 24px oklch(48% 0.24 264 / 0.12); }
+#s3drop h3 { font-size: 36px; font-weight: 600; text-transform: uppercase; letter-spacing: -0.01em; }
+#s3drop .hint { margin-top: 12px; font-size: 15px; font-weight: 600; color: var(--muted-fg); letter-spacing: 0.16em; text-transform: uppercase; }
+#s3drop .chips { margin-top: 24px; display: flex; gap: 14px; justify-content: center; }
+.chip { background: var(--accent); border: 1px solid var(--border); color: var(--primary); padding: 9px 20px; font-size: 16px; border-radius: 2px; }
+.filerow { display: flex; align-items: center; gap: 20px; padding: 0 26px; height: 96px; background: var(--card); border: 1.5px solid var(--primary); border-radius: 2px; box-shadow: 0 8px 24px oklch(48% 0.24 264 / 0.12); }
+.fileic { width: 56px; height: 56px; border-radius: 2px; background: var(--accent); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--primary); }
+.fname { font-size: 25px; font-weight: 600; }
+.fmeta { margin-top: 4px; font-size: 15px; color: var(--muted-fg); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+#s3ghost { left: 0; top: 0; width: 360px; height: 92px; background: white; border: 1.5px solid var(--border); border-radius: 2px; display: flex; align-items: center; gap: 16px; padding: 0 20px; box-shadow: 0 30px 60px rgba(10,20,60,0.25); }
+
+/* configure */
+.cfg { position: absolute; left: 0; top: 0; width: 1100px; height: 760px; background: var(--card); border: 1px solid var(--border); border-radius: 2px; overflow: hidden; padding: 56px 48px 0; box-shadow: 0 10px 30px rgba(10,20,60,0.06); }
+.cfg .bar { position: absolute; left: 0; top: 0; right: 0; height: 8px; background: var(--primary); }
+.proc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 14px; }
+.pbtn { height: 96px; border: 1.5px solid var(--border); background: var(--card); border-radius: 2px; display: flex; align-items: center; gap: 16px; padding: 0 22px; color: var(--muted-fg); }
+.pbtn.on { background: var(--primary); border-color: var(--primary); color: white; box-shadow: 0 14px 30px oklch(48% 0.24 264 / 0.3); }
+.pbtn .t { font-family: GeistMono, monospace; letter-spacing: 0.1em; text-transform: uppercase; font-size: 18px; }
+.pbtn .h { font-size: 14px; margin-top: 4px; opacity: 0.75; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 40px; }
+.sel { margin-top: 14px; height: 78px; background: var(--accent); border: 1.5px solid var(--border); border-radius: 2px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 24px; font-weight: 500; overflow: hidden; }
+.sel.focus { border-color: var(--primary); box-shadow: 0 0 0 5px oklch(48% 0.24 264 / 0.08); }
+.roll { position: relative; height: 34px; overflow: hidden; flex: 1; }
+.roll span { position: absolute; left: 0; height: 34px; line-height: 34px; white-space: nowrap; }
+#s4review { position: absolute; left: 48px; right: 48px; top: 620px; height: 88px; font-family: GeistMono, monospace; font-size: 20px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* quote */
+.quote { position: absolute; left: 0; top: 0; width: 1100px; background: var(--card); border: 1px solid var(--border); border-radius: 2px; overflow: hidden; box-shadow: 0 16px 40px rgba(10,20,60,0.08); }
+.qhead { height: 124px; padding: 0 44px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--accent) 35%, var(--card)); }
+.qhead h3 { font-size: 40px; font-weight: 600; text-transform: uppercase; letter-spacing: -0.01em; }
+.qhead .v { margin-top: 6px; font-size: 14px; letter-spacing: 0.2em; font-weight: 600; color: var(--muted-fg); text-transform: uppercase; }
+.qref { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--border); padding: 14px 22px; border-radius: 2px; }
+.qbody { display: flex; height: 380px; }
+.qprice { flex: 1; padding: 0 44px; display: flex; flex-direction: column; justify-content: center; }
+.qprice .big { font-size: 160px; font-weight: 600; letter-spacing: -0.06em; line-height: 1; font-variant-numeric: tabular-nums; }
+.qprice .ok { margin-top: 26px; display: flex; align-items: center; gap: 12px; font-size: 15px; letter-spacing: 0.16em; font-weight: 600; color: var(--muted-fg); text-transform: uppercase; }
+.qspec { width: 430px; padding: 36px 40px; background: color-mix(in oklab, var(--accent) 50%, var(--card)); }
+.qspec h4 { color: var(--primary); font-size: 16px; font-weight: 400; margin-bottom: 18px; }
+.qspec .r { display: flex; justify-content: space-between; align-items: center; height: 40px; }
+.qspec .r .k { font-family: GeistMono, monospace; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-fg); }
+.qspec .r .val { font-size: 18px; font-weight: 600; }
+.qmet { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); height: 150px; }
+.qmet > div { padding: 30px 44px; border-left: 1px solid var(--border); }
+.qmet > div:first-child { border-left: 0; }
+.qmet .k { font-size: 15px; color: var(--muted-fg); }
+.qmet .n { margin-top: 14px; font-size: 48px; font-weight: 600; letter-spacing: -0.02em; }
+.qmet .n small { font-size: 16px; letter-spacing: 0.16em; color: var(--muted-fg); margin-left: 8px; font-weight: 600; }
+.qmet .lead { background: oklch(48% 0.24 264 / 0.06); }
+
+/* breakdown */
+.bd { position: absolute; left: 0; top: 0; width: 1100px; height: 800px; background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 50px 44px; box-shadow: 0 16px 40px rgba(10,20,60,0.06); }
+.bd .eyebrow { display: flex; align-items: center; gap: 12px; color: var(--primary); font-size: 16px; }
+.bd h3 { margin-top: 18px; font-size: 46px; font-weight: 600; letter-spacing: -0.02em; }
+.bd .sub { margin-top: 12px; font-size: 20px; color: var(--muted-fg); }
+.bd .fair { position: absolute; right: 44px; top: 50px; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border: 1.5px solid oklch(80% 0.1 160); background: oklch(97% 0.03 160); color: oklch(45% 0.12 160); font-size: 17px; font-weight: 600; border-radius: 2px; }
+.bd .div { margin-top: 34px; height: 1px; background: var(--border); }
+.cards { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.bcard { height: 470px; background: var(--accent); border: 1px solid oklch(85% 0.06 264); border-radius: 2px; padding: 30px 26px; }
+.bcard .e { display: flex; align-items: center; gap: 10px; color: var(--muted-fg); font-size: 14px; }
+.bcard .ttl { margin-top: 18px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.bcard .rows { margin-top: 30px; }
+.bcard .r { display: flex; justify-content: space-between; align-items: baseline; height: 42px; gap: 10px; }
+.bcard .r .k { font-size: 16px; color: var(--muted-fg); white-space: nowrap; }
+.bcard .r .val { font-family: GeistMono, monospace; font-size: 17px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bcard .note { position: absolute; left: 26px; right: 26px; bottom: 28px; padding: 16px 18px; background: white; font-size: 15px; line-height: 1.45; color: var(--muted-fg); }
+.bcard { position: relative; }
+.meter { margin-top: 6px; height: 4px; background: oklch(85% 0.06 264); border-radius: 2px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--primary); }
+
+/* ── Scene 6: CTA ───────────────────────────────── */
+#s6 { background-color: var(--primary); color: white;
+  background-image: linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px);
+  background-size: 56px 56px; }
+#s6ast { right: -170px; top: -170px; width: 760px; height: 760px; opacity: 0.11; color: white; }
+#s6head { left: 0; right: 0; top: 230px; text-align: center; font-size: 150px; line-height: 0.98; letter-spacing: -0.035em; }
+#s6sub { left: 0; right: 0; top: 590px; text-align: center; font-size: 30px; opacity: 0.88; }
+#s6badges { left: 0; right: 0; top: 680px; display: flex; justify-content: center; gap: 54px; font-size: 21px; }
+#s6lock { left: 0; right: 0; top: 820px; display: flex; justify-content: center; align-items: center; gap: 36px; }
+#s6lock .cta { background: var(--bg); color: var(--fg); padding: 24px 34px; font-size: 21px; border-radius: 2px; }
+#s6lock .brand { display: flex; align-items: center; gap: 16px; font-size: 40px; font-weight: 600; letter-spacing: -0.01em; }
+#s6lock .brand img { width: 62px; height: 62px; border-radius: 8px; }
+#s6lock .url { font-size: 22px; opacity: 0.85; }
+
+/* ── Cursor ─────────────────────────────────────── */
+#cursor { position: absolute; left: 0; top: 0; width: 40px; height: 52px; z-index: 50; transform-origin: 0 0; }
+#ripple { position: absolute; left: 0; top: 0; width: 100px; height: 100px; margin: -50px 0 0 -50px; border-radius: 50%; border: 3px solid var(--primary); z-index: 49; opacity: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══ Scene 1: .dxf → metal ═══ -->
+<section class="scene" id="s1">
+  <div id="s1grid"></div>
+  <div id="s1vignette"></div>
+  <div class="abs mono" id="s1file"><svg class="i" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.8"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>drone-plate.dxf</div>
+  <div class="abs" id="s1draw">
+    <svg viewBox="-60 -70 520 520">
+      <g id="s1center" class="bp-thin" stroke-dasharray="14 5 3 5">
+        <line x1="200" y1="-10" x2="200" y2="410"/><line x1="-10" y1="200" x2="410" y2="200"/>
+      </g>
+      <path id="s1outer" class="bp" pathLength="1" d="M48 20 H352 Q380 20 380 48 V352 Q380 380 352 380 H48 Q20 380 20 352 V48 Q20 20 48 20 Z"/>
+      <circle class="bp s1hole" pathLength="1" cx="72" cy="72" r="20"/>
+      <circle class="bp s1hole" pathLength="1" cx="328" cy="72" r="20"/>
+      <circle class="bp s1hole" pathLength="1" cx="328" cy="328" r="20"/>
+      <circle class="bp s1hole" pathLength="1" cx="72" cy="328" r="20"/>
+      <circle id="s1bore" class="bp" pathLength="1" cx="200" cy="200" r="98"/>
+      <circle id="s1cb" class="bp-thin" pathLength="1" cx="200" cy="200" r="116" stroke-dasharray="6 6"/>
+      <g id="s1dims">
+        <line class="bp-dim" x1="20" y1="-34" x2="380" y2="-34"/>
+        <line class="bp-dim" x1="20" y1="-46" x2="20" y2="8"/><line class="bp-dim" x1="380" y1="-46" x2="380" y2="8"/>
+        <path class="bp-dim" d="M20 -34 l10 -4 v8 z M380 -34 l-10 -4 v8 z" fill="oklch(80% 0.06 264)"/>
+        <rect x="162" y="-46" width="76" height="24" fill="oklch(12% 0.005 265)"/>
+        <text class="bp-txt" x="200" y="-29" text-anchor="middle">366.0</text>
+        <line class="bp-dim" x1="414" y1="20" x2="414" y2="380"/>
+        <line class="bp-dim" x1="392" y1="20" x2="426" y2="20"/><line class="bp-dim" x1="392" y1="380" x2="426" y2="380"/>
+        <path class="bp-dim" d="M414 20 l-4 10 h8 z M414 380 l-4 -10 h8 z" fill="oklch(80% 0.06 264)"/>
+        <rect x="402" y="162" width="24" height="76" fill="oklch(12% 0.005 265)"/>
+        <text class="bp-txt" x="0" y="0" text-anchor="middle" transform="translate(419 200) rotate(-90)">382.0</text>
+        <line class="bp-dim" x1="269" y1="131" x2="330" y2="80" />
+        <text class="bp-txt" x="232" y="118">Ø196</text>
+        <text class="bp-txt" x="90" y="45">4× Ø40</text>
+      </g>
+    </svg>
+  </div>
+  <div class="abs mono" id="s1hud">Scale 1:2 · Units mm · Layer 0</div>
+  <div class="abs" id="s1glow"></div>
+  <img class="abs" id="s1part" src="assets/part-1-clean.png" alt="">
+  <div class="abs" id="s1text">
+    <div><span class="w s1w">From </span><span class="w s1w dxf">.dxf</span></div>
+    <div><span class="w s1w2">to </span><span class="w s1w2 metal">metal.</span></div>
+  </div>
+</section>
+
+<!-- ═══ Scene 2: hero ═══ -->
+<section class="scene" id="s2">
+  <div class="abs" id="s2nav">
+    <div class="logo"><img src="assets/mechhub.png" alt="">MechHub</div>
+    <div class="links"><span>Services</span><span>Materials</span><span>Process</span><span>Network</span><span>Instant Quote</span><span>Shop</span></div>
+    <svg class="i" width="26" height="26" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+  </div>
+  <h1 class="abs" id="s2head">
+    <span class="line"><span class="w s2w">Custom </span><span class="w s2w accent-serif">Manufacturing</span></span>
+    <span class="line"><span class="w s2w">Made </span><span class="w s2w">Fast </span><span class="w s2w">&amp;</span></span>
+    <span class="line"><span class="w s2w">Affordable</span></span>
+  </h1>
+  <div class="abs" id="s2strip"></div>
+  <div class="abs mono s2foot" id="s2fl" style="left:96px">Built in India for builders<br>72hr avg. turnaround</div>
+  <div class="abs mono s2foot" id="s2fr" style="right:96px;text-align:right">Over 500+ parts<br>delivered with transparency</div>
+</section>
+
+<!-- ═══ Scene 3: upload ═══ -->
+<section class="scene" id="s3">
+  <div class="abs cap" id="s3cap">
+    <span class="tag" id="s3tag">01 / Upload</span>
+    <h2><span class="w s3w">Upload </span><span class="w s3w">your</span><br><span class="w s3w accent-serif">design.</span></h2>
+    <p id="s3p">STEP, DXF or DWG, through an NDA-protected portal.</p>
+  </div>
+  <div class="abs panel" id="s3panel" style="top:96px;height:900px">
+    <div id="s3title">Instant Quote</div>
+    <div id="s3sub">Upload your file, configure options, get a price in seconds.</div>
+    <div class="stepper" id="s3step">
+      <div class="track"><div class="fill" id="s3fill"></div></div>
+      <div class="st" style="left:0"><div class="sq on" id="s3sq1">1</div><div class="nm mono on">Upload</div></div>
+      <div class="st" style="left:350px"><div class="sq" id="s3sq2">2</div><div class="nm mono" id="s3nm2">Configure</div></div>
+      <div class="st" style="left:700px"><div class="sq">3</div><div class="nm mono">Review</div></div>
+    </div>
+    <div id="s3drop">
+      <div class="ic"><svg class="i" width="52" height="52" viewBox="0 0 24 24" stroke-width="1.6"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg></div>
+      <h3>Upload CAD Files</h3>
+      <div class="hint">Drag and drop or click to upload — DXF, STEP, STP, STL</div>
+      <div class="chips mono"><span class="chip">.DXF</span><span class="chip">.STEP</span><span class="chip">.STP</span><span class="chip">.STL</span></div>
+    </div>
+    <div class="abs filerow" id="s3row" style="left:0;top:736px;width:1100px">
+      <div class="fileic"><svg class="i" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.8"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+      <div style="flex:1"><div class="fname">drone-plate.dxf</div><div class="fmeta" id="s3meta">48 KB · Processing…</div></div>
+      <svg class="i" id="s3spin" width="34" height="34" viewBox="0 0 24 24" stroke-width="2.4" style="color:var(--primary)"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <svg class="i abs" id="s3check" width="36" height="36" viewBox="0 0 24 24" stroke-width="2.2" style="color:var(--emerald);right:30px;top:30px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+    </div>
+  </div>
+  <div class="abs" id="s3ghost">
+    <div class="fileic" style="width:50px;height:50px"><svg class="i" width="26" height="26" viewBox="0 0 24 24" stroke-width="1.8"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg></div>
+    <div><div style="font-size:22px;font-weight:600">drone-plate.dxf</div><div class="fmeta" style="font-size:13px">DXF · 48 KB</div></div>
+  </div>
+</section>
+
+<!-- ═══ Scene 4: configure → quote ═══ -->
+<section class="scene" id="s4">
+  <div class="abs cap" id="s4cap">
+    <span class="tag">02 / Quote</span>
+    <h2><span class="w s4w">Price </span><span class="w s4w">in</span><br><span class="w s4w accent-serif">seconds.</span></h2>
+    <p id="s4p">Laser cutting or CNC. Priced the moment you pick.</p>
+  </div>
+  <div class="abs panel" id="s4cfgwrap" style="top:150px;height:760px">
+    <div class="cfg">
+      <div class="bar"></div>
+      <div class="lbl">Process</div>
+      <div class="proc">
+        <div class="pbtn" id="s4laser"><svg class="i" width="26" height="26" viewBox="0 0 24 24" stroke-width="1.8"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg><div><div class="t">Laser Cutting</div><div class="h">Sheet parts · DXF / STEP</div></div></div>
+        <div class="pbtn" id="s4mill"><svg class="i" width="26" height="26" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg><div><div class="t">CNC Milling</div><div class="h">Prismatic parts · STEP</div></div></div>
+        <div class="pbtn"><svg class="i" width="26" height="26" viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><div><div class="t">CNC Turning</div><div class="h">Round parts · STEP</div></div></div>
+      </div>
+      <div class="grid2">
+        <div><div class="lbl">Material</div><div class="sel" id="s4mat"><div class="roll"><span id="s4matA">Aluminium 6061-T6</span><span id="s4matB">Mild Steel</span></div><svg class="i" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" style="color:var(--muted-fg)"><path d="m6 9 6 6 6-6"/></svg></div></div>
+        <div><div class="lbl">Thickness</div><div class="sel" id="s4thk"><div class="roll"><span id="s4thkA">2 mm</span><span id="s4thkB">0.8 mm</span></div><svg class="i" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" style="color:var(--muted-fg)"><path d="m6 9 6 6 6-6"/></svg></div></div>
+      </div>
+      <div class="grid2" style="margin-top:34px">
+        <div><div class="lbl">Quantity</div><div class="sel" style="background:var(--card)"><span>1</span></div></div>
+        <div><div class="lbl">Turnaround</div><div class="sel" style="background:var(--card)"><span>Standard (3 days)</span><svg class="i" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" style="color:var(--muted-fg)"><path d="m6 9 6 6 6-6"/></svg></div></div>
+      </div>
+      <div class="btn-primary" id="s4review"><span id="s4rvA" style="display:flex;align-items:center;gap:10px">Review Quote <svg class="i" width="22" height="22" viewBox="0 0 24 24" stroke-width="2.2"><path d="m9 18 6-6-6-6"/></svg></span><span id="s4rvB" style="display:none;align-items:center;gap:14px"><svg class="i" id="s4rvspin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Calculating...</span></div>
+    </div>
+  </div>
+  <div class="abs panel" id="s4qwrap" style="top:150px;height:660px">
+    <div class="quote">
+      <div class="qhead">
+        <div><h3>Your Quote</h3><div class="v">Valid until 6:30 PM · drone-plate.dxf</div></div>
+        <div class="qref"><span class="mono" style="font-size:14px;color:var(--primary);font-weight:600">Quote Ref</span><span style="font-size:20px;font-weight:600">MH-Q-2481</span></div>
+      </div>
+      <div class="qbody">
+        <div class="qprice">
+          <div class="big" id="s4price">₹0</div>
+          <div class="ok" id="s4ok"><svg class="i" width="22" height="22" viewBox="0 0 24 24" stroke-width="2.2" style="color:var(--emerald)"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>Total for 1 part · ₹3,286/part</div>
+        </div>
+        <div class="qspec">
+          <h4 class="mono">Specification</h4>
+          <div class="r s4r"><span class="k">Material</span><span class="val">Mild Steel</span></div>
+          <div class="r s4r"><span class="k">Thickness</span><span class="val">0.8mm</span></div>
+          <div class="r s4r"><span class="k">Cut Length</span><span class="val">1.93m</span></div>
+          <div class="r s4r"><span class="k">Pierces</span><span class="val">11</span></div>
+          <div class="r s4r"><span class="k">Finish</span><span class="val">Raw / As Cut</span></div>
+          <div class="r s4r"><span class="k">Turnaround</span><span class="val">Standard (3 days)</span></div>
+        </div>
+      </div>
+      <div class="qmet">
+        <div class="s4m"><div class="k mono">Per Part</div><div class="n">₹3,286</div></div>
+        <div class="s4m"><div class="k mono">Quantity</div><div class="n">1<small>UNITS</small></div></div>
+        <div class="s4m lead"><div class="k mono" style="color:var(--primary)">Lead Time</div><div class="n">3<small>DAYS</small></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Scene 5: breakdown ═══ -->
+<section class="scene" id="s5">
+  <div class="abs cap" id="s5cap">
+    <span class="tag">03 / Breakdown</span>
+    <h2><span class="w s5w">No </span><span class="w s5w">hidden</span><br><span class="w s5w">fees, </span><span class="w s5w accent-serif">ever.</span></h2>
+    <p id="s5p">Derived directly from your vector contour geometry.</p>
+  </div>
+  <div class="abs panel" id="s5wrap" style="top:140px;height:800px">
+    <div class="bd">
+      <div class="eyebrow mono"><svg class="i" width="22" height="22" viewBox="0 0 24 24" stroke-width="1.8"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>Manufacturing &amp; Time Transparency</div>
+      <h3>Laser Cutting Cost &amp; Time Breakup</h3>
+      <div class="sub">Total cut perimeter, pierces and laser speed cards, line by line.</div>
+      <div class="fair" id="s5fair"><svg class="i" width="22" height="22" viewBox="0 0 24 24" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>Fair &amp; Transparent Pricing</div>
+      <div class="div"></div>
+      <div class="cards">
+        <div class="bcard s5c">
+          <div class="e mono"><svg class="i" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.8" style="color:var(--primary)"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>Sheet Material</div>
+          <div class="ttl">Mild Steel (0.8 mm)</div>
+          <div class="rows">
+            <div class="r s5r"><span class="k">Bounding Box</span><span class="val">366.0 × 382.0 mm</span></div>
+            <div class="r s5r"><span class="k">Material Cost</span><span class="val" id="s5mat">₹473 / unit</span></div>
+          </div>
+          <div class="note s5n">Nesting efficiency improves as batch size increases.</div>
+        </div>
+        <div class="bcard s5c">
+          <div class="e mono"><svg class="i" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.8" style="color:var(--primary)"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>Laser Cutting Ops</div>
+          <div class="ttl">Fiber Laser (High Precision)</div>
+          <div class="rows">
+            <div class="r s5r"><span class="k">Cut Perimeter</span><span class="val" id="s5per">1.93 m</span></div>
+            <div class="meter s5r"><i id="s5meter"></i></div>
+            <div class="r s5r" style="margin-top:6px"><span class="k">Pierces &amp; Holes</span><span class="val" id="s5pier">11 pierces</span></div>
+            <div class="r s5r"><span class="k">Cutting Cost</span><span class="val" id="s5cut">₹141 / unit</span></div>
+          </div>
+          <div class="note s5n">Machine rate covers assist gas, optic consumables, and electricity.</div>
+        </div>
+        <div class="bcard s5c">
+          <div class="e mono"><svg class="i" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.8" style="color:var(--primary)"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Job Setup &amp; Handling</div>
+          <div class="ttl">Batch Loading &amp; Pallet Shuttle</div>
+          <div class="rows">
+            <div class="r s5r"><span class="k">Setup &amp; Nesting</span><span class="val" id="s5set">₹1,700 / unit</span></div>
+            <div class="r s5r"><span class="k">Batch Quantity</span><span class="val" style="color:var(--primary)">1 unit</span></div>
+            <div class="r s5r"><span class="k">Surface Finish</span><span class="val">₹0 / unit</span></div>
+          </div>
+          <div class="note s5n">Sheet setup fee is amortized over total quantity.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Scene 6: CTA ═══ -->
+<section class="scene" id="s6">
+  <svg class="i abs" id="s6ast" viewBox="0 0 24 24" stroke-width="1"><path d="M12 6v12"/><path d="M17.196 9 6.804 15"/><path d="m6.804 9 10.392 6"/></svg>
+  <h2 class="abs" id="s6head">
+    <span class="line" style="display:block"><span class="w s6w">Ready </span><span class="w s6w">to </span><span class="w s6w">Build</span></span>
+    <span class="line" style="display:block"><span class="w s6w serif">Something </span><span class="w s6w serif">Real?</span></span>
+  </h2>
+  <div class="abs" id="s6sub">No minimums. No negotiation. Just fast, quality parts.</div>
+  <div class="abs mono" id="s6badges"><span class="s6b">✓ NDA Protected</span><span class="s6b">✓ 72hr Turnaround</span><span class="s6b">✓ Made in India</span><span class="s6b">✓ No Minimums</span></div>
+  <div class="abs" id="s6lock">
+    <div class="brand"><img src="assets/mechhub.png" alt="">MechHub</div>
+    <div class="cta mono">→ Upload Your Design</div>
+    <div class="url mono">mechhub.in</div>
+  </div>
+</section>
+
+<div id="ripple"></div>
+<svg id="cursor" viewBox="0 0 24 31"><path d="M1.5 1.5 L1.5 24 L7.4 18.6 L11.3 27.6 L15.2 25.9 L11.4 17 L19.5 17 Z" fill="white" stroke="#0b0d14" stroke-width="1.6" stroke-linejoin="round"/></svg>
+
+<script>
+const DUR = 21.5;
+const SC = { s1: [0, 3.0], s2: [3.0, 6.5], s3: [6.5, 10.0], s4: [10.0, 14.0], s5: [14.0, 17.0], s6: [17.0, DUR] };
+
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, x) => a + (b - a) * x;
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eo5 = (x) => 1 - Math.pow(1 - x, 5);
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+
+function css(el, o) { if (typeof el === 'string') el = $(el); for (const k in o) el.style[k] = o[k]; }
+function wordUp(el, x, dist = 60) {
+  el.style.opacity = clamp(x * 1.4);
+  el.style.filter = x >= 1 ? 'none' : `blur(${(1 - x) * 10}px)`;
+  el.style.transform = `translateY(${(1 - eo(x)) * dist}%)`;
+}
+function words(sel, local, start, stagger, dur, dist) {
+  $$(sel).forEach((el, i) => wordUp(el, eo5(P(local, start + i * stagger, start + i * stagger + dur)), dist));
+}
+function rise(el, x, d = 30) {
+  if (typeof el === 'string') el = $(el);
+  el.style.opacity = x;
+  el.style.transform = `translateY(${(1 - eo(x)) * d}px)`;
+}
+function sceneAlpha(t, [a, b], fin = 0.3, fout = 0.25, first = false, last = false) {
+  const i = first ? 1 : eo(P(t, a, a + fin));
+  const o = last ? 1 : 1 - P(t, b - fout, b);
+  return t < a || t >= b + (last ? 1 : 0) ? 0 : Math.min(i, o);
+}
+
+// cursor keyframes: [time, x, y]; clicks: times
+function pathAt(keys, t) {
+  if (t <= keys[0][0]) return [keys[0][1], keys[0][2]];
+  for (let k = 0; k < keys.length - 1; k++) {
+    const [t0, x0, y0] = keys[k], [t1, x1, y1] = keys[k + 1];
+    if (t <= t1) { const e = eio(P(t, t0, t1)); return [lerp(x0, x1, e), lerp(y0, y1, e)]; }
+  }
+  const l = keys[keys.length - 1]; return [l[1], l[2]];
+}
+function cursor(t, keys, clicks, vis) {
+  const [x, y] = pathAt(keys, t);
+  let press = 1, rip = null;
+  for (const c of clicks) {
+    if (t >= c - 0.08 && t <= c + 0.12) press = 0.86;
+    if (t >= c && t <= c + 0.45) rip = P(t, c, c + 0.45);
+  }
+  css('cursor', { opacity: vis, transform: `translate(${x - 3}px, ${y - 2}px) scale(${press * 1.25})` });
+  if (rip !== null && vis > 0) css('ripple', { opacity: (1 - rip) * 0.7, transform: `translate(${x}px, ${y}px) scale(${0.2 + eo(rip) * 0.9})` });
+  else css('ripple', { opacity: 0 });
+}
+
+// parts strip for the hero
+const PART_W = { 1: 408, 2: 323, 3: 259, 4: 399, 5: 290 };
+(function buildStrip() {
+  const strip = $('s2strip');
+  for (let i = 0; i < 12; i++) {
+    const n = (i % 5) + 1, img = document.createElement('img');
+    img.src = `assets/part-${n}.png`; img.style.width = (270 * PART_W[n] / 640) + 'px';
+    img.className = 's2p'; strip.appendChild(img);
+  }
+})();
+
+function render(t) {
+  // ── Scene 1 ─────────────────────────────
+  const a1 = sceneAlpha(t, SC.s1, 0, 0.001, true);
+  css('s1', { opacity: a1 });
+  if (a1 > 0) {
+    const u = t;
+    css('s1grid', { transform: `translate(${-u * 14}px, ${-u * 8}px)` });
+    const draw = (el, x) => { el.style.strokeDasharray = '1 1'; el.style.strokeDashoffset = 1 - eio(x); };
+    draw($('s1outer'), P(u, 0.12, 0.95));
+    $$('.s1hole').forEach((el, i) => draw(el, P(u, 0.55 + i * 0.08, 0.85 + i * 0.08)));
+    draw($('s1bore'), P(u, 0.7, 1.2));
+    $('s1cb').style.opacity = 0.55 * P(u, 1.0, 1.2);
+    $('s1center').style.opacity = P(u, 0.05, 0.4);
+    $('s1dims').style.opacity = eo(P(u, 1.0, 1.35));
+    rise('s1file', eo(P(u, 0.05, 0.35)), 16);
+    $('s1hud').style.opacity = 0.9 * P(u, 0.9, 1.2) * (1 - P(u, 1.7, 1.95));
+    // tilt into 3D, then flash into the real part
+    const tilt = eio(P(u, 1.45, 2.0));
+    const drawFade = 1 - P(u, 1.92, 2.04);
+    css('s1draw', {
+      opacity: drawFade,
+      transform: `perspective(1400px) rotateX(${tilt * 24}deg) rotateY(${-tilt * 30}deg) rotateZ(${-tilt * 7}deg) scale(${1 - tilt * 0.12})`,
+    });
+    $('s1file').style.opacity = Math.min(eo(P(u, 0.05, 0.35)), 1 - P(u, 1.6, 1.9));
+    const flash = P(u, 1.9, 2.0) * (1 - P(u, 2.0, 2.45));
+    css('s1glow', { opacity: flash, width: `${200 + flash * 900}px`, height: `${200 + flash * 900}px` });
+    const pin = P(u, 1.97, 2.25);
+    const fl = Math.sin((u - 2) * 2.4) * 6;
+    css('s1part', {
+      opacity: eo(pin),
+      transform: `translateY(${(1 - eo(pin)) * 30 - fl * 0.6}px) rotate(${-4 + (1 - eo(pin)) * -10 + fl * 0.25}deg) scale(${0.9 + eo(pin) * 0.1})`,
+    });
+    words('.s1w', u, 0.2, 0.16, 0.6);
+    words('.s1w2', u, 1.72, 0.14, 0.6);
+  }
+
+  // ── Scene 2 ─────────────────────────────
+  const a2 = sceneAlpha(t, SC.s2, 0.25, 0.25);
+  css('s2', { opacity: a2 });
+  if (a2 > 0) {
+    const u = t - SC.s2[0];
+    rise('s2nav', eo(P(u, 0.0, 0.5)), -20);
+    words('.s2w', u, 0.05, 0.065, 0.6);
+    const strip = $('s2strip');
+    strip.style.transform = `translateX(${-180 - u * 95}px)`;
+    $$('.s2p').forEach((img, i) => {
+      const x = eo5(P(u, 0.35 + (i % 6) * 0.09, 1.25 + (i % 6) * 0.09));
+      const fl = Math.sin(u * 1.3 + i * 0.9);
+      img.style.opacity = clamp(x * 1.3);
+      img.style.filter = x >= 1 ? 'drop-shadow(0 30px 30px rgba(0,0,40,0.18))' : `blur(${(1 - x) * 12}px) drop-shadow(0 30px 30px rgba(0,0,40,0.18))`;
+      img.style.transform = `translateY(${(1 - x) * 120 + fl * 12}px) rotate(${(1 - x) * -25 + fl * 3}deg) scale(${0.7 + x * 0.3})`;
+    });
+    rise('s2fl', eo(P(u, 0.9, 1.4)), 16);
+    rise('s2fr', eo(P(u, 0.95, 1.45)), 16);
+  }
+
+  // ── Scene 3 ─────────────────────────────
+  const a3 = sceneAlpha(t, SC.s3, 0.3, 0.25);
+  css('s3', { opacity: a3 });
+  if (a3 > 0) {
+    const u = t - SC.s3[0];
+    rise('s3tag', eo(P(u, 0.05, 0.4)), 14);
+    words('.s3w', u, 0.1, 0.08, 0.6);
+    rise('s3p', eo(P(u, 0.5, 0.9)), 14);
+    const pin = eo(P(u, 0.0, 0.5));
+    css('s3panel', { opacity: pin, transform: `translateX(${(1 - pin) * 60}px) scale(${1 + u * 0.004})`, transformOrigin: '50% 50%' });
+    // drag
+    const drag = P(u, 1.05, 1.45);
+    const drop = $('s3drop');
+    drop.style.borderColor = drag > 0 && u < 1.6 ? `color-mix(in oklab, var(--primary) ${Math.round(eo(drag) * 100)}%, var(--border))` : 'var(--border)';
+    drop.style.background = drag > 0 && u < 1.6 ? `color-mix(in oklab, var(--accent) ${Math.round(eo(drag) * 55)}%, var(--card))` : 'var(--card)';
+    drop.style.transform = `scale(${1 + 0.02 * (u < 1.6 ? eo(drag) : 1 - eo(P(u, 1.6, 1.8)))})`;
+    const ck = [[0, 1760, 1060], [0.35, 1760, 1040], [1.45, 1300, 590], [1.75, 1300, 600], [2.55, 1310, 946], [3.5, 1330, 950]];
+    const [cx, cy] = pathAt(ck, u);
+    const gIn = P(u, 0.3, 0.5), gOut = P(u, 1.5, 1.68);
+    css('s3ghost', { opacity: gIn * (1 - gOut), transform: `translate(${cx + 18}px, ${cy + 22}px) rotate(${lerp(6, 2, P(u, 0.3, 1.45))}deg) scale(${1 - gOut * 0.3})` });
+    cursor(u, ck, [1.5, 2.85], P(u, 0.25, 0.45));
+    // file row
+    const row = eo(P(u, 1.6, 1.95));
+    css('s3row', { opacity: row, transform: `translateY(${(1 - row) * 24}px)` });
+    const done = u >= 2.2;
+    $('s3spin').style.display = done ? 'none' : 'block';
+    $('s3spin').style.transform = `rotate(${u * 540}deg)`;
+    const pop = P(u, 2.2, 2.45);
+    css('s3check', { opacity: done ? 1 : 0, transform: `scale(${done ? back(pop) : 0})` });
+    $('s3meta').textContent = done ? '48 KB · 366×382mm · 11 holes' : '48 KB · Processing…';
+    // stepper
+    $('s3fill').style.width = `${eo(P(u, 2.5, 3.0)) * 50}%`;
+    const on2 = u >= 2.85;
+    $('s3sq2').className = 'sq' + (on2 ? ' on' : '');
+    $('s3nm2').className = 'nm mono' + (on2 ? ' on' : '');
+    $('s3sq2').style.transform = `scale(${on2 ? lerp(1.18, 1.1, P(u, 2.85, 3.1)) : 1})`;
+  }
+
+  // ── Scene 4 ─────────────────────────────
+  const a4 = sceneAlpha(t, SC.s4, 0.3, 0.25);
+  css('s4', { opacity: a4 });
+  if (a4 > 0) {
+    const u = t - SC.s4[0];
+    words('.s4w', u, 0.08, 0.08, 0.6);
+    rise('s4p', eo(P(u, 0.45, 0.85)), 14);
+    // configure phase
+    const cin = eo(P(u, 0.0, 0.4)), cout = eio(P(u, 1.66, 1.86));
+    css('s4cfgwrap', { opacity: cin * (1 - cout), transform: `translateX(${(1 - cin) * 60 - cout * 80}px)` });
+    $('s4laser').className = 'pbtn' + (u >= 0.5 ? ' on' : '');
+    $('s4laser').style.transform = `scale(${u >= 0.5 ? lerp(1.04, 1, P(u, 0.5, 0.7)) : 1})`;
+    const roll = (a, b, x) => { const e = eio(x); $(a).style.top = `${-e * 34}px`; $(b).style.top = `${(1 - e) * 34}px`; };
+    roll('s4matA', 's4matB', P(u, 0.84, 1.0));
+    roll('s4thkA', 's4thkB', P(u, 1.16, 1.32));
+    $('s4mat').className = 'sel' + (u >= 0.8 && u < 1.1 ? ' focus' : '');
+    $('s4thk').className = 'sel' + (u >= 1.12 && u < 1.45 ? ' focus' : '');
+    const calc = u >= 1.5;
+    $('s4rvA').style.display = calc ? 'none' : 'flex';
+    $('s4rvB').style.display = calc ? 'flex' : 'none';
+    $('s4rvspin').style.transform = `rotate(${u * 600}deg)`;
+    $('s4review').style.transform = `scale(${u >= 1.45 && u < 1.6 ? 0.98 : 1})`;
+    const ck = [[0, 1500, 1040], [0.42, 1000, 345], [0.72, 1130, 545], [1.06, 1660, 545], [1.38, 1300, 775], [1.9, 1300, 780], [2.3, 1860, 1020], [4, 1880, 1040]];
+    cursor(u, ck, [0.48, 0.8, 1.12, 1.46], P(u, 0.1, 0.3) * (1 - P(u, 2.0, 2.3)));
+    // quote phase
+    const qin = eo(P(u, 1.88, 2.28));
+    css('s4qwrap', { opacity: qin, transform: `translateY(${(1 - qin) * 50}px)` });
+    const pc = eo5(P(u, 2.0, 2.75));
+    $('s4price').textContent = inr(3286 * pc);
+    $('s4price').style.color = pc >= 1 ? 'var(--fg)' : 'var(--primary)';
+    rise('s4ok', eo(P(u, 2.7, 3.0)), 10);
+    $$('.s4r').forEach((el, i) => rise(el, eo(P(u, 2.2 + i * 0.06, 2.5 + i * 0.06)), 10));
+    $$('.s4m').forEach((el, i) => rise(el, eo(P(u, 2.55 + i * 0.1, 2.9 + i * 0.1)), 16));
+  }
+
+  // ── Scene 5 ─────────────────────────────
+  const a5 = sceneAlpha(t, SC.s5, 0.3, 0.25);
+  css('s5', { opacity: a5 });
+  if (a5 > 0) {
+    const u = t - SC.s5[0];
+    words('.s5w', u, 0.08, 0.08, 0.6);
+    rise('s5p', eo(P(u, 0.5, 0.9)), 14);
+    const pin = eo(P(u, 0.0, 0.45));
+    css('s5wrap', { opacity: pin, transform: `translateY(${(1 - pin) * 40}px) scale(${1 + u * 0.004})` });
+    rise('s5fair', eo(P(u, 0.35, 0.65)), 10);
+    $$('.s5c').forEach((el, i) => {
+      const x = eo5(P(u, 0.3 + i * 0.16, 0.85 + i * 0.16));
+      el.style.opacity = x; el.style.transform = `translateY(${(1 - x) * 60}px)`;
+    });
+    $$('.s5r').forEach((el, i) => {
+      const card = i < 2 ? 0 : i < 6 ? 1 : 2, k = i < 2 ? i : i < 6 ? i - 2 : i - 6;
+      rise(el, eo(P(u, 0.65 + card * 0.16 + k * 0.08, 0.95 + card * 0.16 + k * 0.08)), 10);
+    });
+    $$('.s5n').forEach((el, i) => rise(el, eo(P(u, 1.15 + i * 0.12, 1.45 + i * 0.12)), 10));
+    const c = (a, b) => eo(P(u, a, b));
+    $('s5mat').textContent = `${inr(473 * c(0.7, 1.4))} / unit`;
+    $('s5per').textContent = `${(1.93 * c(0.85, 1.7)).toFixed(2)} m`;
+    $('s5meter').style.width = `${c(0.85, 1.7) * 100}%`;
+    $('s5pier').textContent = `${Math.round(11 * c(0.95, 1.6))} pierces`;
+    $('s5cut').textContent = `${inr(141 * c(1.0, 1.7))} / unit`;
+    $('s5set').textContent = `${inr(1700 * c(1.0, 1.75))} / unit`;
+  }
+
+  // ── Scene 6 ─────────────────────────────
+  const a6 = sceneAlpha(t, SC.s6, 0.3, 0, false, true);
+  css('s6', { opacity: a6 });
+  if (a6 > 0) {
+    const u = t - SC.s6[0];
+    css('s6', { backgroundPosition: `${u * 10}px ${u * 6}px` });
+    $('s6ast').style.transform = `rotate(${u * 22}deg)`;
+    words('.s6w', u, 0.05, 0.09, 0.65);
+    rise('s6sub', eo(P(u, 0.75, 1.15)) * 0.88, 18);
+    $$('.s6b').forEach((el, i) => rise(el, eo(P(u, 1.25 + i * 0.12, 1.6 + i * 0.12)) * 0.85, 14));
+    const lk = eo5(P(u, 2.05, 2.6));
+    css('s6lock', { opacity: lk, transform: `translateY(${(1 - lk) * 30}px)` });
+  }
+
+  if (a1 + a3 + a4 <= 0) css('cursor', { opacity: 0 });
+  if (!(a3 > 0 || a4 > 0)) css('ripple', { opacity: 0 });
+}
+
+window.renderAt = async (t) => { render(t); };
+window.ready = (async () => {
+  await document.fonts.ready;
+  await Promise.all(Array.from(document.images).map((im) => (im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r; }))));
+  render(0);
+  return true;
+})();
+
+if (location.hash.startsWith('#t=')) {
+  window.ready.then(() => render(parseFloat(location.hash.slice(3))));
+} else if (location.hash === '#play') {
+  window.ready.then(() => {
+    const t0 = performance.now();
+    const loop = () => { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); };
+    loop();
+  });
+}
+</script>
+</body>
+</html>

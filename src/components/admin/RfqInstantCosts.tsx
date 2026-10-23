@@ -15,32 +15,70 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { MechanicalPart } from '@/models/project.model';
+import type { MechanicalPart, PartInstantQuote } from '@/models/project.model';
 import { summarizeProjectCost, type PartPriceStatus } from '@/lib/quoting/project-costing';
 import { CNC_PROCESS_LABELS } from '@/lib/quoting/cnc-materials';
 import { getFinishRate } from '@/lib/quoting/materials';
 
-// ═══════════════════════════════════════════════════
-// RfqInstantCosts — admin view of what the instant engine priced this RFQ at
-//
-// Gives the admin the per-part engine prices, cost breakdowns, DFM flags and the
-// project total as the starting point for the official quote, plus the quotation
-// PDF. "Apply instant prices" fills the pricing worksheet with the engine's numbers.
-// ═══════════════════════════════════════════════════
+function quoteFacts(q: PartInstantQuote): { process: string; notes: string[]; rows: [string, number][] } {
+  const finish = (cost: number): [string, number][] =>
+    cost ? [[getFinishRate(q.finishType)?.label ?? 'Finish', cost]] : [];
+  if (q.kind === 'sheet') {
+    const b = q.breakdown;
+    return {
+      process: `Laser cut ${q.thicknessMm} mm`,
+      notes: [`cut ${b.cutTimeMin.toFixed(1)} min`, b.bendCount ? `${b.bendCount} bends` : 'flat', `sheet use ${Math.round(b.sheetUtilisation * 100)}%`],
+      rows: [
+        ['Material', b.materialCost],
+        ['Laser cutting', b.cutCost],
+        ['Laser setup', b.laserSetupCost],
+        ...(b.bendingCost ? [[`Bending (${b.bendCount})`, b.bendingCost] as [string, number]] : []),
+        ...(b.tappingCost ? [[`Tapping (${b.tappedHoles})`, b.tappingCost] as [string, number]] : []),
+        ...finish(b.finishCost),
+      ],
+    };
+  }
+  if (q.kind === 'print') {
+    const b = q.breakdown;
+    return {
+      process: 'FDM 3D print',
+      notes: [`${b.massG.toFixed(0)} g`, `print ${b.printTimeMin.toFixed(0)} min`, `${b.orientation} up`],
+      rows: [
+        ['Filament', b.materialCost],
+        ['Printer time', b.machineCost],
+        ['Post-processing', b.labourCost],
+        ['Setup', b.setupCost],
+        ...finish(b.finishCost),
+      ],
+    };
+  }
+  const b = q.breakdown;
+  return {
+    process: CNC_PROCESS_LABELS[q.process] ?? q.process,
+    notes: [q.stock, `cycle ${b.cycleTimeMin?.toFixed?.(1) ?? '—'} min`],
+    rows: [
+      ['Material', b.materialCost],
+      ['Machining', b.machiningCost],
+      ['Setup', b.setupCost],
+      ['Programming', b.programmingCost],
+      ...(b.tappingCost ? [[`Tapping (${b.tappedHoles})`, b.tappingCost] as [string, number]] : []),
+      ...finish(b.finishCost),
+    ],
+  };
+}
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
 const STATUS_BADGE: Record<PartPriceStatus, { label: string; className: string }> = {
   quoted: { label: 'You quoted', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  instant: { label: 'Instant', className: 'bg-blue-50 text-[#2F5FA7] border-blue-200' },
+  instant: { label: 'Instant', className: 'bg-blue-50 text-blue-700 border-blue-200' },
   expired: { label: 'Instant (stale)', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  pending: { label: 'Needs pricing', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+  pending: { label: 'Needs pricing', className: 'bg-neutral-100 text-neutral-500 border-neutral-200' },
 };
 
 interface RfqInstantCostsProps {
   parts: MechanicalPart[];
   project: { id: string; status?: string; quotedPrice?: number; finalPrice?: number };
-  /** Fills the pricing worksheet with the engine's per-part prices */
   onApplyInstantPrices: (pricePerPartById: Record<string, string>) => void;
 }
 
@@ -87,17 +125,17 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
   if (parts.length === 0) return null;
 
   return (
-    <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50/30 overflow-hidden shadow-sm">
-      <div className="px-4 py-3 bg-blue-600 text-white flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em]">
-          <Sparkles className="w-3.5 h-3.5" /> Instant Cost Engine
+    <div className="border border-lp-border bg-white overflow-hidden">
+      <div className="px-4 py-3 bg-lp-ink text-lp-ink-fg flex items-center justify-between gap-3 flex-wrap">
+        <h3 className="flex items-center gap-2 adm-mono">
+          <Sparkles className="w-3.5 h-3.5 text-[oklch(72%_0.14_264)]" /> Instant Cost Engine
         </h3>
         <div className="flex items-center gap-2">
           {Object.keys(applyablePrices).length > 0 && (
             <Button
               size="sm"
               onClick={() => onApplyInstantPrices(applyablePrices)}
-              className="h-7 bg-white/15 hover:bg-white/25 text-white text-[9px] font-bold uppercase tracking-widest border border-white/20"
+              className="h-7 bg-white/10 hover:bg-white/20 text-white text-[9px] font-semibold uppercase tracking-widest border border-white/20 rounded-none transition-colors"
             >
               <Wand2 className="w-3 h-3 mr-1.5" /> Apply instant prices
             </Button>
@@ -106,7 +144,7 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
             size="sm"
             onClick={handleDownloadPdf}
             disabled={isDownloading}
-            className="h-7 bg-white text-[#2F5FA7] hover:bg-blue-50 text-[9px] font-bold uppercase tracking-widest"
+            className="h-7 bg-white text-lp-fg hover:bg-lp-primary hover:text-white text-[9px] font-semibold uppercase tracking-widest rounded-none transition-colors font-lp-mono"
           >
             {isDownloading ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Download className="w-3 h-3 mr-1.5" />}
             Quotation PDF
@@ -114,8 +152,7 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
         </div>
       </div>
 
-      {/* Project totals from the instant engine */}
-      <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-blue-100 bg-white">
+      <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-lp-border bg-lp-bg">
         <Metric label="Parts subtotal" value={inr(summary.partsSubtotal)} />
         <Metric label="GST (18%)" value={inr(summary.finances.gst)} />
         <Metric label="Grand total" value={inr(summary.finances.total)} strong />
@@ -126,61 +163,54 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
         />
       </div>
 
-      {/* Per-part engine breakdown */}
       <div className="p-4 space-y-3">
         {parts.map((part, idx) => {
           const line = summary.lines[idx];
           const q = part.instantQuote;
           const meta = STATUS_BADGE[line.status];
           return (
-            <div key={part.id} className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-              <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
+            <div key={part.id} className="adm-row border border-lp-border bg-white overflow-hidden">
+              <div className="px-3 py-2.5 bg-lp-bg border-b border-lp-border flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="bg-[#2F5FA7] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">P{idx + 1}</span>
-                  <span className="font-bold text-slate-900 text-xs truncate">{part.partName}</span>
-                  <Badge variant="outline" className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0 h-4 ${meta.className}`}>
+                  <span className="bg-lp-ink text-lp-ink-fg text-[9px] font-lp-mono px-1.5 py-0.5">P{idx + 1}</span>
+                  <span className="adm-row-title text-xs truncate">{part.partName}</span>
+                  <Badge variant="outline" className={`text-[9px] font-medium uppercase tracking-wider px-1.5 py-0 h-4 ${meta.className}`}>
                     {meta.label}
                   </Badge>
                 </div>
                 <div className="text-right shrink-0">
                   {line.lineTotal !== null ? (
                     <>
-                      <p className="text-sm font-black text-[#1E3A66] font-mono leading-none">{inr(line.lineTotal)}</p>
-                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">
+                      <p className="text-sm font-bold text-lp-fg font-lp-mono leading-none">{inr(line.lineTotal)}</p>
+                      <p className="text-[9px] text-lp-muted-fg font-medium uppercase tracking-wider mt-0.5">
                         {inr(line.unitPrice ?? 0)} × {part.quantity}
                       </p>
                     </>
                   ) : (
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Needs pricing</p>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-lp-muted-fg">Needs pricing</p>
                   )}
                 </div>
               </div>
 
               {q ? (
                 <div className="p-3 space-y-2">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold text-slate-600">
-                    <span className="flex items-center gap-1"><Cog className="w-3 h-3 text-[#2F5FA7]" /> {CNC_PROCESS_LABELS[q.process] ?? q.process}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-[#2F5FA7]" /> {q.leadTimeDays}d</span>
-                    <span className="text-slate-400">{q.stock}</span>
-                    <span className="text-slate-400">cycle {q.breakdown.cycleTimeMin?.toFixed?.(1) ?? '—'} min</span>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-lp-fg/80">
+                    <span className="flex items-center gap-1"><Cog className="w-3 h-3 text-lp-primary" /> {quoteFacts(q).process}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-lp-primary" /> {q.leadTimeDays}d</span>
+                    {quoteFacts(q).notes.map((note) => (
+                      <span key={note} className="text-lp-muted-fg">{note}</span>
+                    ))}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-                    {([
-                      ['Material', q.breakdown.materialCost],
-                      ['Machining', q.breakdown.machiningCost],
-                      ['Setup', q.breakdown.setupCost],
-                      ['Programming', q.breakdown.programmingCost],
-                      ...(q.breakdown.tappingCost ? [[`Tapping (${q.breakdown.tappedHoles})`, q.breakdown.tappingCost] as [string, number]] : []),
-                      ...(q.breakdown.finishCost ? [[getFinishRate(q.finishType)?.label ?? 'Finish', q.breakdown.finishCost] as [string, number]] : []),
-                    ] as [string, number][]).map(([label, value]) => (
+                    {quoteFacts(q).rows.map(([label, value]) => (
                       <div key={label} className="flex justify-between text-[10px]">
-                        <span className="text-slate-400 font-bold">{label}</span>
-                        <span className="font-mono font-bold text-slate-700">{inr(value)}</span>
+                        <span className="text-lp-muted-fg font-medium">{label}</span>
+                        <span className="font-lp-mono font-semibold text-lp-fg">{inr(value)}</span>
                       </div>
                     ))}
                   </div>
                   {q.unpricedProcesses.length > 0 && (
-                    <p className="text-[10px] font-bold text-amber-700 flex items-start gap-1.5">
+                    <p className="text-[10px] font-medium text-amber-700 flex items-start gap-1.5">
                       <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
                       Not priced by the engine: {q.unpricedProcesses.map((p) => p.replace(/_/g, ' ')).join(', ')}
                     </p>
@@ -190,7 +220,7 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
                       {q.dfmIssues.map((issue, i) => (
                         <p
                           key={`${issue.code}-${i}`}
-                          className={`text-[10px] font-bold flex items-start gap-1.5 ${issue.blocking ? 'text-red-600' : 'text-amber-700'}`}
+                          className={`text-[10px] font-medium flex items-start gap-1.5 ${issue.blocking ? 'text-red-600' : 'text-amber-700'}`}
                         >
                           {issue.blocking ? <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" /> : <CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" />}
                           {issue.message}
@@ -201,8 +231,8 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
                 </div>
               ) : (
                 <div className="p-3 flex items-start gap-2">
-                  <ReceiptText className="w-3.5 h-3.5 text-slate-300 shrink-0 mt-0.5" />
-                  <p className="text-[10px] font-bold text-slate-500">
+                  <ReceiptText className="w-3.5 h-3.5 text-lp-muted-fg shrink-0 mt-0.5" />
+                  <p className="text-[10px] font-medium text-lp-muted-fg">
                     {part.quoteNote || 'No instant price — our engine does not cover this part. Price it manually below.'}
                   </p>
                 </div>
@@ -218,9 +248,9 @@ export function RfqInstantCosts({ parts, project, onApplyInstantPrices }: RfqIns
 function Metric({ label, value, strong, hint }: { label: string; value: string; strong?: boolean; hint?: string }) {
   return (
     <div>
-      <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
-      <p className={`font-mono font-black ${strong ? 'text-base text-[#1E3A66]' : 'text-xs text-slate-800'}`}>{value}</p>
-      {hint && <p className="text-[8px] font-bold text-amber-600 uppercase tracking-widest">{hint}</p>}
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-lp-muted-fg">{label}</p>
+      <p className={`font-lp-mono font-bold ${strong ? 'text-base text-lp-fg' : 'text-xs text-lp-fg'}`}>{value}</p>
+      {hint && <p className="text-[9px] font-medium text-amber-600 uppercase tracking-wider">{hint}</p>}
     </div>
   );
 }

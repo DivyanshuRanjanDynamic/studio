@@ -10,6 +10,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type {
   CncAnalysis,
+  CncQuoteRequest,
   CncQuoteResult,
   DFMIssue,
   FinishType,
@@ -18,6 +19,7 @@ import type {
   TurnaroundType,
 } from '@/types/quoting';
 import { generateCncQuote, getCncTierTable } from '@/lib/quoting/pricing-engine';
+import { findTappableHoleGroups, tapRequestsFromPicks, type TappableHoleGroup } from '@/lib/quoting/tapping';
 import {
   getActiveMaterials,
   getAvailableFinishes,
@@ -26,6 +28,8 @@ import {
 } from '@/lib/quoting/materials';
 import { getCncMaterialData } from '@/lib/quoting/cnc-materials';
 import { analyzeCncPart, type CncAnalysisHandle } from '@/services/quoteApi.service';
+import { calibrateQuote, calibrateTiers, resolveMultiplier } from '@/lib/quoting/pricing-calibration';
+import { usePricingCalibration } from '@/hooks/use-pricing-calibration';
 import type { Result } from '@/utils/result';
 import type { AppError } from '@/utils/errors';
 
@@ -40,9 +44,19 @@ export interface CncQuoteState {
 
 export type CncAnalysisStatus = 'idle' | 'unsupported_file' | 'analyzing' | 'ready' | 'error';
 
+/** Thread picked for one analysed hole group (keyed by TappableHoleGroup.key) */
+export type TapPicks = Readonly<Record<string, { readonly tapId: string; readonly count: number }>>;
+const NO_PICKS: TapPicks = {};
+
 export interface UseCncQuoteReturn {
   // State
   state: CncQuoteState;
+  /** What is priced and saved: the options plus any threads */
+  request: CncQuoteRequest;
+  // Tapping
+  tappableHoles: readonly TappableHoleGroup[];
+  tapPicks: TapPicks;
+  setTapPick: (groupKey: string, pick: { tapId: string; count: number } | null) => void;
   // Setters
   setMaterialId: (id: string) => void;
   setFinishType: (type: FinishType) => void;
@@ -194,20 +208,61 @@ export function useCncQuote(
     analysis !== null &&
     (analysis.process.recommended === 'cnc_turning') !== (mode === 'cnc_turning');
 
-  const priced = useMemo(
-    () => (enabled && analysis ? generateCncQuote(analysis, state) : null),
-    [enabled, analysis, state]
+  // ── Tapping: picks belong to one analysis, so a new file starts clean ──
+  const tappableHoles = useMemo(() => findTappableHoleGroups(analysis), [analysis]);
+  const [tapState, setTapState] = useState<{ analysisId: string | null; picks: TapPicks }>({
+    analysisId: null,
+    picks: NO_PICKS,
+  });
+  const tapPicks = tapState.analysisId === analysisId ? tapState.picks : NO_PICKS;
+  const setTapPick = useCallback(
+    (groupKey: string, pick: { tapId: string; count: number } | null) => {
+      setTapState((prev) => {
+        const picks = { ...(prev.analysisId === analysisId ? prev.picks : NO_PICKS) };
+        if (pick) picks[groupKey] = pick;
+        else delete picks[groupKey];
+        return { analysisId, picks };
+      });
+    },
+    [analysisId]
+  );
+  const taps = useMemo(() => tapRequestsFromPicks(tapPicks), [tapPicks]);
+
+  const request = useMemo<CncQuoteRequest>(
+    () => ({ ...state, ...(taps.length > 0 ? { taps } : {}) }),
+    [state, taps]
   );
 
-  const quoteResult = priced?.success ? priced.data : null;
+  // Admin settings (shop load for rush surge, price corrections), exactly as the server applies them
+  const calibration = usePricingCalibration();
+  const shopLoad = calibration.shopLoad;
+  const priced = useMemo(
+    () => (enabled && analysis ? generateCncQuote(analysis, request, undefined, shopLoad) : null),
+    [enabled, analysis, request, shopLoad]
+  );
 
   const { materialId, finishType, turnaround } = state;
+  const multiplier = resolveMultiplier(calibration, 'cnc', materialId);
+  const quoteResult = useMemo(
+    () => (priced?.success ? calibrateQuote(priced.data, multiplier) : null),
+    [priced, multiplier]
+  );
+
   const tierPricing = useMemo(
     () =>
       enabled && analysis
-        ? getCncTierTable(analysis, { materialId, finishType, turnaround, quantity: 1 })
+        ? calibrateTiers(
+          getCncTierTable(analysis, {
+            materialId,
+            finishType,
+            turnaround,
+            quantity: 1,
+            ...(taps.length > 0 ? { taps } : {}),
+          }, undefined, shopLoad),
+          multiplier
+        )
         : [],
-    [enabled, analysis, materialId, finishType, turnaround]
+    [enabled, analysis, materialId, finishType, turnaround, taps, multiplier, shopLoad]
   );
 
   const savingsPercent = useMemo(() => {
@@ -227,6 +282,10 @@ export function useCncQuote(
 
   return {
     state,
+    request,
+    tappableHoles,
+    tapPicks,
+    setTapPick,
     setMaterialId,
     setFinishType,
     setQuantity,

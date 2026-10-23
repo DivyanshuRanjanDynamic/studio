@@ -17,7 +17,7 @@ import {
   Factory,
   Clock,
 } from 'lucide-react';
-import { LandingNav } from '@/components/LandingNav';
+import { V2Shell } from '@/components/V2Shell';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -199,9 +199,9 @@ export default function MatchingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-zinc-300 relative overflow-hidden pt-24 pb-20">
+    <V2Shell noFooter>
+      <div className="min-h-screen bg-lp-ink text-lp-muted-fg relative overflow-hidden pb-20 -mt-20 pt-24">
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none" />
-      <LandingNav />
       <div className="container mx-auto px-4 max-w-6xl relative z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
@@ -343,6 +343,7 @@ export default function MatchingPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </V2Shell>
   );
 }

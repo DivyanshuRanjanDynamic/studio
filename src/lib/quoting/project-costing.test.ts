@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { summarizeProjectCost } from './project-costing';
 import { calculateProjectFinances } from '@/utils/finance';
-import type { MechanicalPart, PartInstantQuote } from '@/models/project.model';
+import type { CncPartInstantQuote, MechanicalPart } from '@/models/project.model';
 
 // ═══════════════════════════════════════════════════
 // Project cost roll-up: per-part prices → subtotal, GST, shipping, total
@@ -9,7 +9,7 @@ import type { MechanicalPart, PartInstantQuote } from '@/models/project.model';
 
 const NOW = 1_800_000_000_000;
 
-const instantQuote = (totalPrice: number, overrides: Partial<PartInstantQuote> = {}): PartInstantQuote => ({
+const instantQuote = (totalPrice: number, overrides: Partial<CncPartInstantQuote> = {}): CncPartInstantQuote => ({
   quoteRef: 'MH-ABCDEFGH23',
   analysisId: 'cnca_0123456789abcdef',
   currency: 'INR',
@@ -20,7 +20,7 @@ const instantQuote = (totalPrice: number, overrides: Partial<PartInstantQuote> =
   process: 'cnc_machining_3axis',
   materialId: 'al_6061',
   finishType: 'none',
-  breakdown: {} as PartInstantQuote['breakdown'],
+  breakdown: {} as CncPartInstantQuote['breakdown'],
   stock: '100 × 60 × 20 mm block',
   hasBlockingIssues: false,
   dfmIssues: [],

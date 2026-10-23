@@ -166,9 +166,14 @@ export function FileUploadStep({
 
     try {
       // Step 1: Get presigned URL
+      // Send the ID token too: the session cookie alone may have expired.
+      const token = await user?.getIdToken();
       const response = await fetch('/api/v1/files/upload-intent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           fileName: file.name,
           fileSize: file.size,
@@ -177,7 +182,8 @@ export function FileUploadStep({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get upload intent');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Could not start the upload (${response.status})`);
       }
 
       const { uploadUrl, fileKey } = await response.json();
@@ -262,36 +268,18 @@ export function FileUploadStep({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-bold uppercase tracking-wide text-slate-900 mb-2">
-          Upload 3D Design
+      <div className="mb-6">
+        <h3 className="text-2xl text-lp-fg mb-1">
+          Upload <span className="font-lp-serif italic text-lp-primary">3D design</span>
         </h3>
-        <p className="text-xs uppercase tracking-widest font-bold text-blue-200">
-          Upload your STEP OR STP file to get started
+        <p className="lp-label-mono text-lp-muted-fg">
+          Step or STP file to get started
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label className="text-[10px] uppercase font-bold tracking-[0.15em] text-[#2F5FA7] flex items-center gap-2">
-            <Tag className="w-3.5 h-3.5" />
-            Part Identity
-          </Label>
-          <Input
-            placeholder="e.g. Main Bracket, Mounting Plate v2"
-            value={partName}
-            onChange={(e) => onPartNameChange(e.target.value)}
-            className="h-12 border-slate-200 focus:border-[#2F5FA7] focus:ring-[#2F5FA7]/20 uppercase text-xs tracking-wider font-bold"
-          />
-          <p className="text-[8px] text-blue-100 uppercase tracking-widest font-bold italic pl-1">
-            Give your part a descriptive name for internal tracking
-          </p>
-        </div>
-
-        <div className="h-px bg-slate-100 my-2" />
-
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase font-bold tracking-[0.15em] text-[#2F5FA7] flex items-center gap-2">
+          <Label className="lp-label-mono text-lp-primary flex items-center gap-2">
             <Box className="w-3.5 h-3.5" />
             Geometry File (STEP/STP)
           </Label>
@@ -299,9 +287,9 @@ export function FileUploadStep({
           {!uploadedFile ? (
             <div className="space-y-4">
               <Card
-                className={`border-2 border-dashed transition-all duration-300 relative overflow-hidden cursor-pointer ${dragActive
-                  ? 'border-[#2F5FA7] bg-blue-50'
-                  : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                className={`border-2 border-dashed transition-all duration-300 relative overflow-hidden cursor-pointer rounded-sm ${dragActive
+                  ? 'border-lp-primary bg-lp-accent'
+                  : 'border-lp-border hover:border-lp-primary/40 hover:bg-lp-accent'
                   }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -311,17 +299,17 @@ export function FileUploadStep({
               >
                 <div className="p-8 text-center flex flex-col items-center gap-4">
                   <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-sm ${dragActive
-                      ? 'bg-blue-600 text-white border-[#2F5FA7]'
-                      : 'bg-blue-50 text-[#2F5FA7] border-blue-100'
+                    className={`w-14 h-14 rounded-sm flex items-center justify-center transition-colors ${dragActive
+                      ? 'bg-lp-primary text-lp-primary-fg'
+                      : 'bg-lp-accent text-lp-primary'
                       }`}
                   >
                     {isUploading ? (
                       <Loader2 className="w-8 h-8 animate-spin" />
                     ) : isValidating ? (
                       <div className="flex flex-col items-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-[#2F5FA7]" />
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] mt-2 text-[#2F5FA7] animate-pulse">
+                        <Loader2 className="w-8 h-8 animate-spin text-lp-primary" />
+                        <span className="lp-label-mono mt-2 text-lp-primary animate-pulse">
                           Validating File
                         </span>
                       </div>
@@ -331,20 +319,20 @@ export function FileUploadStep({
                   </div>
 
                   <div>
-                    <p className="font-bold text-slate-900 uppercase tracking-wide text-sm">
+                    <p className="font-bold text-lp-fg text-sm">
                       {isUploading ? 'Uploading Design...' : 'Drop your design file here'}
                     </p>
-                    <p className="text-[10px] text-blue-200 uppercase tracking-widest font-bold mt-1">
+                    <p className="lp-label-mono text-lp-muted-fg mt-1">
                       {isUploading
                         ? `${Math.round(uploadProgress)}% completed`
-                        : 'or click to browse from files'}
+                        : 'or click to browse'}
                     </p>
                   </div>
 
                   {isUploading && (
-                    <div className="w-full max-w-xs h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
+                    <div className="w-full max-w-xs h-1.5 bg-lp-accent rounded-full overflow-hidden mt-2">
                       <div
-                        className="h-full bg-blue-600 transition-all duration-300"
+                        className="h-full bg-lp-primary transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -354,13 +342,13 @@ export function FileUploadStep({
                     <div className="flex gap-2 mt-2">
                       <Badge
                         variant="outline"
-                        className="text-[8px] uppercase font-bold tracking-tighter px-1.5 py-0"
+                        className="lp-label-mono px-2 py-0.5 border-lp-border rounded-sm"
                       >
                         STEP
                       </Badge>
                       <Badge
                         variant="outline"
-                        className="text-[8px] uppercase font-bold tracking-tighter px-1.5 py-0"
+                        className="lp-label-mono px-2 py-0.5 border-lp-border rounded-sm"
                       >
                         STP
                       </Badge>
@@ -379,15 +367,15 @@ export function FileUploadStep({
             </div>
           ) : (
             <div className="space-y-4">
-              <Card className="bg-blue-50 border-[#2F5FA7]/20 border relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-1 h-full bg-blue-600" />
+              <Card className="bg-lp-accent border-lp-primary/20 border relative overflow-hidden group rounded-sm">
+                <div className="absolute top-0 left-0 w-1 h-full bg-lp-primary" />
                 <div className="p-4 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-blue-100 text-[#2F5FA7] shadow-sm shrink-0">
+                  <div className="w-12 h-12 rounded-sm bg-lp-card flex items-center justify-center border border-lp-border text-lp-primary shadow-sm shrink-0">
                     <Box className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-slate-900 uppercase tracking-wide text-xs truncate">
+                      <p className="font-bold text-lp-fg text-xs truncate">
                         {uploadedFile.fileName}
                       </p>
                       <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[8px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 border-none">
@@ -395,7 +383,7 @@ export function FileUploadStep({
                         Validated
                       </Badge>
                     </div>
-                    <p className="text-[9px] text-blue-200 uppercase tracking-widest font-mono">
+                    <p className="text-[9px] text-lp-muted-fg font-lp-mono uppercase tracking-widest">
                       {formatFileSize(uploadedFile.fileSize)}
                     </p>
                   </div>
@@ -403,7 +391,7 @@ export function FileUploadStep({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 text-[9px] font-black uppercase tracking-widest border-[#2F5FA7]/30 text-[#2F5FA7] hover:bg-blue-600 hover:text-white transition-all gap-1.5"
+                      className="h-8 lp-label-mono border-lp-primary/30 text-lp-primary hover:bg-lp-primary hover:text-lp-primary-fg transition-all gap-1.5 rounded-sm"
                       disabled={isConverting}
                       onClick={async (e) => {
                         e.stopPropagation();
@@ -495,11 +483,10 @@ export function FileUploadStep({
         isConverting={isConverting}
       />
 
-      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3">
-        <AlertCircle className="w-4 h-4 text-[#2F5FA7] mt-0.5" />
-        <p className="text-[9px] text-blue-200 uppercase tracking-wider font-bold leading-relaxed">
-          Technical design files are handled securely. Our manufacturing experts will review your
-          files to ensure production readiness.
+      <div className="p-3 bg-lp-accent rounded-sm border border-lp-border flex items-start gap-3">
+        <Info className="w-4 h-4 text-lp-primary mt-0.5 shrink-0" />
+        <p className="text-xs text-lp-muted-fg leading-relaxed">
+          Technical design files are handled securely. Our engineers review every file for production readiness.
         </p>
       </div>
     </div>

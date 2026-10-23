@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuotingService } from '@/services/quoting.service';
 import {
-  quoteRequestSchema,
+  sheetQuoteCreateSchema,
   cncQuoteCreateSchema,
   cncUploadIntentSchema,
   cncAnalyzeSchema,
+  partAnalyzeSchema,
 } from '@/lib/validation/quoting';
 import { CncAnalysisService } from '@/services/cnc-analysis.service';
+import { PartAnalysisService } from '@/services/part-analysis.service';
+import { PricingCalibrationRepository } from '@/repositories/pricing-calibration.repository';
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { logger } from '@/utils/logger';
 import { ErrorCode } from '@/utils/errors';
@@ -43,8 +46,9 @@ async function requireRegisteredUser(
  */
 export const QuoteController = {
   /**
-   * Generates and saves a new instant (laser) quote for a signed-in user.
-   * The client-side estimate is display-only; this is the quote of record.
+   * Prices and saves a laser (sheet) quote from a stored sheet analysis
+   * ({ analysisId, request }). The client never sends geometry; the client-side
+   * estimate is display-only and this is the quote of record.
    */
   async createQuote(request: NextRequest) {
     const reqId = Math.random().toString(36).substring(7);
@@ -57,7 +61,7 @@ export const QuoteController = {
       const body = await request.json();
 
       // 1. Validate Input
-      const validation = quoteRequestSchema.safeParse(body);
+      const validation = sheetQuoteCreateSchema.safeParse(body);
       if (!validation.success) {
         logger.warn({
           event: 'API: Quote validation failed',
@@ -73,8 +77,9 @@ export const QuoteController = {
         );
       }
 
-      // 2. Process Quote via Service
-      const result = await QuotingService.processQuoteRequest(validation.data, user.uid);
+      // 2. Price from the caller's own stored analysis
+      const { analysisId, request: quoteRequest } = validation.data;
+      const result = await QuotingService.processStoredSheetQuoteRequest(analysisId, quoteRequest, user.uid);
 
       if (result.success) {
         logger.info({
@@ -96,7 +101,7 @@ export const QuoteController = {
             error: error.message,
             code: error.code,
           },
-          { status: error.code === ErrorCode.VALIDATION_FAILED ? 400 : 500 }
+          { status: error.statusCode }
         );
       }
     } catch (e) {
@@ -176,6 +181,43 @@ export const QuoteController = {
   },
 
   /**
+   * Analyses the caller's wizard upload for sheet-metal or 3D-print pricing and
+   * stores it; the part wizard prices from the returned analysisId.
+   */
+  async analyzePart(request: NextRequest) {
+    const reqId = Math.random().toString(36).substring(7);
+    logger.info({ event: 'API: Part analysis started', reqId });
+
+    try {
+      const user = await requireRegisteredUser(request, reqId);
+      if (user instanceof NextResponse) return user;
+
+      const validation = partAnalyzeSchema.safeParse(await request.json());
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: 'Invalid analysis request', code: ErrorCode.VALIDATION_FAILED },
+          { status: 400 }
+        );
+      }
+
+      const { fileKey, kind } = validation.data;
+      const result = await PartAnalysisService.analyzeUpload(user.uid, fileKey, kind);
+      if (!result.success) {
+        logger.warn({ event: 'API: Part analysis failed', reqId, kind, code: result.error.code });
+        return NextResponse.json(
+          { error: result.error.message, code: result.error.code },
+          { status: result.error.statusCode }
+        );
+      }
+      logger.info({ event: 'API: Part analysis stored', reqId, kind, analysisId: result.data.analysisId });
+      return NextResponse.json(result.data);
+    } catch (e) {
+      logger.error({ event: 'API: Unexpected error in analyzePart', reqId, error: e });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+  },
+
+  /**
    * Prices and saves a CNC quote from an analysis stored by analyzeCnc.
    * Signed-in users only, like createQuote; the price is recomputed server-side.
    */
@@ -239,6 +281,18 @@ export const QuoteController = {
       logger.error({ event: 'API: Unexpected error in createCncQuote', reqId, error: e });
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
+  },
+
+  /**
+   * The admin-applied price multipliers, so live prices in the browser match the
+   * quote of record the server saves. Read-only; signed-in users only.
+   */
+  async getCalibration(request: NextRequest) {
+    const reqId = Math.random().toString(36).substring(7);
+    const user = await requireRegisteredUser(request, reqId);
+    if (user instanceof NextResponse) return user;
+    const config = await PricingCalibrationRepository.getConfig();
+    return NextResponse.json({ multipliers: config.multipliers, shopLoad: config.shopLoad ?? null });
   },
 
   /**

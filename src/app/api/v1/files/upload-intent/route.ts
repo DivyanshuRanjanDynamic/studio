@@ -11,7 +11,7 @@ import { FileAccessRepository } from '@/repositories/file-access.repository';
 // POST /api/v1/files/upload-intent — Real S3 Presigned URL
 // ═══════════════════════════════════════════════════
 
-const CAD_EXTENSIONS = ['.dxf', '.step', '.stp', '.stl'];
+const CAD_EXTENSIONS = ['.dxf', '.step', '.stp', '.stl', '.obj'];
 const ARTIFACT_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
 
 const MAX_CAD_SIZE = 30 * 1024 * 1024; // 30 MB
@@ -22,6 +22,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
   'application/octet-stream',
   'model/step',
   'model/stl',
+  'model/obj',
   'application/sla',
   'image/jpeg',
   'image/png',
