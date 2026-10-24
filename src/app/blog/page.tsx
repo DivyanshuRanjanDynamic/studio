@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { allPosts } from 'contentlayer/generated';
+import { allPosts } from 'contentlayer2/generated';
 import { compareDesc } from 'date-fns';
 import { Search, ArrowRight } from 'lucide-react';
 import Fuse from 'fuse.js';

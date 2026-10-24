@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { allPosts } from 'contentlayer/generated';
+import { allPosts } from 'contentlayer2/generated';
 import { format, parseISO } from 'date-fns';
 import { ChevronLeft, Calendar, Clock, ArrowRight } from 'lucide-react';
 import { Mdx } from '@/components/MDXComponents';
