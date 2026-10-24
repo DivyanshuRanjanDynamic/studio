@@ -1,4 +1,5 @@
 import { ConversionResult, BendAnalysisResult } from '@/types/viewer';
+import { logger } from '@/utils/logger';
 
 /**
  * CAD Conversion Service
@@ -28,7 +29,6 @@ interface JobStatusResponse {
   status: 'queued' | 'processing' | 'done' | 'failed';
   fileName?: string;
   fileSize?: number;
-  resultUrl?: string | null;
   result?: ConversionResult | null;
   error?: string | null;
 }
@@ -57,7 +57,9 @@ export async function convertStepFile(
   file: File,
   onStatusUpdate?: (status: string) => void
 ): Promise<ConversionResult> {
-  const ticket = await getConvertTicket();
+  // Also authorises the /status polls: the converter only shows a job to the
+  // user who created it.
+  let ticket = await getConvertTicket();
 
   const form = new FormData();
   form.append('file', file);
@@ -103,14 +105,20 @@ export async function convertStepFile(
       const statusUrl = `${SERVICE_BASE_ROOT}/status/${jobId}`;
       let statusRes: Response;
       try {
-        statusRes = await fetch(statusUrl);
+        statusRes = await fetch(statusUrl, { headers: { Authorization: `Bearer ${ticket}` } });
       } catch (err) {
-        console.warn(`[stepConverter] Status check attempt ${attempt} network glitch:`, err);
+        logger.debug({ event: 'stepConverter: status check network glitch', attempt });
+        continue;
+      }
+
+      if (statusRes.status === 401) {
+        // Tickets last 10 minutes; a long upload + conversion can outlive one.
+        ticket = await getConvertTicket();
         continue;
       }
 
       if (!statusRes.ok) {
-        console.warn(`[stepConverter] Status check attempt ${attempt} returned ${statusRes.status}`);
+        logger.debug({ event: 'stepConverter: status check failed', attempt, status: statusRes.status });
         continue;
       }
 

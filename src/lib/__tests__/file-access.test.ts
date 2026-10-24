@@ -107,8 +107,8 @@ describe('FileAccessService for legacy files (no upload record)', () => {
   it('treats the earliest part as the owner — a later forged part does not count', async () => {
     repo.getPartsReferencing.mockResolvedValue(
       ok([
-        { userId: 'mallory', projectId: 'mallory_proj', createdAt: '2026-03-01T00:00:00Z' },
-        { userId: 'alice', projectId: 'alice_proj', createdAt: '2025-12-01T00:00:00Z' },
+        { userId: 'mallory', projectId: 'mallory_proj', createdAtMs: Date.parse('2026-03-01T00:00:00Z') },
+        { userId: 'alice', projectId: 'alice_proj', createdAtMs: Date.parse('2025-12-01T00:00:00Z') },
       ])
     );
     expect(await decide(user('alice'))).toEqual({ allowed: true, reason: 'legacy_part' });
@@ -116,9 +116,26 @@ describe('FileAccessService for legacy files (no upload record)', () => {
     expect((await decide(user('mallory'))).allowed).toBe(false);
   });
 
+  it('ignores the client-written createdAt — a back-dated forged part does not win', async () => {
+    repo.getPartsReferencing.mockResolvedValue(
+      ok([
+        // Mallory's part claims 1970, but Firestore created it after Alice's
+        { userId: 'mallory', projectId: 'mallory_proj', createdAt: '1970-01-01T00:00:00Z', createdAtMs: Date.parse('2026-03-01T00:00:00Z') },
+        { userId: 'alice', projectId: 'alice_proj', createdAt: '2025-12-01T00:00:00Z', createdAtMs: Date.parse('2025-12-01T00:00:00Z') },
+      ])
+    );
+    expect((await decide(user('mallory'))).allowed).toBe(false);
+    expect(await decide(user('alice'))).toEqual({ allowed: true, reason: 'legacy_part' });
+  });
+
+  it('denies when no part has a server create time', async () => {
+    repo.getPartsReferencing.mockResolvedValue(ok([{ userId: 'mallory', projectId: 'mallory_proj', createdAt: '1970-01-01' }]));
+    expect((await decide(user('mallory'))).allowed).toBe(false);
+  });
+
   it('denies everything once the backfill has run and the fallback is off', async () => {
     vi.stubEnv('FILE_ACCESS_LEGACY_FALLBACK', 'false');
-    repo.getPartsReferencing.mockResolvedValue(ok([{ userId: 'alice', projectId: 'alice_proj', createdAt: '2025-01-01' }]));
+    repo.getPartsReferencing.mockResolvedValue(ok([{ userId: 'alice', projectId: 'alice_proj', createdAtMs: Date.parse('2025-01-01') }]));
     expect((await decide(user('alice'))).allowed).toBe(false);
   });
 });
@@ -134,8 +151,19 @@ describe('POST /api/v1/files/upload-intent records ownership', () => {
       checkVerification: () => null,
       authorizeRoles: () => null,
     }));
-    vi.doMock('@aws-sdk/s3-request-presigner', () => ({ getSignedUrl: async () => 'https://s3.example/put' }));
+    const signed: Array<{ input: Record<string, unknown> }> = [];
+    vi.doMock('@aws-sdk/s3-request-presigner', () => ({
+      getSignedUrl: async (_c: unknown, command: { input: Record<string, unknown> }) => {
+        signed.push(command);
+        return 'https://s3.example/put';
+      },
+    }));
     vi.doMock('@/lib/s3-client', () => ({ s3Client: {} }));
+    let allow = true;
+    vi.doMock('@/lib/rate-limit', () => ({
+      rateLimit: async () => ({ success: allow, remaining: 0, reset: Date.now() + 1000 }),
+      rateLimitResponse: () => new Response(null, { status: 429 }),
+    }));
     const { POST } = await import('@/app/api/v1/files/upload-intent/route');
     const req = () =>
       new NextRequest('http://localhost/api/v1/files/upload-intent', {
@@ -151,7 +179,14 @@ describe('POST /api/v1/files/upload-intent records ownership', () => {
       expect.objectContaining({ fileKey: body.fileKey, userId: 'alice', source: 'server', kind: 'cad' })
     );
 
+    // The declared size is signed into the PUT, so S3 refuses any other length
+    expect(signed[0].input).toMatchObject({ ContentLength: 1000, Key: body.fileKey });
+
     repo.recordUpload.mockResolvedValueOnce(err(internalError('down')));
     expect((await POST(req())).status).toBe(503);
+
+    // Per-account limit
+    allow = false;
+    expect((await POST(req())).status).toBe(429);
   });
 });

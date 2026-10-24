@@ -6,6 +6,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { authenticateRequest, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { FileAccessRepository } from '@/repositories/file-access.repository';
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 // ═══════════════════════════════════════════════════
 // POST /api/v1/files/upload-intent — Real S3 Presigned URL
@@ -16,6 +17,7 @@ const ARTIFACT_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
 
 const MAX_CAD_SIZE = 30 * 1024 * 1024; // 30 MB
 const MAX_ARTIFACT_SIZE = 10 * 1024 * 1024; // 10 MB
+const UPLOADS_PER_HOUR = 60;
 
 const ALLOWED_CONTENT_TYPES = new Set([
   'application/dxf',
@@ -44,11 +46,14 @@ export async function POST(request: NextRequest) {
     if (verifyBlock) return verifyBlock;
 
     // Any verified user (customer, vendor, admin) can trigger upload intent for now
-    // as it's needed for designs, artifacts, etc.
+    // as it's needed for designs, artifacts, etc. Each URL can create a stored
+    // object, so they're rate-limited per account.
+    const limiter = await rateLimit(`upload-intent:${auth.uid}`, UPLOADS_PER_HOUR, 60 * 60 * 1000);
+    if (!limiter.success) return rateLimitResponse(limiter.reset);
 
-    const { fileName, fileSize, contentType } = await request.json();
+    const { fileName, fileSize, contentType } = await request.json().catch(() => ({}));
 
-    if (!fileName || !fileSize) {
+    if (typeof fileName !== 'string' || !fileName || typeof fileSize !== 'number' || !Number.isInteger(fileSize)) {
       return NextResponse.json({ error: 'Missing file metadata' }, { status: 400 });
     }
 
@@ -89,6 +94,9 @@ export async function POST(request: NextRequest) {
       Bucket: bucket,
       Key: key,
       ContentType: contentType || 'application/octet-stream',
+      // Signed: S3 rejects a body of any other length, so the size limit above
+      // holds for what is actually stored (the client's file.size is exact).
+      ContentLength: fileSize,
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 mins

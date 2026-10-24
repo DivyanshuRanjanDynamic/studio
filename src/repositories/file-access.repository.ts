@@ -28,7 +28,10 @@ export interface UploadRecord {
 export interface PartReference {
   readonly userId?: string;
   readonly projectId?: string;
+  /** Client-written; never used to decide ownership */
   readonly createdAt?: string;
+  /** Firestore's own document create time (server-set, can't be forged) */
+  readonly createdAtMs?: number;
 }
 
 export interface ProjectAccessInfo {
@@ -85,7 +88,12 @@ export const FileAccessRepository = {
   async getPartsReferencing(fileKey: string): Promise<Result<PartReference[], AppError>> {
     try {
       const snap = await db().collection('projectParts').where('cadFile.fileUrl', '==', fileKey).limit(50).get();
-      return ok(snap.docs.map((d: { data: () => PartReference }) => d.data()));
+      return ok(
+        snap.docs.map((d: { data: () => PartReference; createTime?: { toMillis: () => number } }) => ({
+          ...d.data(),
+          createdAtMs: d.createTime?.toMillis(),
+        }))
+      );
     } catch (e: any) {
       logger.error({ event: 'FileAccess: Failed to read parts', error: e?.message, fileKey });
       return err(internalError('Could not check file access'));

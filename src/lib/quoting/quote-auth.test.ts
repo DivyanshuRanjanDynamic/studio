@@ -10,6 +10,12 @@ const getQuote = vi.fn();
 vi.mock('@/lib/auth-middleware', () => ({
   authenticateRequest: (...args: unknown[]) => authenticateRequest(...args),
 }));
+// Per-account quote limits (Firestore-backed in production)
+const rateLimit = vi.fn();
+vi.mock('@/lib/rate-limit', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/rate-limit')>()),
+  rateLimit: (...args: unknown[]) => rateLimit(...args),
+}));
 vi.mock('@/services/quoting.service', () => ({
   QuotingService: {
     processStoredSheetQuoteRequest: (...args: unknown[]) => processStoredSheetQuoteRequest(...args),
@@ -31,6 +37,8 @@ beforeEach(() => {
   processStoredSheetQuoteRequest.mockReset();
   processCncQuoteRequest.mockReset();
   getQuote.mockReset();
+  rateLimit.mockReset();
+  rateLimit.mockResolvedValue({ success: true, remaining: 10, reset: Date.now() + 60_000 });
 });
 
 describe('QuoteController requires a registered user', () => {
@@ -87,6 +95,17 @@ describe('QuoteController requires a registered user', () => {
     };
     const res = await QuoteController.createQuote(post('/api/v1/quote', legacy));
     expect(res.status).toBe(400);
+    expect(processStoredSheetQuoteRequest).not.toHaveBeenCalled();
+  });
+
+  it('limits quote saves per account', async () => {
+    authenticateRequest.mockResolvedValue({ success: true, uid: 'user_1', role: 'customer', status: 'active' });
+    rateLimit.mockResolvedValue({ success: false, remaining: 0, reset: Date.now() + 60_000 });
+    const { QuoteController } = await import('@/controllers/quote.controller');
+
+    const res = await QuoteController.createQuote(post('/api/v1/quote', laserBody));
+    expect(res.status).toBe(429);
+    expect(rateLimit).toHaveBeenCalledWith('quote-quote:user_1', expect.any(Number), expect.any(Number));
     expect(processStoredSheetQuoteRequest).not.toHaveBeenCalled();
   });
 });

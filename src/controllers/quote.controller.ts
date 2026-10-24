@@ -11,6 +11,7 @@ import { CncAnalysisService } from '@/services/cnc-analysis.service';
 import { PartAnalysisService } from '@/services/part-analysis.service';
 import { PricingCalibrationRepository } from '@/repositories/pricing-calibration.repository';
 import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { logger } from '@/utils/logger';
 import { ErrorCode } from '@/utils/errors';
 
@@ -42,6 +43,24 @@ async function requireRegisteredUser(
 }
 
 /**
+ * Per-account limits for the expensive quoting calls. Each analysis is minutes of
+ * converter CPU and each upload intent can store a file; without limits one
+ * account could starve instant quoting for everyone or run up storage costs.
+ */
+const QUOTE_LIMITS = {
+  upload: { limit: 60, windowMs: 60 * 60 * 1000 },
+  analyze: { limit: 30, windowMs: 60 * 60 * 1000 },
+  quote: { limit: 120, windowMs: 60 * 60 * 1000 },
+} as const;
+
+/** 429 response when `uid` is over the limit for `action`, else null */
+async function overQuoteLimit(uid: string, action: keyof typeof QUOTE_LIMITS): Promise<NextResponse | null> {
+  const { limit, windowMs } = QUOTE_LIMITS[action];
+  const limiter = await rateLimit(`quote-${action}:${uid}`, limit, windowMs);
+  return limiter.success ? null : rateLimitResponse(limiter.reset);
+}
+
+/**
  * QuoteController handles all API requests related to instant quoting.
  */
 export const QuoteController = {
@@ -57,6 +76,8 @@ export const QuoteController = {
     try {
       const user = await requireRegisteredUser(request, reqId);
       if (user instanceof NextResponse) return user;
+      const limited = await overQuoteLimit(user.uid, 'quote');
+      if (limited) return limited;
 
       const body = await request.json();
 
@@ -119,6 +140,8 @@ export const QuoteController = {
     try {
       const user = await requireRegisteredUser(request, reqId);
       if (user instanceof NextResponse) return user;
+      const limited = await overQuoteLimit(user.uid, 'upload');
+      if (limited) return limited;
 
       const validation = cncUploadIntentSchema.safeParse(await request.json());
       if (!validation.success) {
@@ -155,6 +178,8 @@ export const QuoteController = {
     try {
       const user = await requireRegisteredUser(request, reqId);
       if (user instanceof NextResponse) return user;
+      const limited = await overQuoteLimit(user.uid, 'analyze');
+      if (limited) return limited;
 
       const validation = cncAnalyzeSchema.safeParse(await request.json());
       if (!validation.success) {
@@ -191,6 +216,8 @@ export const QuoteController = {
     try {
       const user = await requireRegisteredUser(request, reqId);
       if (user instanceof NextResponse) return user;
+      const limited = await overQuoteLimit(user.uid, 'analyze');
+      if (limited) return limited;
 
       const validation = partAnalyzeSchema.safeParse(await request.json());
       if (!validation.success) {
@@ -228,6 +255,8 @@ export const QuoteController = {
     try {
       const user = await requireRegisteredUser(request, reqId);
       if (user instanceof NextResponse) return user;
+      const limited = await overQuoteLimit(user.uid, 'quote');
+      if (limited) return limited;
 
       const body = await request.json();
 

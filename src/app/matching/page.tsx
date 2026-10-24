@@ -24,12 +24,12 @@ import {
   useUser,
   useFirestore,
   useDoc,
-  useCollection,
   useMemoFirebase,
   addDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { isVendorRole } from '@/lib/roles';
+import type { VendorCard } from '@/lib/vendor-directory';
 
 export default function MatchingPage() {
   const router = useRouter();
@@ -40,18 +40,20 @@ export default function MatchingPage() {
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Filter for ACTIVE vendors only
-  const vendorsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    // Rules only expose active vendor profiles, so the query must say so.
-    return query(
-      collection(db, 'users'),
-      where('role', 'in', ['vendor', 'mechmaster']),
-      where('isActive', '==', true)
-    );
-  }, [db]);
-
-  const { data: dbVendors, isLoading: isVendorsLoading } = useCollection(vendorsQuery);
+  // Active vendors' public cards. Vendor user docs also hold contact, GST and
+  // revenue details, so they come from the directory API, not Firestore.
+  const [dbVendors, setDbVendors] = useState<VendorCard[] | null>(null);
+  const isVendorsLoading = dbVendors === null;
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/vendors/directory')
+      .then((res) => (res.ok ? res.json() : { vendors: [] }))
+      .then((body: { vendors?: VendorCard[] }) => active && setDbVendors(body.vendors ?? []))
+      .catch(() => active && setDbVendors([]));
+    return () => {
+      active = false;
+    };
+  }, []);
   const activeVendors = useMemo(
     () => (dbVendors || []).filter((vendor) => isVendorRole(vendor.role)),
     [dbVendors]

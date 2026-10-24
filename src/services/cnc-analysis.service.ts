@@ -70,7 +70,9 @@ export const CncAnalysisService = {
     try {
       const uploadUrl = await getSignedUrl(
         s3Client,
-        new PutObjectCommand({ Bucket: S3_BUCKET, Key: fileKey, ContentType: CNC_UPLOAD_CONTENT_TYPE }),
+        // ContentLength is signed: S3 rejects a body of any other size, so the
+        // limit above holds for what is stored, not just what the client declared.
+        new PutObjectCommand({ Bucket: S3_BUCKET, Key: fileKey, ContentType: CNC_UPLOAD_CONTENT_TYPE, ContentLength: fileSize }),
         { expiresIn: UPLOAD_URL_TTL_S }
       );
       return ok({

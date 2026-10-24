@@ -46,13 +46,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Public: active vendor cards (landing page, matching). Queries must filter on
-      // role + isActive. Everyone else: only your own profile, or admin.
-      allow read: if (resource != null &&
-                      resource.data.role in ['vendor', 'mechmaster'] &&
-                      resource.data.isActive == true)
-                  || isOwner(userId)
-                  || isAdmin();
+      // Your own profile, or admin. Vendor docs hold email, phone, workshop address,
+      // GST and revenue, and rules can't hide fields — public vendor cards come from
+      // GET /api/v1/vendors/directory (Admin SDK, card fields only).
+      allow read: if isOwner(userId) || isAdmin();
 
       // Profiles are provisioned by the server; a client may only create
       // non-privileged fields on its own doc (e.g. a cart saved before provisioning).

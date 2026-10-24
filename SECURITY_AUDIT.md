@@ -56,6 +56,25 @@
   - That state is reachable through admin-issued quotations, and through the customer's own client-side `quotation_sent → accepted` status change, which the rules allow.
   - A vendor bid through `POST …/quotations` moves the project to `QUOTATION_SENT`, after which accept returns 409. That is a functional bug in the marketplace flow, separate from this audit.
 
+### Medium findings: fixed (working tree, not committed)
+
+| Finding | Fix | Tests |
+|---|---|---|
+| **M1** vendor self-assign | `projects/[id]/accept` requires the vendor to be on `invitedVendorIds` / `shortlistedVendorIds` / `selectedVendorIds` (merged, so an empty list can't hide a shortlist) and the RFQ to be `RFQ_SENT` | `medium-findings.test.ts` |
+| **M2** unbounded uploads, no rate limits | Presigned PUTs sign `ContentLength`, so S3 rejects any other body size (checked: `X-Amz-SignedHeaders=content-length;host`). Per-account limits: upload intents 60/h, CNC upload intents 60/h, converter analyses (CNC / sheet / print) 30/h, quote saves 120/h | `file-access.test.ts`, `quote-auth.test.ts` |
+| **M3** legacy file fallback trusted client `createdAt` | "Earliest part" now uses Firestore's own document `createTime`. Parts with no server time never count | `file-access.test.ts` (back-dated forged part refused) |
+| **M4** vendor profiles world-readable | `users` read = owner or admin only. The matching page loads `GET /api/v1/vendors/directory`, which returns card fields only: name/team, https image, rating, verified flag, city/state, experience, specializations, portfolio. No email, phone, GST, revenue or street address | `medium-findings.test.ts`, plus a browser check on `/matching` against production data |
+| **M5** cron open without secret | `/api/vendors/reminders` returns 503 when `VENDOR_REMINDER_CRON_SECRET` is unset and 401 on a wrong secret (constant-time compare) | `medium-findings.test.ts` |
+| **M7** login token in verification URL | The verify route redirects to `/login?verified=true&redirect=…` and mints no custom token; the login page has no `?token=` auto sign-in | `medium-findings.test.ts` |
+| **M10** converter copies to public bucket, open `/status` | `cad-converter/main.py`: STEP/STL files are no longer uploaded anywhere (`_upload_to_s3` removed). Jobs record their `owner`. `/status/{id}` needs the creator's convert ticket (or the service token), returns 404 for anyone else, and never returns `owner`/`fileUrl`/`resultUrl`. The app sends its ticket when polling and renews it on 401 | converter `tests/test_convert_access.py` (82/82), `step-converter-status.test.ts` |
+
+**Rollout:**
+1. **Deploy order:** deploy the app before the converter. The new app sends tickets to the old converter, which ignores them. The old app polls without one, which the new converter refuses.
+2. **Cron secret:** set `VENDOR_REMINDER_CRON_SECRET` on App Hosting and send it as `x-cron-secret` from the scheduler.
+3. **Firestore rules:** deploy them; they include the `users` read lock.
+4. **Old copies in S3:** delete `cad_uploads/` and `cad_outputs/` from `mechhub-product-images` if present.
+5. **Legacy file fallback:** run `scripts/backfill-file-owners.ts --apply`, then set `FILE_ACCESS_LEGACY_FALLBACK=false`.
+
 ### Re-verification (2026-10-24): every Critical and High finding re-investigated
 
 **Code re-trace (fresh pass):**

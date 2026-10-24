@@ -51,14 +51,20 @@ export async function POST(
         };
       }
 
-      const invited: string[] =
-        project.invitedVendorIds || project.shortlistedVendorIds || project.selectedVendorIds || [];
-      if (Array.isArray(invited) && invited.length > 0 && !invited.includes(auth.uid)) {
+      // Every list a vendor can be invited through (an empty invitedVendorIds must
+      // not hide a shortlist).
+      const invited: string[] = [project.invitedVendorIds, project.shortlistedVendorIds, project.selectedVendorIds]
+        .filter(Array.isArray)
+        .flat();
+      // Only invited vendors, and only while the RFQ is open. An empty invite list
+      // or an unrecognised status used to let any active vendor claim the project —
+      // and with it the customer's CAD files.
+      if (!invited.includes(auth.uid)) {
         return { ok: false as const, code: 403, message: 'You are not invited for this project' };
       }
 
       const normalized = normalizeWorkflowStatus(project.workflowStatus, project.status);
-      if (normalized && normalized !== 'RFQ_SENT') {
+      if (normalized !== 'RFQ_SENT') {
         return {
           ok: false as const,
           code: 409,

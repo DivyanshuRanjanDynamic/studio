@@ -115,12 +115,14 @@ export const FileAccessService = {
     if (!legacyFallbackEnabled()) return ok(DENY);
 
     // Legacy file (no upload record): treat the earliest part that referenced the
-    // key as the owner's. A part forged later to point at the key is never earliest.
+    // key as the owner's. "Earliest" is Firestore's own create time — the part's
+    // createdAt field is written by the browser, so a forged part could claim to be
+    // older than the real one. A part forged later is never earliest.
     const parts = await FileAccessRepository.getPartsReferencing(fileKey);
     if (!parts.success) return err(parts.error);
     const earliest = [...parts.data]
-      .filter((p) => p.userId && p.projectId)
-      .sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))[0];
+      .filter((p) => p.userId && p.projectId && Number.isFinite(p.createdAtMs))
+      .sort((a, b) => (a.createdAtMs as number) - (b.createdAtMs as number))[0];
     if (!earliest?.userId) return ok(DENY);
 
     let granted = earliest.userId === auth.uid;
