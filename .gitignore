@@ -46,3 +46,20 @@ firestore-debug.log
 
 # Contentlayer
 .contentlayer
+
+.claude/
+.qoder/
+.trae/
+.windsurf/
+.idx/
+.codex
+
+# Generated promo / brag assets
+brag-output/
+
+# Misc junk / one-off files
+skills-lock.json
+build_output.txt
+type_errors.txt
+test_resend.ts
+0
