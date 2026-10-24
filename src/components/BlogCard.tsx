@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { Clock, Calendar, ArrowRight } from 'lucide-react';
-import type { Post } from 'contentlayer/generated';
+import type { Post } from 'contentlayer2/generated';
 
 interface BlogCardProps {
   post: Post;
