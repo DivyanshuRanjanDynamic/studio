@@ -555,33 +555,19 @@ export default function AdminPanel() {
         description: `RFQ lifecycle stage set to ${newStatus}.`,
       });
 
-      // Trigger user-critical status notifications ONLY on first transition to that status
-      const customerName = rfq.userName || 'Customer';
-      const customerEmail = rfq.userEmail || '';
-
+      // Trigger user-critical status notifications ONLY on first transition to that status.
+      // The server addresses the email to the project owner and fills in the
+      // project details (including the balance due for "shipped").
       let eventType: string | null = null;
       if (newStatus === 'in_progress' && oldStatus !== 'in_progress') eventType = 'status_in_production';
       if (newStatus === 'shipped' && oldStatus !== 'shipped') eventType = 'status_shipped';
       if (newStatus === 'completed' && oldStatus !== 'completed') eventType = 'status_delivered';
 
-      if (eventType && customerEmail) {
-        const payload: any = {
-          type: eventType,
-          customer: { email: customerEmail, name: customerName },
-          projectName: rfq.projectName,
-          projectId: rfq.id,
-        };
-
-        // For shipping, we must include the 50% balance due
-        if (eventType === 'status_shipped') {
-          const finances = calculateProjectFinances(rfq.finalPrice || rfq.quotedPrice);
-          payload.balanceDue = finances.balance;
-        }
-
+      if (eventType) {
         fetch('/api/v1/notifications/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ type: eventType, projectId: rfq.id }),
         }).catch((err) => console.error('Failed to trigger status notification:', err));
       }
     } catch (e) {
@@ -810,24 +796,17 @@ export default function AdminPanel() {
         description: 'Intervention logged. RFQ moved to negotiation.',
       });
 
-      // Trigger customer notification for revised quote
-      const customerName = selectedRfq.userName || 'Customer';
-      const customerEmail = selectedRfq.userEmail || '';
-
-      if (customerEmail) {
-        fetch('/api/v1/notifications/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'quotation_received',
-            customer: { email: customerEmail, name: customerName },
-            projectName: selectedRfq.projectName,
-            projectId: selectedRfq.id,
-            quotedPrice: Number(revPrice),
-            leadTimeDays: Number(revLeadTime),
-          }),
-        }).catch((err) => console.error('Failed to trigger revision notification:', err));
-      }
+      // Trigger customer notification for revised quote (the server emails the project owner)
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'quotation_received',
+          projectId: selectedRfq.id,
+          quotedPrice: Number(revPrice),
+          leadTimeDays: Number(revLeadTime),
+        }),
+      }).catch((err) => console.error('Failed to trigger revision notification:', err));
     } catch (err: any) {
       toast({ title: 'Update Failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -891,24 +870,17 @@ export default function AdminPanel() {
       setSendQuoteRemarks('');
       toast({ title: 'Quotation Sent', description: 'Customer will be notified.' });
 
-      // Trigger customer notification for new quote
-      const customerName = selectedRfq.userName || 'Customer';
-      const customerEmail = selectedRfq.userEmail || '';
-
-      if (customerEmail) {
-        fetch('/api/v1/notifications/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'quotation_received',
-            customer: { email: customerEmail, name: customerName },
-            projectName: selectedRfq.projectName,
-            projectId: selectedRfq.id,
-            quotedPrice: Number(sendQuotePrice),
-            leadTimeDays: Number(sendQuoteLeadTime),
-          }),
-        }).catch((err) => console.error('Failed to trigger quotation notification:', err));
-      }
+      // Trigger customer notification for new quote (the server emails the project owner)
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'quotation_received',
+          projectId: selectedRfq.id,
+          quotedPrice: Number(sendQuotePrice),
+          leadTimeDays: Number(sendQuoteLeadTime),
+        }),
+      }).catch((err) => console.error('Failed to trigger quotation notification:', err));
     } catch (err: any) {
       toast({ title: 'Submission Failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -949,24 +921,17 @@ export default function AdminPanel() {
         description: 'The customer has been notified of your counter-offer.',
       });
 
-      // Trigger customer notification for negotiation reply
-      const customerName = selectedRfq.userName || 'Customer';
-      const customerEmail = selectedRfq.userEmail || '';
-
-      if (customerEmail) {
-        fetch('/api/v1/notifications/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'negotiation_admin_reply',
-            customer: { email: customerEmail, name: customerName },
-            projectName: selectedRfq.projectName,
-            projectId: selectedRfq.id,
-            adminMessage: adminNegMessage,
-            proposedPrice: adminNegPrice ? Number(adminNegPrice) : undefined,
-          }),
-        }).catch((err) => console.error('Failed to trigger negotiation reply notification:', err));
-      }
+      // Trigger customer notification for negotiation reply (the server emails the project owner)
+      fetch('/api/v1/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'negotiation_admin_reply',
+          projectId: selectedRfq.id,
+          adminMessage: adminNegMessage,
+          proposedPrice: adminNegPrice ? Number(adminNegPrice) : undefined,
+        }),
+      }).catch((err) => console.error('Failed to trigger negotiation reply notification:', err));
     } catch (err: any) {
       toast({ title: 'Response Failed', description: err.message, variant: 'destructive' });
     } finally {

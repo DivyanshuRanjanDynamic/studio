@@ -20,6 +20,7 @@ import {
 } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { HoleFeature, BendFeature } from '@/types/viewer';
+import { logger } from '@/utils/logger';
 
 // Persistent Static Vectors/Quaternions for Performance Optimization
 const VEC3_UP = new THREE.Vector3(0, 1, 0);
@@ -489,11 +490,10 @@ export const STLViewer = forwardRef<STLViewerHandle, STLViewerProps>(
 
     const activeBendIndex = hoveredBendIndex !== undefined ? hoveredBendIndex : internalHoveredBendIndex;
 
-    // Production Debug: Log feature counts to verify API response integrity
+    // Feature counts, to verify the converter response (debug only — silent in production browsers)
     useEffect(() => {
       if (serviceMode !== 'none') {
-        console.log(`[STLViewer] Service Active: ${serviceMode}`);
-        console.log(`[STLViewer] Data Check: ${holes.length} holes, ${bends.length} bending lines found.`);
+        logger.debug({ event: 'STLViewer: features', serviceMode, holes: holes.length, bends: bends.length });
       }
     }, [serviceMode, holes.length, bends.length]);
 

@@ -42,7 +42,7 @@ export const orderCreateSchema = z
         fileName: z.string().min(1),
         quote: z.record(z.any()), // Ensuring it's a non-null object
       })
-    ).default([]),
+    ).max(50).default([]), // bounded: a huge array is a memory-exhaustion vector (zod <4.6.6)
     shopItems: z
       .array(
         z.object({
@@ -56,6 +56,7 @@ export const orderCreateSchema = z
           inventory: z.number(),
         })
       )
+      .max(50)
       .optional()
       .default([]),
     shippingAddress: shippingAddressSchema,
@@ -69,6 +70,12 @@ export const orderCreateSchema = z
   .refine((data) => data.items.length > 0 || data.shopItems.length > 0, {
     message: 'At least one item (quote or product) is required',
     path: ['items'],
+  })
+  // Pricing charges the balance but payment recording checks isAdvance first,
+  // which would move a shipped project back into production.
+  .refine((data) => !(data.isAdvance && data.isBalance), {
+    message: 'An order pays either the advance or the balance, not both',
+    path: ['isBalance'],
   });
 
 export type ShippingAddressInput = z.infer<typeof shippingAddressSchema>;

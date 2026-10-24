@@ -23,6 +23,12 @@ vi.mock('@/repositories/project.repository', () => ({
 vi.mock('@/repositories/part.repository', () => ({
   PartRepository: { getPartsByProjectId: (...a: unknown[]) => getPartsByProjectId(...a) },
 }));
+// Emails go to the owner's account email (users/{uid}), not the project's userEmail
+vi.mock('@/repositories/user.repository', () => ({
+  UserRepository: {
+    getUserById: async (id: string) => ok({ id, email: 'asha.account@example.in', fullName: 'Asha' }),
+  },
+}));
 vi.mock('@/services/notification.service', () => ({
   NotificationService: {
     sendAllAsync: (...a: unknown[]) => sendAllAsync(...a),
@@ -90,6 +96,8 @@ describe('ProjectRfqService.requestQuote', () => {
 
     const events = sendAllAsync.mock.calls[0][0];
     expect(events.map((e: { type: string }) => e.type)).toEqual(['rfq_submitted_customer', 'admin_new_rfq']);
+    // Account email from users/{uid} — the project's own userEmail is client-editable
+    expect(events[0].customer.email).toBe('asha.account@example.in');
   });
 
   it('counts pending parts in the snapshot but prices only the instant ones', async () => {

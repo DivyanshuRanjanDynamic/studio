@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { loadRazorpay, openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import type { QuoteOrder } from '@/models/order.model';
 
 interface PaymentSectionProps {
@@ -13,7 +14,8 @@ interface PaymentSectionProps {
 
 /**
  * PaymentSection — Razorpay Standard Checkout bridge.
- * Handles Razorpay script loading and payment verification callback.
+ * Opens Razorpay Checkout for the server-created order (src/lib/razorpay-checkout)
+ * and hands the signed response to the verification callback.
  */
 export function PaymentSection({
   order,
@@ -25,80 +27,53 @@ export function PaymentSection({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Check if already loaded by RootLayout
-    if ((window as any).Razorpay) {
-      setIsScriptLoaded(true);
-      return;
-    }
-
-    // 2. Poll for the global script (faster than waiting for a new script tag)
-    const interval = setInterval(() => {
-      if ((window as any).Razorpay) {
-        setIsScriptLoaded(true);
-        clearInterval(interval);
-      }
-    }, 100);
-
-    // 3. Optional fallback Timeout
-    const timeout = setTimeout(() => {
-      if (!(window as any).Razorpay) {
-        setError('Payment gateway took too long to load. Please refresh.');
-      }
-      clearInterval(interval);
-    }, 10000);
-
+    // Load checkout.js as soon as the payment step shows (once per session)
+    let active = true;
+    loadRazorpay()
+      .then(() => active && setIsScriptLoaded(true))
+      .catch((e: Error) => active && setError(e.message));
     return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+      active = false;
     };
   }, []);
 
-  const handlePayment = () => {
-    if (!isScriptLoaded || typeof window === 'undefined') return;
+  const handlePayment = async () => {
+    if (!isScriptLoaded) return;
 
     setInternalLoading(true);
     setError(null);
 
-    const options = {
-      key: (order as any)._serverRazorpayKey || process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_dummy',
-      amount: order.total * 100, // Amount in paise
-      currency: 'INR',
-      name: 'MechHub',
-      description: `Order ${order.orderNumber}`,
-      image: 'https://mechhub.in/logo.png',
-      order_id: order.razorpayOrderId,
-      handler: function (response: any) {
-        logger.info({
-          event: 'Razorpay payment capture successful',
-          orderId: order.id,
-          razorpayOrderId: response.razorpay_order_id,
-        });
-        onSuccess(response); // Send full response (order_id, payment_id, signature)
-      },
-      prefill: {
-        name: order.shippingAddress.fullName,
-        contact: order.shippingAddress.phone,
-      },
-      notes: {
-        address: order.shippingAddress.addressLine1,
-      },
-      theme: {
-        color: '#2F5FA7',
-      },
-      modal: {
-        ondismiss: function () {
+    try {
+      await openRazorpayCheckout({
+        key: (order as any)._serverRazorpayKey,
+        orderId: order.razorpayOrderId ?? '',
+        amountRupees: order.total,
+        description: `Order ${order.orderNumber}`,
+        prefill: {
+          name: order.shippingAddress.fullName,
+          contact: order.shippingAddress.phone,
+        },
+        notes: { orderNumber: order.orderNumber },
+        onSuccess: (response) => {
+          logger.info({
+            event: 'Razorpay payment capture successful',
+            orderId: order.id,
+            razorpayOrderId: response.razorpay_order_id,
+          });
+          onSuccess(response); // Send full response (order_id, payment_id, signature)
           setInternalLoading(false);
         },
-      },
-    };
-
-    const rzp1 = new (window as any).Razorpay(options);
-    rzp1.on('payment.failed', function (response: any) {
-      logger.error({ event: 'Razorpay payment failed', error: response.error });
-      setError(response.error.description);
+        onFailure: (failure) => {
+          logger.error({ event: 'Razorpay payment failed', code: failure.code, reason: failure.reason });
+          setError(failure.description || 'The payment did not go through. No money was taken.');
+          setInternalLoading(false);
+        },
+        onDismiss: () => setInternalLoading(false),
+      });
+    } catch (e: any) {
+      setError(e?.message || 'Could not open the payment gateway. Please try again.');
       setInternalLoading(false);
-    });
-    rzp1.open();
+    }
   };
 
   const isLoading = externalLoading || internalLoading || !isScriptLoaded;

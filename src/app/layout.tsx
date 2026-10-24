@@ -63,7 +63,9 @@ export default function RootLayout({
             </QuoteCartProvider>
           </CartProvider>
         </FirebaseClientProvider>
-        <Analytics />
+        {/* Vercel Analytics only exists on Vercel. On Firebase App Hosting its script
+            (/_vercel/insights/script.js) 404s and logs an error on every page. */}
+        {process.env.VERCEL === '1' && <Analytics />}
         <Script
           id="json-ld-org"
           type="application/ld+json"
@@ -191,7 +193,6 @@ export default function RootLayout({
             }),
           }}
         />
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
       </body>
     </html>
   );

@@ -67,8 +67,23 @@ function formatLog(level: LogLevel, payload: LogPayload): string {
   )}`;
 }
 
+/**
+ * In a production browser only errors reach the console: visitors' DevTools
+ * shouldn't show our debug/info chatter (or ids and URLs inside it). Server
+ * logs are unaffected — they feed Cloud Logging.
+ */
+function silencedInBrowser(level: LogLevel): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    process.env.NODE_ENV === 'production' &&
+    level !== 'error' &&
+    level !== 'fatal'
+  );
+}
+
 function createLogFn(level: LogLevel): (payload: LogPayload) => void {
   return (payload: LogPayload): void => {
+    if (silencedInBrowser(level)) return;
     const formatted = formatLog(level, payload);
 
     switch (level) {

@@ -209,18 +209,10 @@ service cloud.firestore {
         isAdmin()
       );
 
-      // Vendors create quotations as themselves; admins for anyone
-      allow create: if isAdmin() ||
-        (isVendor() && request.resource.data.vendorId == request.auth.uid);
-
-      // Customers accept through /api/v1/projects/[id]/quotations/[id]/accept (server).
-      // A vendor may revise their own quote but not reassign it or mark it accepted.
-      allow update: if isAdmin() || (
-        isVendor() &&
-        resource.data.vendorId == request.auth.uid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'vendorId', 'projectId', 'rfqId']) &&
-        request.resource.data.get('status', '') != 'accepted'
-      );
+      // An accepted quotedPrice is what the customer pays, so vendors bid, revise and
+      // accept only through /api/v1/projects/[id]/quotations/* (server-validated).
+      // A direct client write could bid on any project at any price.
+      allow create, update: if isAdmin();
 
       allow delete: if isAdmin();
     }

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles } from '@/lib/auth-middleware';
 import { logger } from '@/utils/logger';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { getClientIdentifier } from '@/lib/auth-safety';
+import { verifyPaymentSignature } from '@/lib/razorpay-signature';
+import { PaymentFulfilmentService } from '@/services/payment-fulfilment.service';
 
 const ShopVerifySchema = z.object({
   razorpay_order_id: z.string().min(1),
@@ -54,89 +55,28 @@ export async function POST(req: NextRequest) {
       logger.warn({ event: 'API: Unauthorized shop payment verification', shopOrderId, authUid: auth.uid, orderOwner: orderData.userId });
       return forbiddenResponse('You do not own this order');
     }
-    if (orderData.razorpayOrderId && orderData.razorpayOrderId !== razorpay_order_id) {
-      logger.warn({
-        event: 'shop_payment_order_mismatch',
-        shopOrderId,
-        expectedOrderId: orderData.razorpayOrderId,
-        receivedOrderId: razorpay_order_id,
-        uid: auth.uid,
-      });
-      return forbiddenResponse('Payment order does not match this order');
-    }
 
     // 3. Verify HMAC-SHA256 signature
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-      .update(body)
-      .digest('hex');
-
-    if (expectedSignature !== razorpay_signature) {
+    if (!verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
       logger.warn({ event: 'API: Shop payment signature mismatch', shopOrderId });
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
     }
 
-    // 4. Atomic Transaction: Inventory Reduction & Order Completion
-    const paidAt = new Date().toISOString();
-
-    await db.runTransaction(async (transaction: any) => {
-      const orderRef = db.collection('orders').doc(shopOrderId);
-      const orderDoc = await transaction.get(orderRef);
-
-      if (!orderDoc.exists) throw new Error('Order not found');
-      const orderData = orderDoc.data()!;
-
-      if (orderData.paymentStatus === 'paid') {
-        return; // Double call prevention
-      }
-
-      // Decrement Inventory for each item
-      for (const item of orderData.items) {
-        const productRef = db.collection('products').doc(item.id);
-        const productDoc = await transaction.get(productRef);
-
-        if (!productDoc.exists) throw new Error(`Product ${item.id} no longer exists`);
-        const currentInventory = productDoc.data()?.inventory || 0;
-
-        if (currentInventory < item.quantity) {
-          throw new Error(`Insufficient stock for ${item.name} during finalization.`);
-        }
-
-        transaction.update(productRef, {
-          inventory: currentInventory - item.quantity,
-          updatedAt: paidAt,
-        });
-      }
-
-      // Update Order
-      transaction.update(orderRef, {
-        status: 'paid',
-        paymentStatus: 'paid',
-        razorpayOrderId: razorpay_order_id,
-        razorpayPaymentId: razorpay_payment_id,
-        paidAt: paidAt,
-        updatedAt: paidAt,
-      });
-
-      // Create Payment Record
-      const paymentRef = db.collection('payments').doc();
-      transaction.set(paymentRef, {
-        orderId: shopOrderId,
-        userId: auth.uid,
-        type: 'shop_purchase',
-        razorpayOrderId: razorpay_order_id,
-        razorpayPaymentId: razorpay_payment_id,
-        amount: orderData.pricing.total,
-        currency: 'INR',
-        paidAt,
-        createdAt: paidAt,
-      });
+    // 4. Mark paid + decrement stock atomically — only if this order's stored
+    //    Razorpay order is the one paid (same idempotent path as the webhook)
+    const fulfilled = await PaymentFulfilmentService.markShopOrderPaid(shopOrderId, {
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
     });
+    if (!fulfilled.success) {
+      logger.warn({ event: 'API: Shop payment not recorded', shopOrderId, code: fulfilled.error.code });
+      return NextResponse.json({ error: fulfilled.error.message }, { status: fulfilled.error.statusCode });
+    }
+    const { paidAt } = fulfilled.data;
 
     return NextResponse.json({ success: true, shopOrderId, paidAt });
   } catch (err: any) {
-    console.error('[shop-verify] Transaction Error:', err);
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+    logger.error({ event: 'API: Shop payment verification failed', error: err?.message });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

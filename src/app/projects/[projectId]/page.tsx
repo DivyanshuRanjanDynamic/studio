@@ -10,7 +10,9 @@ import {
   useMemoFirebase,
   updateDocumentNonBlocking,
 } from '@/firebase';
-import { doc, query, collection, where, deleteDoc } from 'firebase/firestore';
+import { doc, query, collection, where, deleteDoc, updateDoc } from 'firebase/firestore';
+import { bearerHeader } from '@/lib/auth-header';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { V2Shell } from '@/components/V2Shell';
 import { landingFontVars } from '@/components/home/fonts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -444,24 +446,19 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const [isRequestingQuote, setIsRequestingQuote] = useState(false);
   const [isDownloadingQuote, setIsDownloadingQuote] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  // Address dialog before a milestone payment. Controlled so it closes before
+  // Razorpay opens (a modal dialog would aria-hide and focus-trap the checkout).
+  const [payDialog, setPayDialog] = useState<'advance' | 'balance' | null>(null);
   const [optimisticParts, setOptimisticParts] = useState<MechanicalPart[]>([]);
   const [pendingPartDeleteId, setPendingPartDeleteId] = useState<string | null>(null);
   const [isPartWizardOpen, setIsPartWizardOpen] = useState(false);
 
-  // Read highlight param from URL on mount and load Razorpay
+  // Read highlight param from URL on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       const h = url.searchParams.get('highlight');
       if (h) setHighlightId(h);
-
-      // Load Razorpay
-      if (!(window as any).Razorpay) {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-      }
     }
   }, []);
 
@@ -650,7 +647,8 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const handleAcceptQuote = async () => {
     if (!db || !project) return;
     try {
-      await updateDocumentNonBlocking(doc(db, 'projectRFQs', project.id), {
+      // Awaited: the notification route checks the project is accepted.
+      await updateDoc(doc(db, 'projectRFQs', project.id), {
         status: 'accepted',
         updatedAt: new Date().toISOString(),
       });
@@ -659,33 +657,12 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         description: 'Please provide delivery details and pay the advance to start production.',
       });
 
-      // Trigger notifications (fire-and-forget)
-      const customerName = user?.displayName || userProfile?.fullName || 'Customer';
-      const customerEmail = user?.email || '';
-      const acceptedPrice = project.quotedPrice || project.finalPrice || 0;
-
+      // Trigger customer + admin notifications (fire-and-forget). The server
+      // fills in the recipient, project and accepted price from the records.
       fetch('/api/v1/notifications/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          events: [
-            {
-              type: 'quote_accepted',
-              customer: { email: customerEmail, name: customerName },
-              projectName: project.projectName,
-              projectId: project.id,
-              finalPrice: acceptedPrice,
-            },
-            {
-              type: 'admin_quote_accepted',
-              customerName,
-              customerEmail,
-              projectName: project.projectName,
-              projectId: project.id,
-              acceptedPrice: acceptedPrice,
-            },
-          ],
-        }),
+        headers: { 'Content-Type': 'application/json', ...(await bearerHeader()) },
+        body: JSON.stringify({ type: 'quote_accepted', projectId: project.id }),
       }).catch((err) => console.error('Failed to trigger quote acceptance notifications:', err));
     } catch (err: any) {
       console.error(err);
@@ -707,7 +684,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
       // 1. Create Order via API
       const orderRes = await fetch('/api/v1/order/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await bearerHeader()) },
         body: JSON.stringify({
           projectId: project.id,
           advancePercentage: 0.5,
@@ -729,16 +706,14 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         throw new Error(error?.message || 'Failed to create order');
       }
 
-      // 2. Open Razorpay
-      const options = {
-        key: razorpayKey || process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_5W444444444444',
-        amount: order.total * 100,
-        currency: 'INR',
-        name: 'MechHub',
+      // 2. Open Razorpay (the server order fixes the amount charged)
+      await openRazorpayCheckout({
+        key: razorpayKey,
+        orderId: order.razorpayOrderId,
+        amountRupees: order.total,
         description: isAdvance
           ? `50% Advance for Project: ${project.projectName}`
           : `50% Balance for Project: ${project.projectName}`,
-        order_id: order.razorpayOrderId,
         prefill: {
           name: customerName || '',
           email: customerEmail || '',
@@ -747,46 +722,52 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         notes: {
           projectId: project.id,
           projectName: projectName || project.projectName,
-          customerName: customerName || '',
         },
-        handler: async function (response: any) {
-          // Verify & Sync
-          const verifyRes = await fetch('/api/v1/order/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...response,
-              orderId: order.id,
-              userId: user.uid,
-            }),
-          });
-          const verifyResult = await verifyRes.json();
-          if (verifyResult.success) {
-            toast({
-              title: 'Payment Successful',
-              description: isAdvance
-                ? '50% Advance paid. Moving to Production.'
-                : 'Balance paid. Parts will be delivered soon.',
+        onSuccess: async (response) => {
+          try {
+            // Verify & Sync
+            const verifyRes = await fetch('/api/v1/order/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...(await bearerHeader()) },
+              body: JSON.stringify({ ...response, orderId: order.id }),
             });
-            router.refresh();
-          } else {
-            toast({
-              title: 'Verification Failed',
-              description: verifyResult.error?.message,
-              variant: 'destructive',
-            });
+            const verifyResult = await verifyRes.json().catch(() => ({}));
+            if (verifyRes.ok && verifyResult.success) {
+              toast({
+                title: 'Payment Successful',
+                description: isAdvance
+                  ? '50% Advance paid. Moving to Production.'
+                  : 'Balance paid. Parts will be delivered soon.',
+              });
+              router.refresh();
+            } else {
+              // The Razorpay webhook still records a captured payment if this call failed.
+              toast({
+                title: 'Verification Pending',
+                description:
+                  verifyResult.error?.message ||
+                  'Your payment was received; confirmation can take a minute. Contact support if it does not update.',
+                variant: 'destructive',
+              });
+            }
+          } finally {
+            setIsPaying(false);
           }
         },
-        theme: { color: '#2F5FA7' },
-      };
-
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
+        onFailure: (failure) => {
+          toast({
+            title: 'Payment Failed',
+            description: failure.description || 'The payment did not go through. No money was taken.',
+            variant: 'destructive',
+          });
+        },
+        onDismiss: () => setIsPaying(false),
+      });
+      // isPaying stays on until the checkout completes, fails or is dismissed
     } catch (error: any) {
       console.error('Payment error:', error);
       const msg = resolveUserFriendlyMessage(error);
       if (msg) toast(msg);
-    } finally {
       setIsPaying(false);
     }
   };
@@ -1621,7 +1602,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     </p>
                   </div>
 
-                  <Dialog>
+                  <Dialog open={payDialog === 'advance'} onOpenChange={(open) => setPayDialog(open ? 'advance' : null)}>
                     <DialogTrigger asChild>
                       <Button
                         disabled={isPaying}
@@ -1636,7 +1617,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                       </Button>
                     </DialogTrigger>
                     <AddressDialog
-                      onConfirm={(addr) => handlePayDeposit(addr, true)}
+                      onConfirm={(addr) => {
+                        setPayDialog(null); // close before Razorpay opens
+                        handlePayDeposit(addr, true);
+                      }}
                       isLoading={isPaying}
                       initialAddress={userProfile?.savedAddress}
                     />
@@ -1723,7 +1707,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     })()}
                   </div>
 
-                  <Dialog>
+                  <Dialog open={payDialog === 'balance'} onOpenChange={(open) => setPayDialog(open ? 'balance' : null)}>
                     <DialogTrigger asChild>
                       <Button
                         disabled={isPaying}
@@ -1738,7 +1722,10 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                       </Button>
                     </DialogTrigger>
                     <AddressDialog
-                      onConfirm={(addr) => handlePayDeposit(addr, false)}
+                      onConfirm={(addr) => {
+                        setPayDialog(null); // close before Razorpay opens
+                        handlePayDeposit(addr, false);
+                      }}
                       isLoading={isPaying}
                       initialAddress={userProfile?.savedAddress}
                     />

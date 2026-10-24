@@ -7,6 +7,7 @@ import { ProjectRepository } from '@/repositories/project.repository';
 import { logger } from '@/utils/logger';
 import { nanoid } from 'nanoid';
 import { NegotiationEntry } from '@/models/quotation.model';
+import { counterOfferFields } from '@/lib/quotation-acceptance';
 
 const NegotiationSchema = z.object({
   price: z.number().positive(),
@@ -69,10 +70,11 @@ export async function PATCH(
       return forbiddenResponse(`Cannot negotiate on a ${quotation.status} quotation`);
     }
 
+    // A customer's counter-offer is only a proposal: quotedPrice (what Razorpay
+    // charges once accepted) changes only on a vendor or admin move.
     const updatedQuotation = {
       id: quotationId,
-      quotedPrice: parsed.data.price,
-      leadTimeDays: parsed.data.leadTime,
+      ...counterOfferFields(actorType, parsed.data.price, parsed.data.leadTime),
       status: 'revised' as const,
       negotiationHistory: [...history, newEntry],
       updatedAt: nowIso,

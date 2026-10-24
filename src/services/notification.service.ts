@@ -11,7 +11,36 @@ import { logger } from '@/utils/logger';
 import { Result, ok, err } from '@/utils/result';
 import { AppError, ErrorCode, internalError } from '@/utils/errors';
 import type { NotificationEvent, EmailPayload } from '@/types/notification';
-import * as templates from './email-templates';
+import { escapeHtml } from '@/lib/auth-safety';
+import * as rawTemplates from './email-templates';
+
+// ─── HTML Escaping ───────────────────────────────────────────
+// Every template argument is user- or record-supplied text (names, project names,
+// messages, ids in links), so all of them are escaped here — at the one place the
+// templates are called — instead of relying on each template to remember. Escaping
+// is also correct for URLs, which only appear inside href attributes and text.
+
+function escapeDeep(value: unknown): unknown {
+  if (typeof value === 'string') return escapeHtml(value);
+  if (Array.isArray(value)) return value.map(escapeDeep);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, escapeDeep(v)]));
+  }
+  return value;
+}
+
+type Templates = typeof rawTemplates;
+const templates = Object.fromEntries(
+  Object.entries(rawTemplates).map(([name, fn]) => [
+    name,
+    (...args: unknown[]) => (fn as (...a: unknown[]) => string)(...args.map(escapeDeep)),
+  ])
+) as Templates;
+
+/** Subjects are plain text: no HTML escaping, but no line breaks or control characters */
+function plainSubject(subject: string): string {
+  return subject.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 200);
+}
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -333,7 +362,7 @@ export const NotificationService = {
       const { data, error } = await resend.emails.send({
         from: FROM_ADDRESS,
         to: Array.isArray(payload.to) ? payload.to : [payload.to],
-        subject: payload.subject,
+        subject: plainSubject(payload.subject),
         html: payload.html,
         ...(payload.text ? { text: payload.text } : {}),
       });

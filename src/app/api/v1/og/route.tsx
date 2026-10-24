@@ -8,9 +8,12 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
-    // ?title=<title>&author=<author>
-    const title = searchParams.get('title') || 'MechHub Chronicles';
-    const author = searchParams.get('author') || 'MechHub Team';
+    // ?title=<title>&author=<author> — public and unauthenticated, so keep the
+    // renderer's input to short plain text (letters, digits, punctuation, spaces).
+    const clean = (value: string | null, fallback: string) =>
+      (value ?? '').replace(/[^\p{L}\p{N}\p{P}\p{Zs}]/gu, '').trim().slice(0, 120) || fallback;
+    const title = clean(searchParams.get('title'), 'MechHub Chronicles');
+    const author = clean(searchParams.get('author'), 'MechHub Team');
 
     return new ImageResponse(
       <div

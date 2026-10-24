@@ -30,7 +30,7 @@ export type OrderStatus =
   | 'shipped'
   | 'delivered';
 
-export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'partially_refunded' | 'refunded';
 
 export interface QuoteOrder {
   readonly id: string;

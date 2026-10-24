@@ -185,6 +185,7 @@ export async function POST(req: NextRequest) {
       .doc(rfqId)
       .update({
         [`paymentStatus.${paymentType}.razorpayOrderId`]: order.id,
+        [`paymentStatus.${paymentType}.amountPaise`]: amountPaise, // The webhook checks the captured amount against this
         [`paymentStatus.${paymentType}.paid`]: false, // Not paid yet — just created
         updatedAt: new Date().toISOString(),
       });

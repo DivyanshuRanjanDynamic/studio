@@ -23,8 +23,6 @@ const CONVERT_URL = BASE_URL.endsWith('/convert') || BASE_URL.endsWith('convertS
 
 const SERVICE_BASE_ROOT = CONVERT_URL.replace(/\/convert$/, '').replace(/\/convertStep$/, '');
 
-console.log(`[stepConverter] Using CAD Service URL: ${CONVERT_URL}`);
-
 interface JobStatusResponse {
   jobId: string;
   status: 'queued' | 'processing' | 'done' | 'failed';

@@ -92,6 +92,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { checkIsAdmin } from '@/lib/auth-utils';
+import { bearerHeader } from '@/lib/auth-header';
+import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { getIdTokenResult, signOut } from 'firebase/auth';
 import { CreateProjectModal } from '@/components/CreateProjectModal';
 import { calculateProjectFinances } from '@/utils/finance';
@@ -579,8 +581,8 @@ function UserDashboardContent() {
       // Step 1: create a Razorpay order on the server
       const res = await fetch('/api/v1/payment/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rfqId: selectedOrder.id, paymentType: type, userId: user.uid }),
+        headers: { 'Content-Type': 'application/json', ...(await bearerHeader()) },
+        body: JSON.stringify({ rfqId: selectedOrder.id, paymentType: type }),
       });
 
       if (!res.ok) {
@@ -590,40 +592,29 @@ function UserDashboardContent() {
 
       const orderData = await res.json();
 
-      // Step 2: open Razorpay popup
-      const RazorpayClass = (window as any).Razorpay;
-      if (!RazorpayClass) {
-        throw new Error(
-          'Payment gateway is still initializing. Please wait a moment and try again.'
-        );
-      }
-
-      const rzp = new RazorpayClass({
+      // Step 2: open Razorpay (loads checkout.js on demand; the order fixes the amount)
+      await openRazorpayCheckout({
         key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'MechHub',
+        orderId: orderData.orderId,
+        amountPaise: orderData.amount,
         description: type === 'advance' ? '50% Advance Payment' : '50% Completion Payment',
-        order_id: orderData.orderId,
         prefill: {
           name: orderData.customerName,
           email: orderData.customerEmail,
           contact: orderData.customerPhone,
         },
-        theme: { color: '#2962FF' },
-        handler: async (response: any) => {
+        onSuccess: async (response) => {
           // Step 3: verify on server
           try {
             const verifyRes = await fetch('/api/v1/payment/verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', ...(await bearerHeader()) },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 rfqId: selectedOrder.id,
                 paymentType: type,
-                userId: user.uid,
               }),
             });
 
@@ -637,19 +628,25 @@ function UserDashboardContent() {
                   : 'Final payment confirmed. Your order is complete!',
             });
           } catch {
+            // The Razorpay webhook still records a captured payment if this call failed.
             toast({
-              title: 'Verification Failed',
-              description: 'Please contact support.',
+              title: 'Verification Pending',
+              description: 'Your payment was received; confirmation can take a minute. Contact support if it does not update.',
               variant: 'destructive',
             });
+          } finally {
+            setLoading(false);
           }
         },
-        modal: {
-          ondismiss: () => setLoading(false),
+        onFailure: (failure) => {
+          toast({
+            title: 'Payment Failed',
+            description: failure.description || 'The payment did not go through. No money was taken.',
+            variant: 'destructive',
+          });
         },
+        onDismiss: () => setLoading(false),
       });
-
-      rzp.open();
     } catch (err: any) {
       toast({ title: 'Payment Error', description: err.message, variant: 'destructive' });
       setLoading(false);

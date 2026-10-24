@@ -3,7 +3,9 @@ import { withContentlayer } from 'next-contentlayer2';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  turbopack: {},
+  turbopack: {
+    root: process.cwd(),
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

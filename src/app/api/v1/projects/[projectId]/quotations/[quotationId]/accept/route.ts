@@ -4,6 +4,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { logger } from '@/utils/logger';
 import { nanoid } from 'nanoid';
 import { normalizeWorkflowStatus, toLegacyStatus } from '@/lib/project-workflow';
+import { decideAcceptance, type QuotationActor } from '@/lib/quotation-acceptance';
 
 export async function POST(
   req: NextRequest,
@@ -32,10 +33,17 @@ export async function POST(
       const project = pSnap.data() || {};
       const quote = qSnap.data() || {};
 
-      // Authority check: Only owner or admin
-      if (!isAdmin && project.userId !== auth.uid) {
-        return { ok: false, code: 403, message: 'Permission denied' };
-      }
+      // Authority check: owner, the quoting vendor (to accept a counter-offer), or admin
+      let actor: QuotationActor;
+      if (isAdmin) actor = 'admin';
+      else if (project.userId === auth.uid) actor = 'customer';
+      else if (quote.vendorId === auth.uid && auth.role === 'mechmaster' && auth.status === 'active') actor = 'vendor';
+      else return { ok: false, code: 403, message: 'Permission denied' };
+
+      // The quotation must be an open bid on this project, and the price one the
+      // other party proposed — it becomes quotedPrice, which payments charge.
+      const decision = decideAcceptance(projectId, project, quote, actor);
+      if (!decision.ok) return decision;
 
       // Project state check
       const canonical = normalizeWorkflowStatus(project.workflowStatus, project.status);
@@ -54,7 +62,7 @@ export async function POST(
       timelineEvents.push({
         id: `evt_${nanoid(9)}`,
         type: 'ACCEPTED',
-        actorType: (isAdmin ? 'admin' : 'customer') as any,
+        actorType: actor,
         actorId: auth.uid,
         content: `Quotation from ${quote.vendorName} accepted. Project assigned.`,
         channel: 'internal' as const,
@@ -65,14 +73,17 @@ export async function POST(
         assignedVendorId: quote.vendorId,
         workflowStatus: 'ACCEPTED',
         status: toLegacyStatus('ACCEPTED'),
-        quotedPrice: quote.quotedPrice, // Lock in the price
-        leadTimeDays: quote.leadTimeDays,
+        quotedPrice: decision.price, // Lock in the agreed price
+        leadTimeDays: decision.leadTimeDays,
+        acceptedQuotationId: quotationId,
         updatedAt: nowIso,
         timelineEvents,
       });
 
-      // Update winning quote
+      // Update winning quote (to the agreed terms, if the vendor took a counter-offer)
       tx.update(quoteRef, {
+        quotedPrice: decision.price,
+        leadTimeDays: decision.leadTimeDays,
         status: 'accepted',
         updatedAt: nowIso,
       });

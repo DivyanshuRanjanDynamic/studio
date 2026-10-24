@@ -8,7 +8,8 @@ import { CheckoutService } from '@/services/checkout.service';
 import { authenticateRequest, forbiddenResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import Razorpay from 'razorpay';
-import crypto from 'crypto';
+import { verifyPaymentSignature } from '@/lib/razorpay-signature';
+import { PaymentFulfilmentService } from '@/services/payment-fulfilment.service';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { getClientIdentifier } from '@/lib/auth-safety';
 
@@ -246,42 +247,29 @@ export const OrderController = {
         );
       }
 
-      // 2. Verify the order belongs to the authenticated user
+      // 2. Verify the order belongs to the authenticated user (no records → no verification)
       const { adminFirestore } = getFirebaseAdmin();
-      if (adminFirestore) {
-        const orderSnap = await adminFirestore.collection('orders').doc(orderId).get();
-        if (!orderSnap.exists) {
-          return NextResponse.json(
-            { success: false, error: { code: ErrorCode.NOT_FOUND, message: 'Order not found' } },
-            { status: 404 }
-          );
-        }
-        const orderData = orderSnap.data()!;
-        if (orderData.userId !== auth.uid) {
-          logger.warn({ event: 'API: Unauthorized order verification', requestId, orderId, authUid: auth.uid, orderOwner: orderData.userId });
-          return forbiddenResponse('You do not own this order');
-        }
-        if (orderData.razorpayOrderId && orderData.razorpayOrderId !== razorpay_order_id) {
-          logger.warn({
-            event: 'API: Order verify mismatch',
-            requestId,
-            orderId,
-            expectedOrderId: orderData.razorpayOrderId,
-            receivedOrderId: razorpay_order_id,
-            authUid: auth.uid,
-          });
-          return forbiddenResponse('Payment order does not match this order');
-        }
+      if (!adminFirestore) {
+        return NextResponse.json(
+          { success: false, error: { code: ErrorCode.SERVICE_UNAVAILABLE, message: 'Service unavailable' } },
+          { status: 503 }
+        );
+      }
+      const orderSnap = await adminFirestore.collection('orders').doc(orderId).get();
+      if (!orderSnap.exists) {
+        return NextResponse.json(
+          { success: false, error: { code: ErrorCode.NOT_FOUND, message: 'Order not found' } },
+          { status: 404 }
+        );
+      }
+      const orderData = orderSnap.data()!;
+      if (orderData.userId !== auth.uid) {
+        logger.warn({ event: 'API: Unauthorized order verification', requestId, orderId, authUid: auth.uid, orderOwner: orderData.userId });
+        return forbiddenResponse('You do not own this order');
       }
 
       // 3. Signature Verification
-      const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-      const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-        .update(body)
-        .digest('hex');
-
-      if (expectedSignature !== razorpay_signature) {
+      if (!verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
         logger.warn({ event: 'API: Payment signature verification failed', requestId, orderId });
         return NextResponse.json(
           {
@@ -292,8 +280,12 @@ export const OrderController = {
         );
       }
 
-      // 4. Business Logic Execution
-      const result = await CheckoutService.markAsPaid(orderId, razorpay_payment_id);
+      // 4. Record it — only if this order's stored Razorpay order is the one paid
+      //    (same idempotent path as the Razorpay webhook)
+      const result = await PaymentFulfilmentService.markQuoteOrderPaid(orderId, {
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+      });
 
       if (!result.success) {
         const error = result.error;

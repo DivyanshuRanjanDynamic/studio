@@ -40,6 +40,11 @@ export async function POST(
 
     const isAdmin = auth.role === 'admin';
     const isVendor = auth.role === 'mechmaster' && auth.status === 'active';
+    // A suspended/inactive MechMaster is neither: without this they'd skip the
+    // vendor checks below and could move any project to any status.
+    if (!isAdmin && !isVendor) {
+      return forbiddenResponse('Active MechMaster account required');
+    }
 
     const parsed = UpdateStatusSchema.safeParse(await req.json());
     if (!parsed.success) {

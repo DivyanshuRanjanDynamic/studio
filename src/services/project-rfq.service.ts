@@ -1,6 +1,7 @@
 import { ProjectRepository } from '@/repositories/project.repository';
 import { PartRepository } from '@/repositories/part.repository';
 import { NotificationService } from '@/services/notification.service';
+import { projectOwnerContact } from '@/lib/project-contact';
 import { summarizeProjectCost, type ProjectCostSummary } from '@/lib/quoting/project-costing';
 import type { NegotiationMessage, ProjectRFQ, TimelineEvent } from '@/models/project.model';
 import { Result, ok, err } from '@/utils/result';
@@ -116,18 +117,22 @@ export const ProjectRfqService = {
     if (!saved.success) return err(saved.error);
 
     // Admin + customer emails (fire-and-forget; failures don't fail the request).
+    // The customer copy goes to the account email, never the project's editable userEmail.
+    const contact = await projectOwnerContact(project.data);
     NotificationService.sendAllAsync([
-      {
-        type: 'rfq_submitted_customer',
-        customer: { email: project.data.userEmail || '', name: project.data.userName || 'Customer' },
-        projectName: project.data.projectName,
-        projectId,
-        partCount: parts.length,
-      },
+      ...(contact
+        ? [{
+            type: 'rfq_submitted_customer' as const,
+            customer: contact,
+            projectName: project.data.projectName,
+            projectId,
+            partCount: parts.length,
+          }]
+        : []),
       {
         type: 'admin_new_rfq',
-        customerName: project.data.userName || 'Customer',
-        customerEmail: project.data.userEmail || '',
+        customerName: contact?.name || project.data.userName || 'Customer',
+        customerEmail: contact?.email || '',
         projectName: project.data.projectName,
         projectId,
         partCount: parts.length,
@@ -181,10 +186,11 @@ export const ProjectRfqService = {
     } as Partial<ProjectRFQ> & { id: string });
     if (!saved.success) return err(saved.error);
 
+    const contact = await projectOwnerContact(project.data);
     NotificationService.sendAsync({
       type: 'admin_negotiation_customer_reply',
-      customerName: project.data.userName || 'Customer',
-      customerEmail: project.data.userEmail || '',
+      customerName: contact?.name || project.data.userName || 'Customer',
+      customerEmail: contact?.email || '',
       projectName: project.data.projectName,
       projectId,
       customerMessage: trimmed,
