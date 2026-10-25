@@ -74,25 +74,34 @@ describe('M1: vendors claim only projects they were invited to', () => {
 
 // ── M5 ───────────────────────────────────────────────────────────────
 describe('M5: vendor reminder cron fails closed', () => {
-  async function trigger(secretHeader?: string) {
-    const { POST } = await import('@/app/api/vendors/reminders/route');
-    const headers: Record<string, string> = secretHeader ? { 'x-cron-secret': secretHeader } : {};
-    return (await POST(new NextRequest('https://www.mechhub.in/api/vendors/reminders', { method: 'POST', headers }))).status;
+  async function trigger(method: 'GET' | 'POST', headers: Record<string, string> = {}) {
+    const route = await import('@/app/api/vendors/reminders/route');
+    const req = new NextRequest('https://www.mechhub.in/api/vendors/reminders', { method, headers });
+    return (await route[method](req)).status;
   }
 
   it('refuses everyone when no secret is configured', async () => {
-    vi.stubEnv('VENDOR_REMINDER_CRON_SECRET', '');
-    expect(await trigger()).toBe(503);
-    expect(await trigger('anything')).toBe(503);
+    vi.stubEnv('CRON_SECRET', '');
+    expect(await trigger('POST')).toBe(503);
+    expect(await trigger('GET', { authorization: 'Bearer anything' })).toBe(503);
     expect(runVendorReminderCron).not.toHaveBeenCalled();
   });
 
-  it('runs only with the exact secret', async () => {
-    vi.stubEnv('VENDOR_REMINDER_CRON_SECRET', 'cron-secret-123');
-    expect(await trigger()).toBe(401);
-    expect(await trigger('cron-secret-12')).toBe(401);
+  it('Vercel Cron: GET with Authorization: Bearer <CRON_SECRET>', async () => {
+    vi.stubEnv('CRON_SECRET', 'cron-secret-123');
+    expect(await trigger('GET')).toBe(401);
+    expect(await trigger('GET', { authorization: 'Bearer cron-secret-12' })).toBe(401);
+    expect(await trigger('GET', { authorization: 'cron-secret-123' })).toBe(401); // no "Bearer "
     expect(runVendorReminderCron).not.toHaveBeenCalled();
-    expect(await trigger('cron-secret-123')).toBe(200);
+    expect(await trigger('GET', { authorization: 'Bearer cron-secret-123' })).toBe(200);
+    expect(runVendorReminderCron).toHaveBeenCalledTimes(1);
+  });
+
+  it('other schedulers: POST with x-cron-secret (VENDOR_REMINDER_CRON_SECRET)', async () => {
+    vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('VENDOR_REMINDER_CRON_SECRET', 'cron-secret-123');
+    expect(await trigger('POST', { 'x-cron-secret': 'wrong' })).toBe(401);
+    expect(await trigger('POST', { 'x-cron-secret': 'cron-secret-123' })).toBe(200);
     expect(runVendorReminderCron).toHaveBeenCalledTimes(1);
   });
 });
