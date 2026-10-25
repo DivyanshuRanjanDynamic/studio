@@ -26,11 +26,12 @@ const CheckoutSchema = z.object({
   items: z
     .array(
       z.object({
-        id: z.string(),
-        quantity: z.number().min(1),
+        id: z.string().min(1).max(128),
+        quantity: z.number().int().min(1).max(1000),
       })
     )
-    .min(1),
+    .min(1)
+    .max(50),
   shippingAddress: AddressSchema,
 });
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     const result = CheckoutSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
-        { error: 'Invalid checkout data', details: result.error.format() },
+        { error: 'Invalid checkout data' },
         { status: 400 }
       );
     }
@@ -70,6 +71,12 @@ export async function POST(req: NextRequest) {
     // Use authenticated userId instead of trusting request body
     const userId = auth.uid;
 
+    // De-duplicate item ids — repeated ids would skip the combined stock check
+    const deduped = new Map<string, number>();
+    for (const item of items) {
+      deduped.set(item.id, (deduped.get(item.id) ?? 0) + item.quantity);
+    }
+
     const { adminFirestore: db } = getFirebaseAdmin();
     if (!db) throw new Error('Firebase Admin not initialized');
 
@@ -77,16 +84,25 @@ export async function POST(req: NextRequest) {
     let subtotal = 0;
     const validatedItems = [];
 
-    for (const item of items) {
-      const productSnap = await db.collection('products').doc(item.id).get();
+    for (const [id, quantity] of deduped) {
+      const productSnap = await db.collection('products').doc(id).get();
       if (!productSnap.exists) {
-        return NextResponse.json({ error: `Product ${item.id} not found` }, { status: 404 });
+        return NextResponse.json({ error: `Product not found` }, { status: 404 });
       }
 
       const product = productSnap.data()!;
 
+      // M9: inactive and unpriced products must not be orderable
+      const price = Number(product.salePrice);
+      if (product.isActive === false || !Number.isFinite(price) || price <= 0) {
+        return NextResponse.json(
+          { error: 'An item in your cart is currently unavailable' },
+          { status: 400 }
+        );
+      }
+
       // Check Inventory
-      if (product.inventory < item.quantity) {
+      if ((Number(product.inventory) || 0) < quantity) {
         return NextResponse.json(
           {
             error: `Insufficient stock for ${product.name}. Available: ${product.inventory}`,
@@ -95,15 +111,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const price = product.salePrice || 0;
-      subtotal += price * item.quantity;
+      subtotal += price * quantity;
 
       validatedItems.push({
-        id: item.id,
+        id,
         name: product.name,
         sku: product.sku,
-        quantity: item.quantity,
-        price: price,
+        quantity,
+        price,
       });
     }
 

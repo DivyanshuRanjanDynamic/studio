@@ -138,7 +138,26 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  // Revoke all sessions server-side so a stolen cookie can't survive logout.
+  const cookie = (req.headers.get('cookie') ?? '')
+    .split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('session='));
+  const sessionValue = cookie?.split('=').slice(1).join('=') ?? '';
+
+  if (sessionValue) {
+    try {
+      const { adminAuth } = getFirebaseAdmin();
+      if (adminAuth) {
+        const { sub } = await adminAuth.verifySessionCookie(sessionValue);
+        await adminAuth.revokeRefreshTokens(sub);
+      }
+    } catch {
+      // Cookie was already invalid — that's fine
+    }
+  }
+
   const response = NextResponse.json({ status: 'logged-out' }, { status: 200 });
 
   // Clear the session cookie

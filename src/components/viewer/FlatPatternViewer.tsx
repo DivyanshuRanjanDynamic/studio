@@ -83,16 +83,34 @@ export function FlatPatternViewer({
   const svgContent = useMemo(() => {
     if (!flatPattern?.svg) return '';
 
+    let svg = flatPattern.svg;
+
+    // L10: sanitise converter SVG before injecting. The converter builds SVGs from
+    // numbers today, but a compromise, MITM (dev is HTTP), or future text in the
+    // SVG would become stored XSS on the app origin.
+    svg = svg
+      // Remove all <script> blocks
+      .replace(/<script[\s\S]*?<\/script\s*>/gi, '')
+      // Remove event handler attributes (onclick, onerror, onload, etc.)
+      .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+      // Remove dangerous elements that can execute code or embed content
+      .replace(/<\s*(foreignObject|iframe|embed|object|applet|form|input|button|textarea|select|meta|link|base)[^>]*>[\s\S]*?<\/\s*\1\s*>/gi, '')
+      .replace(/<\s*(foreignObject|iframe|embed|object|applet|form|input|button|textarea|select|meta|link|base)[^>]*\/?\s*>/gi, '')
+      // Remove <use> with external hrefs (data: / http: / javascript:)
+      .replace(/<use[^>]*href\s*=\s*["'](?!#)[^"']*["'][^>]*\/?\s*>/gi, '')
+      // Remove javascript: and data: URIs in href/xlink:href attributes
+      .replace(/(href\s*=\s*["'])\s*(javascript:|data:)[^"']*/gi, '$1#');
+
     // If we don't need to overlay interactive bend lines, return base SVG
     if (!showBendLines || !bendsVisible) {
       // Strip existing bend lines from SVG (they're baked in by the server)
       // and return the outline only
-      return flatPattern.svg
+      return svg
         .replace(/<line[^>]*data-angle[^>]*\/>/g, '')
         .replace(/<\/svg>/, '</svg>');
     }
 
-    return flatPattern.svg;
+    return svg;
   }, [flatPattern, showBendLines, bendsVisible]);
 
   // ── Bend Summary Stats ──

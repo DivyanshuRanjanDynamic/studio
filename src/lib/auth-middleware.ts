@@ -71,6 +71,14 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthRespons
   try {
     const userDoc = await adminFirestore.collection('users').doc(decodedClaims.uid).get();
     const userData = userDoc.data();
+    const accountStatus = userData?.status || 'active';
+
+    // M8: suspended / banned / deleted users must not access any API, even if
+    // they still hold a valid session cookie or ID token.
+    if (accountStatus === 'suspended' || accountStatus === 'banned' || accountStatus === 'deleted') {
+      logger.warn({ event: 'auth_blocked_inactive_account', uid: decodedClaims.uid, status: accountStatus });
+      return { success: false, error: 'Account is not active', status: 403 };
+    }
 
     return {
       success: true,
@@ -78,7 +86,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthRespons
       email: decodedClaims.email,
       emailVerified: decodedClaims.email_verified || userData?.emailVerified || false,
       role: (userData?.role as UserRole) || 'customer',
-      status: userData?.status || 'active',
+      status: accountStatus,
     };
   } catch (error: any) {
     logger.error({ event: 'Firestore user data resolution failed', uid: decodedClaims.uid, error: error.message });

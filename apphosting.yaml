@@ -8,7 +8,3 @@ runConfig:
   # Scale out under load. The app is stateless (sessions, rate limits, quotes and
   # pricing settings live in Firestore), so any instance can serve any request.
   maxInstances: 4
-
-env:
-  - variable: process.env.VENDOR_REMINDER_CRON_SECRET
-    secret: process.env.VENDOR_REMINDER_CRON_SECRET

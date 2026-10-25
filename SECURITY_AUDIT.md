@@ -64,13 +64,13 @@
 | **M2** unbounded uploads, no rate limits | Presigned PUTs sign `ContentLength`, so S3 rejects any other body size (checked: `X-Amz-SignedHeaders=content-length;host`). Per-account limits: upload intents 60/h, CNC upload intents 60/h, converter analyses (CNC / sheet / print) 30/h, quote saves 120/h | `file-access.test.ts`, `quote-auth.test.ts` |
 | **M3** legacy file fallback trusted client `createdAt` | "Earliest part" now uses Firestore's own document `createTime`. Parts with no server time never count | `file-access.test.ts` (back-dated forged part refused) |
 | **M4** vendor profiles world-readable | `users` read = owner or admin only. The matching page loads `GET /api/v1/vendors/directory`, which returns card fields only: name/team, https image, rating, verified flag, city/state, experience, specializations, portfolio. No email, phone, GST, revenue or street address | `medium-findings.test.ts`, plus a browser check on `/matching` against production data |
-| **M5** cron open without secret | `/api/vendors/reminders` returns 503 when `VENDOR_REMINDER_CRON_SECRET` is unset and 401 on a wrong secret (constant-time compare) | `medium-findings.test.ts` |
+| **M5** cron open without secret | `/api/vendors/reminders` returns 503 when `CRON_SECRET` is unset and 401 on a wrong secret (constant-time compare) | `medium-findings.test.ts` |
 | **M7** login token in verification URL | The verify route redirects to `/login?verified=true&redirect=…` and mints no custom token; the login page has no `?token=` auto sign-in | `medium-findings.test.ts` |
 | **M10** converter copies to public bucket, open `/status` | `cad-converter/main.py`: STEP/STL files are no longer uploaded anywhere (`_upload_to_s3` removed). Jobs record their `owner`. `/status/{id}` needs the creator's convert ticket (or the service token), returns 404 for anyone else, and never returns `owner`/`fileUrl`/`resultUrl`. The app sends its ticket when polling and renews it on 401 | converter `tests/test_convert_access.py` (82/82), `step-converter-status.test.ts` |
 
 **Rollout:**
 1. **Deploy order:** deploy the app before the converter. The new app sends tickets to the old converter, which ignores them. The old app polls without one, which the new converter refuses.
-2. **Cron secret:** set `VENDOR_REMINDER_CRON_SECRET` on App Hosting and send it as `x-cron-secret` from the scheduler.
+2. **Cron secret:** set `CRON_SECRET` on App Hosting and send it as `x-cron-secret` from the scheduler.
 3. **Firestore rules:** deploy them; they include the `users` read lock.
 4. **Old copies in S3:** delete `cad_uploads/` and `cad_outputs/` from `mechhub-product-images` if present.
 5. **Legacy file fallback:** run `scripts/backfill-file-owners.ts --apply`, then set `FILE_ACCESS_LEGACY_FALLBACK=false`.
@@ -150,7 +150,7 @@ The public-read policy plus `*` GET/HEAD CORS for `marketing-video-mechhub` is f
 | M2 | Medium | Presigned S3 PUTs don't enforce size, and upload-intent and analysis routes have no rate limit (storage cost and converter CPU DoS) |
 | M3 | Medium | The legacy file-access fallback trusts the client-written `projectParts.createdAt`, so another user's legacy CAD file can be read |
 | M4 | Medium | Active vendors' full `users` docs (phone, email, address, GST, monthly revenue) can be read **without signing in** |
-| M5 | Medium | The vendor-reminder cron endpoint is open when `VENDOR_REMINDER_CRON_SECRET` is unset (it is unset in `.env.local`) |
+| M5 | Medium | The vendor-reminder cron endpoint is open when `CRON_SECRET` is unset (it is unset in `.env.local`) |
 | M6 | Medium | Firestore rules are over-permissive for `notifications`, `negotiations/messages`, `reviews`, `rfqs`, `blog_comments` and `blog_stats` |
 | M7 | Medium | The email-verification link turns into a Firebase **custom token in a URL query string** (a 24 h magic login link that leaks into history and logs) |
 | M8 | Medium | Account suspension isn't enforced on most APIs, and logout doesn't revoke the session |
@@ -589,21 +589,21 @@ This needs no `isAuthenticated()`. Firestore rules can't restrict fields, so the
 
 ### M5. Vendor-reminder cron endpoint is public when its secret is unset
 
-**File:** `src/app/api/vendors/reminders/route.ts:19-27`. `if (cronSecret) { … }` fails open, and `.env.local` has no `VENDOR_REMINDER_CRON_SECRET`.
+**File:** `src/app/api/vendors/reminders/route.ts:19-27`. `if (cronSecret) { … }` fails open, and `.env.local` has no `CRON_SECRET`.
 
 **Exploitation:** `curl -X POST https://<host>/api/vendors/reminders` in a loop triggers `runVendorReminderCron()` each time, so vendors are spammed, Resend quota is burned and the sending domain's reputation drops.
 
 **Fix**
 
 ```diff
--  const cronSecret = process.env.VENDOR_REMINDER_CRON_SECRET;
+-  const cronSecret = process.env.CRON_SECRET;
 -  if (cronSecret) {
 -    const provided = req.headers.get('x-cron-secret');
 -    if (provided !== cronSecret) {
 -      return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
 -    }
 -  }
-+  const cronSecret = process.env.VENDOR_REMINDER_CRON_SECRET;
++  const cronSecret = process.env.CRON_SECRET;
 +  const provided = req.headers.get('x-cron-secret') ?? '';
 +  if (!cronSecret || provided.length !== cronSecret.length ||
 +      !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(cronSecret))) {
@@ -844,7 +844,7 @@ async headers() { return [{ source: '/(.*)', headers: [
 1. **Deployed Firestore rules.** The hand-over notes say the tightened `firestore.rules` were **not deployed** and never emulator-tested (Java 8 on this machine). If production still runs older rules, the protections credited above (protected price/payment/role fields, `orders` create:false, `uploaded_files` deny) may be missing and the risk is much higher. Check with `firebase firestore:rules:get` or in the console.
 2. **S3 bucket policies, ACLs, Block Public Access and CORS** for `mechhub-assets` and `mechhub-product-images`: whether either is public, whether listing is allowed, and whether `cad_uploads/`, `cad_outputs/` or `rfq-designs/` objects exist in the public bucket (M10). Also the IAM policy of the app's AWS key (it should be scoped to `s3:PutObject`/`GetObject` on specific prefixes, not `s3:*`), and lifecycle rules.
 3. **Razorpay dashboard:** whether webhooks are configured (L3), auto-capture settings, which key pair production uses, whether live keys were ever used outside production (they're in a developer's `.env.local`), and account-level fraud/limit settings.
-4. **Production environment variables:** `VENDOR_REMINDER_CRON_SECRET` (M5), `FILE_ACCESS_LEGACY_FALLBACK` (M3), `TRUSTED_PROXY_HOPS`/`TRUSTED_CLIENT_IP_HEADER` (L8), `ADMIN_EMAILS`, `CONVERTER_SERVICE_TOKEN` strength (local is `mechhub-local-…`), `FILE_URL_ALLOWED_HOSTS` and `AWS_S3_BUCKET` on the converter (M10, L6), and whether `NEXT_PUBLIC_CONVERT_SERVICE_URL` is `https://` in production.
+4. **Production environment variables:** `CRON_SECRET` (M5), `FILE_ACCESS_LEGACY_FALLBACK` (M3), `TRUSTED_PROXY_HOPS`/`TRUSTED_CLIENT_IP_HEADER` (L8), `ADMIN_EMAILS`, `CONVERTER_SERVICE_TOKEN` strength (local is `mechhub-local-…`), `FILE_URL_ALLOWED_HOSTS` and `AWS_S3_BUCKET` on the converter (M10, L6), and whether `NEXT_PUBLIC_CONVERT_SERVICE_URL` is `https://` in production.
 5. **Data state:** how many orders lack `razorpayOrderId` (H3), how many files lack `uploaded_files` records (M3), whether any `users` docs carry `role: 'admin'` that shouldn't, and whether any `quotations` were already price-overwritten by customers (C1). Query `quotations` where the last `negotiationHistory` entry has `party == 'customer'` and the project has `status == 'accepted'`.
 6. **Infrastructure:** Firebase App Hosting/Cloud Run ingress, the CDN cache config for `/api/*`, Railway network exposure of the converter (is `/status`/`/convert` public, TLS?), WAF/DDoS protection, Firebase Auth settings (email enumeration protection, password policy, MFA for admins, authorised domains, App Check), Resend domain (SPF/DKIM/DMARC), and log retention and access.
 7. **Exploitability of the dependency advisories** (C2, H4): I matched installed versions to advisories and confirmed the affected features are used, but didn't build exploits. The converter's Python dependencies weren't scanned (no `pip-audit` here). Run `pip-audit -r <(docker run --rm <image> pip freeze)` against the built image.

@@ -85,14 +85,8 @@ service cloud.firestore {
       // Any authenticated user can submit an RFQ, but must set their own userId
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
 
-      allow update: if isAuthenticated() && (
-        // Owner can update their own RFQ (e.g. edit before submission)
-        resource.data.userId == request.auth.uid ||
-        // Admin can update anything (status, assignment, shortlist)
-        isAdmin() ||
-        // Assigned vendor can update production status
-        (isVendor() && request.auth.uid == resource.data.assignedVendorId)
-      );
+      // Legacy collection: no client writes (server routes handle everything).
+      allow update: if isAdmin();
 
       allow delete: if isAdmin();
     }
@@ -227,10 +221,16 @@ service cloud.firestore {
       // Creator must identify themselves as the customer in the negotiation document
       allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
 
-      allow update: if isAuthenticated() && (
-        resource.data.customerId == request.auth.uid ||
-        resource.data.vendorId == request.auth.uid ||
-        isAdmin()
+      // Parties can update non-structural fields. customerId, vendorId, amounts
+      // are set by the server and must not be rewritten from the client.
+      allow update: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.customerId == request.auth.uid ||
+          resource.data.vendorId == request.auth.uid
+        ) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(
+          ['customerId', 'vendorId', 'projectId', 'agreedPrice', 'status']
+        )
       );
 
       allow delete: if isAdmin();
@@ -243,12 +243,15 @@ service cloud.firestore {
           isAdmin()
         );
 
-        // Parties in the negotiation + admin can write messages
-        allow create: if isAuthenticated() && (
-          get(/databases/$(database)/documents/negotiations/$(negotiationId)).data.customerId == request.auth.uid ||
-          get(/databases/$(database)/documents/negotiations/$(negotiationId)).data.vendorId == request.auth.uid ||
-          isAdmin()
-        );
+        // Parties in the negotiation + admin can write messages.
+        // senderId must be the caller's uid so nobody can impersonate the other party.
+        allow create: if isAuthenticated() &&
+          request.resource.data.senderId == request.auth.uid &&
+          request.resource.data.createdAt == request.time && (
+            get(/databases/$(database)/documents/negotiations/$(negotiationId)).data.customerId == request.auth.uid ||
+            get(/databases/$(database)/documents/negotiations/$(negotiationId)).data.vendorId == request.auth.uid ||
+            isAdmin()
+          );
 
         // Messages are immutable after creation (no edits, no deletes by users)
         allow update: if isAdmin();
@@ -260,11 +263,11 @@ service cloud.firestore {
     // reviews/{reviewId}
     // ─────────────────────────────────────────
     match /reviews/{reviewId} {
-      // Public reviews readable by anyone for vendor profile pages
-      allow read: if resource.data.isPublic == true || isAuthenticated();
+      // Public reviews readable by anyone; private reviews only by the author or admin.
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.customerId) || isAdmin();
 
-      // Only the customer who completed the project can write a review
-      allow create: if isAuthenticated() && isOwner(request.resource.data.customerId);
+      // Reviews are created only by a server route that checks a completed project.
+      allow create: if false;
 
       // Only admin can edit/delete reviews
       allow update, delete: if isAdmin();
@@ -274,8 +277,13 @@ service cloud.firestore {
     // notifications/{notificationId}
     // ─────────────────────────────────────────
     match /notifications/{notificationId} {
-      // User can read and mark-as-read their own notifications
-      allow read, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // User can read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // User can only mark as read — not change the userId, title, message, link or any
+      // other field (which would let them forge phishing notifications for other users).
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
 
       // Only admin can create notifications (cloud functions handle this)
       allow create: if isAdmin();
@@ -362,8 +370,13 @@ service cloud.firestore {
       // Anyone can read comments
       allow read: if true;
 
-      // Any authenticated user can create a comment
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Authenticated users can comment. Only known fields are allowed (no
+      // authorName, authorRole, isAdmin — that would let impersonation).
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['userId', 'slug', 'content', 'createdAt']) &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() <= 2000;
 
       // Only the comment author or an admin can delete it
       allow delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
@@ -429,22 +442,6 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ─────────────────────────────────────────
-    // vendorApplications/{applicationId}
-    // ─────────────────────────────────────────
-    match /vendorApplications/{applicationId} {
-      // Admin can read all applications; owner can read their own.
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-
-      // Applicant can create their own pending application.
-      allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'pending'
-                    && request.resource.data.ndaAgreed == true;
-
-      // Only admin can review/update/delete.
-      allow update, delete: if isAdmin();
-    }
 
   }
 }

@@ -97,9 +97,8 @@ describe('M5: vendor reminder cron fails closed', () => {
     expect(runVendorReminderCron).toHaveBeenCalledTimes(1);
   });
 
-  it('other schedulers: POST with x-cron-secret (VENDOR_REMINDER_CRON_SECRET)', async () => {
-    vi.stubEnv('CRON_SECRET', '');
-    vi.stubEnv('VENDOR_REMINDER_CRON_SECRET', 'cron-secret-123');
+  it('other schedulers: POST with x-cron-secret', async () => {
+    vi.stubEnv('CRON_SECRET', 'cron-secret-123');
     expect(await trigger('POST', { 'x-cron-secret': 'wrong' })).toBe(401);
     expect(await trigger('POST', { 'x-cron-secret': 'cron-secret-123' })).toBe(200);
     expect(runVendorReminderCron).toHaveBeenCalledTimes(1);
