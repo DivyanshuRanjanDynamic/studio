@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
     // Drop the 2048/3840 defaults: no layout here is wider than 1400px, and every
     // extra width is another variant to generate and cache.
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    // Keep optimized images for 7 days instead of the 4-hour default, so repeat
+    // visitors rarely wait on the optimizer. Replacing a file under the same name
+    // can show the old version for up to a week: give changed images a new name.
+    minimumCacheTTL: 604800,
     remotePatterns: [
       {
         protocol: 'https',

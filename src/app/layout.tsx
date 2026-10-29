@@ -40,7 +40,6 @@ export default function RootLayout({
     // data-scroll-behavior lets Next.js turn smooth scrolling off during route changes
     <html lang="en" className={`scroll-smooth ${siteFontVars}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://checkout.razorpay.com" />
         <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
       </head>
       <body

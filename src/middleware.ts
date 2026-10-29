@@ -47,15 +47,17 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
+  // Only the protected areas: the middleware does nothing on any other path, and
+  // matching everything ran it on every static page view and link prefetch.
+  // Keep in sync with isProtectedRoute above.
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public (public folder)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/dashboard/:path*',
+    '/admin/:path*',
+    '/vendor/:path*',
+    '/profile/:path*',
+    '/projects/:path*',
+    '/checkout/:path*',
+    '/orders/:path*',
+    '/quote/instant/:path*',
   ],
 };

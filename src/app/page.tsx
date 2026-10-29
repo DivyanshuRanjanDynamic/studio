@@ -35,9 +35,24 @@ const TRUST_POINTS = [
   'Sustainable Manufacturing',
 ];
 
+// Copy mirrors claims the page itself makes (hero, trust marquee, 72hr stat).
+const HOME_TITLE = 'Custom Manufacturing, Made Fast & Affordable | MechHub';
+const HOME_DESCRIPTION =
+  'Upload your design and get CNC machined, laser cut and bent parts delivered across India. Instant quotes, verified vendors, 72-hour average turnaround.';
+
 export const metadata: Metadata = {
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
   alternates: {
     canonical: '/',
+  },
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: '/',
+    siteName: 'MechHub',
+    type: 'website',
+    locale: 'en_IN',
   },
 };
 
