@@ -11,6 +11,7 @@ import {
   ArrowDownToLine, CircleDotDashed, Drill, Cog, Factory,
   type LucideIcon,
 } from 'lucide-react';
+import type { Metadata } from 'next';
 import type { ServicePageConfig } from '@/components/services/ServicePageTemplate';
 import * as F from './service-facts';
 
@@ -748,3 +749,18 @@ export const SERVICE_PAGES: Record<string, ServicePageConfig> = {
   'dimple-forming': DIMPLE_FORMING,
   'countersinking': COUNTERSINKING,
 };
+
+/**
+ * Page metadata for /services/<slug>, built from the copy the hero renders so the
+ * search snippet always matches the page. Used by each service route's layout.tsx,
+ * since the pages themselves are client components and cannot export metadata.
+ */
+export function serviceMetadata(config: ServicePageConfig, slug: string): Metadata {
+  return {
+    title: `${config.heroSubtitle} Services in India | MechHub`,
+    description: config.heroDescription,
+    alternates: {
+      canonical: `/services/${slug}`,
+    },
+  };
+}
