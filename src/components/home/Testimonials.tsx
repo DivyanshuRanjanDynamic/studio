@@ -31,9 +31,9 @@ const TESTIMONIALS = [
 // TODO: Update "500+ builders" count with real number
 const METRICS = [
   ['500+', 'Builders on MechHub'],
-  ['10k+', 'Parts Shipped'],
-  ['2–4 Days', 'Rapid Lead Times'],
-  ['99%', 'On-time Delivery'],
+  ['72hr', 'Avg. Turnaround'],
+  ['150+', 'Active Projects'],
+  ['100%', 'NDA Protected'],
 ];
 
 // TODO: Replace with real university/company logos

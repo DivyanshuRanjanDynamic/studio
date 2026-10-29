@@ -27,6 +27,9 @@ export const OrderController = {
    */
   async createOrder(req: NextRequest) {
     const requestId = req.headers.get('x-request-id') || 'req_internal';
+    // Set only once this request holds the idempotency lock, so the catch block
+    // never releases a lock owned by a concurrent request.
+    let lockedIdempotencyKey: string | undefined;
 
     try {
       const ip = getClientIdentifier(req.headers);
@@ -126,6 +129,7 @@ export const OrderController = {
             { status: 409 }
           );
         }
+        lockedIdempotencyKey = idempotencyKey;
       }
 
       let projectName = 'MechHub Order';
@@ -267,10 +271,10 @@ export const OrderController = {
         error: e,
       });
       // Release the idempotency lock so the client can retry with the same key.
-      if (idempotencyKey) {
+      if (lockedIdempotencyKey) {
         const { adminFirestore: failDb } = getFirebaseAdmin();
         failDb?.collection('idempotency_keys')
-          .doc(`order_${idempotencyKey}`)
+          .doc(`order_${lockedIdempotencyKey}`)
           .update({ status: 'failed', failedAt: new Date().toISOString() })
           .catch(() => {});
       }
