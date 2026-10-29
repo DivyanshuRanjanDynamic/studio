@@ -145,6 +145,9 @@ export const RazorpayWebhookService = {
   /**
    * Applies `event` once per `eventId`. An error result means "not applied — let
    * Razorpay retry" (the route answers 5xx).
+   *
+   * C5 fix: the dedupe check is now a transactional claim so two concurrent
+   * deliveries of the same event can't both pass the "not yet processed" check.
    */
   async process(eventId: string, event: RazorpayWebhookEvent): Promise<Result<WebhookOutcome, AppError>> {
     const { adminFirestore: db } = getFirebaseAdmin();
@@ -155,14 +158,41 @@ export const RazorpayWebhookService = {
     }
 
     const logRef = db.collection(EVENTS).doc(eventId);
+
+    // ── Atomic claim: only one request proceeds per eventId ────────────
+    let claimed = false;
     try {
-      const logged = await logRef.get();
-      if (logged.exists && logged.data()?.status === 'processed') return ok('duplicate');
+      claimed = await db.runTransaction(async (tx: any) => {
+        const snap = await tx.get(logRef);
+        if (snap.exists) {
+          const data = snap.data();
+          // Already processed or another request is actively processing
+          if (data?.status === 'processed' || data?.status === 'processing') return false;
+        }
+        tx.set(logRef, {
+          status: 'processing',
+          event: event.event,
+          receivedAt: new Date().toISOString(),
+        }, { merge: true });
+        return true;
+      });
     } catch (e: any) {
-      logger.error({ event: 'RazorpayWebhook: event log read failed', eventId, error: e?.message });
+      logger.error({ event: 'RazorpayWebhook: event claim failed', eventId, error: e?.message });
+      await logRef.set(
+        {
+          event: event.event,
+          status: 'failed',
+          error: e?.message || 'Transaction failed',
+          completedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
       return err(internalError('Webhook event log unavailable'));
     }
 
+    if (!claimed) return ok('duplicate');
+
+    // ── Apply the event — only one request reaches here per eventId ────
     let result = await applyEvent(event);
     if (!result.success && result.error.statusCode < 500) {
       // Permanent (record mismatch / missing): retrying can't fix it, and Razorpay
@@ -183,7 +213,7 @@ export const RazorpayWebhookService = {
           status: result.success ? 'processed' : 'failed',
           outcome: result.success ? result.data : null,
           error: result.success ? null : result.error.message,
-          receivedAt: now,
+          completedAt: now,
         },
         { merge: true }
       );

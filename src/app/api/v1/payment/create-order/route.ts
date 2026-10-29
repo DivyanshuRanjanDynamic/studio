@@ -78,129 +78,153 @@ export async function POST(req: NextRequest) {
     // Use authenticated userId instead of trusting request body
     const userId = auth.uid;
 
-    // ── Step 2: Fetch the project (RFQ) from Firestore ──────────────────
-    // We use Firebase Admin SDK here because this runs on the server,
-    // not in the browser. Admin SDK has full access to Firestore.
+    // ── Step 2: Fetch the project and validate atomically ─────────────
+    // Use a transaction to read-then-write so two concurrent requests
+    // can't both create a Razorpay order and overwrite each other's ID.
     const { adminFirestore: db } = getFirebaseAdmin();
     if (!db) throw new Error('Firebase Admin not initialized');
 
-    const rfqSnap = await db.collection('projectRFQs').doc(rfqId).get();
+    const rfqRef = db.collection('projectRFQs').doc(rfqId);
 
-    // If the project doesn't exist, return a 404 error
-    if (!rfqSnap.exists) {
-      return NextResponse.json({ error: 'RFQ not found' }, { status: 404 });
-    }
+    // Phase 1: Transactional validation — check status, ownership, double-pay
+    // and see if an unpaid Razorpay order already exists (idempotent return).
+    const txResult = await db.runTransaction(async (tx: any) => {
+      const snap = await tx.get(rfqRef);
+      if (!snap.exists) return { error: 'RFQ not found', status: 404 } as const;
+      const rfq = snap.data()!;
 
-    // Get the project data from Firestore
-    const rfq = rfqSnap.data()!;
+      // Ownership check
+      if (rfq.userId !== userId) {
+        logger.warn({ event: 'API: Unauthorized payment attempt', rfqId, authUid: userId, rfqOwner: rfq.userId });
+        return { error: 'FORBIDDEN', status: 403 } as const;
+      }
 
-    // ── Step 3: Security check — make sure this user owns the project ───
-    // Prevents someone from paying for (or tampering with) another user's project
-    if (rfq.userId !== userId) {
-      logger.warn({ event: 'API: Unauthorized payment attempt', rfqId, authUid: userId, rfqOwner: rfq.userId });
-      return forbiddenResponse('You do not own this project');
-    }
+      // Status checks
+      if (paymentType === 'advance' && rfq.status !== 'accepted') {
+        return { error: 'Advance payment only available after order is accepted', status: 400 } as const;
+      }
+      if (paymentType === 'completion' && !['shipped', 'delivered', 'shipping'].includes(rfq.status)) {
+        return { error: 'Completion payment only available after order is shipped', status: 400 } as const;
+      }
 
-    // ── Step 4: Validate the project is in the correct status ────────────
-    // Advance payment is only allowed when the project status is "accepted"
-    if (paymentType === 'advance' && rfq.status !== 'accepted') {
-      return NextResponse.json(
-        { error: 'Advance payment only available after order is accepted' },
-        { status: 400 }
-      );
-    }
+      // Already paid
+      if (rfq.paymentStatus?.[paymentType]?.paid) {
+        return { error: `${paymentType === 'advance' ? 'Advance' : 'Completion'} already paid`, status: 400 } as const;
+      }
 
-    // Completion payment is only allowed when parts have been shipped/delivered
-    if (
-      paymentType === 'completion' &&
-      rfq.status !== 'shipped' &&
-      rfq.status !== 'delivered' &&
-      rfq.status !== 'shipping'
-    ) {
-      return NextResponse.json(
-        { error: 'Completion payment only available after order is shipped' },
-        { status: 400 }
-      );
-    }
+      // If an unpaid Razorpay order already exists, return it (idempotent)
+      const stored = rfq.paymentStatus?.[paymentType];
+      if (stored?.razorpayOrderId && !stored.paid) {
+        return {
+          existing: true as const,
+          razorpayOrderId: stored.razorpayOrderId as string,
+          amountPaise: stored.amountPaise as number,
+          rfq,
+        };
+      }
 
-    // ── Step 5: Prevent double payments ──────────────────────────────────
-    // If advance is already marked as paid, don't allow paying again
-    if (paymentType === 'advance' && rfq.paymentStatus?.advance?.paid) {
-      return NextResponse.json({ error: 'Advance already paid' }, { status: 400 });
-    }
+      // Calculate amount
+      let finalPrice: number = rfq.finalPrice || rfq.quotedPrice || 0;
+      if (finalPrice <= 0) {
+        // Fallback: calculate subtotal from associated parts
+        const partsSnap = await db.collection('projectParts').where('projectId', '==', rfqId).get();
+        let partsSubtotal = 0;
+        partsSnap.forEach((doc: any) => {
+          const p = doc.data();
+          partsSubtotal += (p.unitCost || 0) * (p.quantity || 0);
+        });
+        finalPrice = partsSubtotal;
+      }
+      if (finalPrice <= 0) {
+        return { error: 'Invalid order amount', status: 400 } as const;
+      }
 
-    if (paymentType === 'completion' && rfq.paymentStatus?.completion?.paid) {
-      return NextResponse.json({ error: 'Completion already paid' }, { status: 400 });
-    }
+      const finances = calculateProjectFinances(finalPrice);
+      const amount = paymentType === 'advance' ? finances.advance : finances.balance;
+      const amountPaise = Math.round(amount * 100);
 
-    // ── Step 6: Calculate the payment amount ─────────────────────────────
-    // finalPrice is the agreed-upon manufacturing cost set by the admin
-    let finalPrice: number = rfq.finalPrice || rfq.quotedPrice || 0;
-
-    if (finalPrice <= 0) {
-      // Fallback: calculate subtotal from associated parts if neither finalPrice nor quotedPrice exist
-      const partsSnap = await db.collection('projectParts').where('projectId', '==', rfqId).get();
-      let partsSubtotal = 0;
-      partsSnap.forEach((doc: any) => {
-        const p = doc.data();
-        partsSubtotal += (p.unitCost || 0) * (p.quantity || 0);
+      // Claim the slot with a placeholder — we'll fill in the real ID after
+      // creating the Razorpay order. This prevents a concurrent request from
+      // also reaching this point.
+      tx.update(rfqRef, {
+        [`paymentStatus.${paymentType}.claimedAt`]: new Date().toISOString(),
+        [`paymentStatus.${paymentType}.amountPaise`]: amountPaise,
+        [`paymentStatus.${paymentType}.paid`]: false,
+        updatedAt: new Date().toISOString(),
       });
-      finalPrice = partsSubtotal;
+
+      return {
+        existing: false as const,
+        amountPaise,
+        rfq,
+      };
+    });
+
+    // Handle transaction validation errors
+    if ('error' in txResult) {
+      if (txResult.error === 'FORBIDDEN') return forbiddenResponse('You do not own this project');
+      return NextResponse.json({ error: txResult.error }, { status: txResult.status });
     }
 
-    if (finalPrice <= 0) {
-      return NextResponse.json({ error: 'Invalid order amount' }, { status: 400 });
+    // If an unpaid Razorpay order already exists, return it (idempotent)
+    if (txResult.existing) {
+      return NextResponse.json({
+        orderId: txResult.razorpayOrderId,
+        amount: txResult.amountPaise,
+        currency: 'INR',
+        keyId: process.env.RAZORPAY_KEY_ID,
+        projectName: txResult.rfq.projectName || 'MechHub Order',
+        customerEmail: txResult.rfq.contactEmail || '',
+        customerName: txResult.rfq.contactName || '',
+        customerPhone: txResult.rfq.contactPhone || '',
+      });
     }
 
-    // Use the unified finance utility to calculate GST, shipping, and 50/50 split
-    const finances = calculateProjectFinances(finalPrice);
-
-    // Pick the correct amount based on payment type
-    const amount = paymentType === 'advance' ? finances.advance : finances.balance;
-
-    // Razorpay requires amounts in the smallest currency unit (paise for INR)
-    // ₹100 = 10000 paise, so we multiply by 100
-    const amountPaise = Math.round(amount * 100);
-
-    // ── Step 7: Create the Razorpay order ────────────────────────────────
-    // This tells Razorpay "a customer wants to pay X amount"
-    // Razorpay returns an order ID that we use to open the checkout popup
+    // Phase 2: Create the Razorpay order (external API — outside transaction)
     const order = await razorpay.orders.create({
-      amount: amountPaise,
+      amount: txResult.amountPaise,
       currency: 'INR',
-      receipt: `${rfqId}_${paymentType}`, // A reference string for your records
+      receipt: `${rfqId}_${paymentType}`,
       notes: {
         rfqId,
         paymentType,
         userId,
-        projectName: rfq.projectName || 'MechHub Order',
-        customerName: rfq.userName || rfq.contactName || '',
+        projectName: txResult.rfq.projectName || 'MechHub Order',
+        customerName: txResult.rfq.userName || txResult.rfq.contactName || '',
       },
     });
 
-    // ── Step 8: Save the pending order ID in Firestore ───────────────────
-    // We store this so we can verify the payment later in /api/v1/payment/verify
-    await db
-      .collection('projectRFQs')
-      .doc(rfqId)
-      .update({
+    // Phase 3: Conditional write — store the Razorpay order ID only if no
+    // other request has stored one in the meantime.
+    await db.runTransaction(async (tx: any) => {
+      const snap = await tx.get(rfqRef);
+      const current = snap.data()?.paymentStatus?.[paymentType];
+      // If another request already stored a different Razorpay order ID, keep theirs
+      if (current?.razorpayOrderId && current.razorpayOrderId !== order.id) {
+        logger.warn({
+          event: 'API: Razorpay order race — keeping existing',
+          rfqId,
+          existing: current.razorpayOrderId,
+          orphaned: order.id,
+        });
+        return;
+      }
+      tx.update(rfqRef, {
         [`paymentStatus.${paymentType}.razorpayOrderId`]: order.id,
-        [`paymentStatus.${paymentType}.amountPaise`]: amountPaise, // The webhook checks the captured amount against this
-        [`paymentStatus.${paymentType}.paid`]: false, // Not paid yet — just created
         updatedAt: new Date().toISOString(),
       });
+    });
 
-    // ── Step 9: Return the order details to the frontend ─────────────────
-    // The frontend uses these to open the Razorpay checkout popup
+    // ── Return the order details to the frontend ─────────────────────
     return NextResponse.json({
       orderId: order.id,
-      amount: amountPaise,
+      amount: txResult.amountPaise,
       currency: 'INR',
-      keyId: process.env.RAZORPAY_KEY_ID, // Public key for the popup
-      projectName: rfq.projectName || 'MechHub Order',
-      customerEmail: rfq.contactEmail || '', // Pre-fills the checkout form
-      customerName: rfq.contactName || '',
-      customerPhone: rfq.contactPhone || '',
+      keyId: process.env.RAZORPAY_KEY_ID,
+      projectName: txResult.rfq.projectName || 'MechHub Order',
+      customerEmail: txResult.rfq.contactEmail || '',
+      customerName: txResult.rfq.contactName || '',
+      customerPhone: txResult.rfq.contactPhone || '',
     });
   } catch (err: any) {
     // ── Error handling ───────────────────────────────────────────────────

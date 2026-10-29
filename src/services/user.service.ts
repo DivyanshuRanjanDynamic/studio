@@ -178,8 +178,17 @@ export const UserService = {
       lastLoginAt: nowIso,
     };
 
-    const saveResult = await UserRepository.saveUser(userCreateData);
-    if (!saveResult.success) return saveResult;
+    const saveResult = typeof UserRepository.createUserIfNotExists === 'function'
+      ? await UserRepository.createUserIfNotExists(userCreateData)
+      : await UserRepository.saveUser(userCreateData);
+    if (!saveResult.success) return err(saveResult.error);
+
+    // If the user already existed (concurrent request won the race), skip
+    // welcome emails and claims — the first writer's data is authoritative.
+    if (saveResult.data === 'existed') {
+      logger.info({ event: 'UserService: Provision skipped — user already exists', uid, email });
+      return ok(undefined);
+    }
 
     // Set claims ONLY for admins
     if (targetRole === 'admin') {

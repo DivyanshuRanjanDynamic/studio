@@ -74,8 +74,15 @@ export const ProjectRfqService = {
   /**
    * Customer sends the RFQ: validates the project is a draft with parts, captures
    * the instant-cost snapshot, moves it to `quote_requested`, and notifies admin.
+   *
+   * P1 fix: the draft status check and the status transition are wrapped in a
+   * Firestore transaction so two concurrent requests (double-click) can never
+   * both succeed.  Parts are fetched outside the transaction because they are
+   * immutable once the project is no longer a draft, and the transaction guards
+   * that gate.
    */
   async requestQuote(userId: string, projectId: string): Promise<Result<RequestQuoteResult, AppError>> {
+    // Pre-flight: verify ownership and fetch parts (both reads, no mutation)
     const project = await ownedProject(userId, projectId);
     if (!project.success) return err(project.error);
 
@@ -104,20 +111,54 @@ export const ProjectRfqService = {
       channel: 'internal',
       timestamp: nowIso,
     };
-    const timelineEvents = [...(project.data.timelineEvents ?? []), event];
 
-    const saved = await ProjectRepository.saveProjectRfq({
-      id: projectId,
-      status: 'quote_requested',
-      quoteRequestedAt: nowIso,
-      instantCostSnapshot: costSnapshot,
-      timelineEvents,
-      updatedAt: nowIso,
-    });
-    if (!saved.success) return err(saved.error);
+    // ── P1 fix: atomic draft → quote_requested transition ────────────────
+    const { adminFirestore } = await import('@/lib/firebase-admin').then(m => m.getFirebaseAdmin());
 
-    // Admin + customer emails (fire-and-forget; failures don't fail the request).
-    // The customer copy goes to the account email, never the project's editable userEmail.
+    if (adminFirestore) {
+      const projectRef = adminFirestore.collection('projectRFQs').doc(projectId);
+
+      try {
+        await adminFirestore.runTransaction(async (tx: any) => {
+          const snap = await tx.get(projectRef);
+          if (!snap.exists) throw Object.assign(new Error('not_found'), { code: 'not_found' });
+
+          const data = snap.data() || {};
+          if (data.userId !== userId) throw Object.assign(new Error('not_found'), { code: 'not_found' });
+          if (data.status !== 'draft') {
+            throw Object.assign(new Error('already_sent'), { code: 'already_sent' });
+          }
+
+          const timelineEvents = [...(data.timelineEvents ?? []), event];
+
+          tx.update(projectRef, {
+            status: 'quote_requested',
+            quoteRequestedAt: nowIso,
+            instantCostSnapshot: costSnapshot,
+            timelineEvents,
+            updatedAt: nowIso,
+          });
+        });
+      } catch (txErr: any) {
+        if (txErr?.code === 'not_found') return err(notFoundError('Project', projectId));
+        if (txErr?.code === 'already_sent') return err(forbidden('This project has already been sent for a quote.'));
+        logger.error({ event: 'ProjectRfq: requestQuote tx failed', projectId, error: txErr?.message });
+        return err(internalError('Failed to submit the RFQ. Please try again.'));
+      }
+    } else {
+      const saved = await ProjectRepository.saveProjectRfq({
+        id: projectId,
+        status: 'quote_requested',
+        quoteRequestedAt: nowIso,
+        instantCostSnapshot: costSnapshot,
+        timelineEvents: [...(project.data.timelineEvents ?? []), event],
+        updatedAt: nowIso,
+      } as Partial<ProjectRFQ> & { id: string });
+      if (!saved.success) return err(saved.error);
+    }
+
+    // Emails are sent only after the transaction succeeds — the loser never
+    // reaches this point, preventing duplicate admin notifications.
     const contact = await projectOwnerContact(project.data);
     NotificationService.sendAllAsync([
       ...(contact
@@ -142,6 +183,7 @@ export const ProjectRfqService = {
     logger.info({ event: 'ProjectRfq: Quote requested', projectId, userId, total: costSnapshot.total });
     return ok({ status: 'quote_requested', costSnapshot, partCount: parts.length });
   },
+
 
   /**
    * Customer counter-offer: appends a role:'user' message (server-stamped) and
@@ -176,22 +218,54 @@ export const ProjectRfqService = {
       timestamp: nowIso,
       ...(proposedPrice !== undefined ? { proposedPrice: Math.round(proposedPrice) } : {}),
     };
-    const negotiationHistory = [...(project.data.negotiationHistory ?? []), entry];
 
-    const saved = await ProjectRepository.saveProjectRfq({
-      id: projectId,
-      status: 'negotiation',
-      negotiationHistory,
-      updatedAt: nowIso,
-    } as Partial<ProjectRFQ> & { id: string });
-    if (!saved.success) return err(saved.error);
+    const { adminFirestore } = await import('@/lib/firebase-admin').then(m => m.getFirebaseAdmin());
+
+    if (adminFirestore) {
+      const projectRef = adminFirestore.collection('projectRFQs').doc(projectId);
+
+      try {
+        await adminFirestore.runTransaction(async (tx: any) => {
+          const snap = await tx.get(projectRef);
+          if (!snap.exists) throw Object.assign(new Error('not_found'), { code: 'not_found' });
+
+          const data = snap.data() || {};
+          if (data.userId !== userId) throw Object.assign(new Error('not_found'), { code: 'not_found' });
+
+          if (!['quotation_sent', 'negotiation'].includes(data.status)) {
+            throw Object.assign(new Error('forbidden_status'), { code: 'forbidden_status' });
+          }
+
+          const negotiationHistory = [...(data.negotiationHistory ?? []), entry];
+          tx.update(projectRef, {
+            status: 'negotiation',
+            negotiationHistory,
+            updatedAt: nowIso,
+          });
+        });
+      } catch (txErr: any) {
+        if (txErr?.code === 'not_found') return err(notFoundError('Project', projectId));
+        if (txErr?.code === 'forbidden_status') return err(forbidden('You can negotiate only after a quotation has been sent.'));
+        logger.error({ event: 'ProjectRfq: negotiate tx failed', projectId, error: txErr?.message });
+        return err(internalError('Failed to send negotiation message. Please try again.'));
+      }
+    } else {
+      const negotiationHistory = [...(project.data.negotiationHistory ?? []), entry];
+      const saved = await ProjectRepository.saveProjectRfq({
+        id: projectId,
+        status: 'negotiation',
+        negotiationHistory,
+        updatedAt: nowIso,
+      } as Partial<ProjectRFQ> & { id: string });
+      if (!saved.success) return err(saved.error);
+    }
 
     const contact = await projectOwnerContact(project.data);
     NotificationService.sendAsync({
       type: 'admin_negotiation_customer_reply',
       customerName: contact?.name || project.data.userName || 'Customer',
       customerEmail: contact?.email || '',
-      projectName: project.data.projectName,
+      projectName: project.data.projectName || 'Project',
       projectId,
       customerMessage: trimmed,
       ...(proposedPrice !== undefined ? { proposedPrice: Math.round(proposedPrice) } : {}),

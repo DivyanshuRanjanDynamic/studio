@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest, forbiddenResponse, checkVerification, authorizeRoles, unauthorizedResponse } from '@/lib/auth-middleware';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { QuotationRepository } from '@/repositories/quotation.repository';
-import { ProjectRepository } from '@/repositories/project.repository';
 import { logger } from '@/utils/logger';
 import { nanoid } from 'nanoid';
 import { NegotiationEntry } from '@/models/quotation.model';
@@ -27,81 +25,90 @@ export async function PATCH(
     const { adminFirestore } = getFirebaseAdmin();
     if (!adminFirestore) return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
 
-    // 1. Get existing quotation
-    const quoteResult = await QuotationRepository.getQuotationById(quotationId);
-    if (!quoteResult.success) return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
-    const quotation = quoteResult.data;
-
-    if (quotation.rfqId !== projectId) {
-      return NextResponse.json({ error: 'Quotation project mismatch' }, { status: 400 });
-    }
-
-    // 2. Identify actor type
-    let actorType: 'vendor' | 'customer' | 'admin' | null = null;
-    if (auth.role === 'admin') actorType = 'admin';
-    else if (quotation.userId === auth.uid) actorType = 'customer';
-    else if (quotation.vendorId === auth.uid) actorType = 'vendor';
-
-    if (!actorType) {
-      return forbiddenResponse('You do not have permission to negotiate on this quote');
-    }
-
-    // 3. Parse and validate counter-offer
+    // Parse and validate counter-offer before entering the transaction
     const body = await req.json();
     const parsed = NegotiationSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid negotiation data', details: parsed.error.flatten() }, { status: 400 });
     }
 
-    // 4. Update Quotation
-    const nowIso = new Date().toISOString();
-    const newEntry: NegotiationEntry = {
-      party: actorType,
-      price: parsed.data.price,
-      leadTime: parsed.data.leadTime,
-      message: parsed.data.message,
-      createdAt: nowIso,
-    };
+    // ── P2 fix: atomic counter-offer ─────────────────────────────────────
+    // The entire read → status check → history append → write is wrapped in
+    // a single Firestore transaction.  Two concurrent counter-offers (e.g.
+    // vendor and customer both submit within 200 ms) now serialize: the
+    // second transaction re-reads the updated history and appends to it
+    // instead of overwriting the first party's message.
+    const quoteRef = adminFirestore.collection('quotations').doc(quotationId);
+    const projectRef = adminFirestore.collection('projectRFQs').doc(projectId);
 
-    const history = quotation.negotiationHistory || [];
-    
-    // Check if the current status allows negotiation
-    if (quotation.status === 'accepted' || quotation.status === 'declined' || quotation.status === 'cancelled') {
-      return forbiddenResponse(`Cannot negotiate on a ${quotation.status} quotation`);
-    }
+    const txResult = await adminFirestore.runTransaction(async (tx: any) => {
+      const [qSnap, pSnap] = await Promise.all([tx.get(quoteRef), tx.get(projectRef)]);
 
-    // A customer's counter-offer is only a proposal: quotedPrice (what Razorpay
-    // charges once accepted) changes only on a vendor or admin move.
-    const updatedQuotation = {
-      id: quotationId,
-      ...counterOfferFields(actorType, parsed.data.price, parsed.data.leadTime),
-      status: 'revised' as const,
-      negotiationHistory: [...history, newEntry],
-      updatedAt: nowIso,
-    };
+      if (!qSnap.exists) return { ok: false, code: 404, message: 'Quotation not found' };
+      const quotation = qSnap.data() || {};
 
-    const saveResult = await QuotationRepository.saveQuotation(updatedQuotation);
-    if (!saveResult.success) return NextResponse.json({ error: 'Failed to update quotation' }, { status: 500 });
+      if (quotation.rfqId !== projectId) {
+        return { ok: false, code: 400, message: 'Quotation project mismatch' };
+      }
 
-    // 5. Timeline Event on Project
-    const timelineEvent = {
-      id: `evt_${nanoid(9)}`,
-      type: 'QUOTATION_NEGOTIATED',
-      projectId: projectId,
-      actorType,
-      actorId: auth.uid,
-      content: `${actorType === 'vendor' ? 'MechMaster' : actorType.toUpperCase()} made a counter-offer: ₹${parsed.data.price} in ${parsed.data.leadTime} days.`,
-      channel: 'internal' as const,
-      timestamp: nowIso,
-    };
+      // Identify actor type
+      let actorType: 'vendor' | 'customer' | 'admin' | null = null;
+      if (auth.role === 'admin') actorType = 'admin';
+      else if (quotation.userId === auth.uid) actorType = 'customer';
+      else if (quotation.vendorId === auth.uid) actorType = 'vendor';
 
-    const projectResult = await ProjectRepository.getProjectRfqById(projectId);
-    if (projectResult.success) {
-      const project = projectResult.data;
-      await ProjectRepository.saveProjectRfq({
-        id: projectId,
-        timelineEvents: [...(project.timelineEvents || []), timelineEvent],
+      if (!actorType) {
+        return { ok: false, code: 403, message: 'You do not have permission to negotiate on this quote' };
+      }
+
+      // Status guard
+      if (['accepted', 'declined', 'cancelled'].includes(quotation.status)) {
+        return { ok: false, code: 409, message: `Cannot negotiate on a ${quotation.status} quotation` };
+      }
+
+      const nowIso = new Date().toISOString();
+      const newEntry: NegotiationEntry = {
+        party: actorType,
+        price: parsed.data.price,
+        leadTime: parsed.data.leadTime,
+        message: parsed.data.message,
+        createdAt: nowIso,
+      };
+
+      const history = quotation.negotiationHistory || [];
+
+      // A customer's counter-offer is only a proposal: quotedPrice (what Razorpay
+      // charges once accepted) changes only on a vendor or admin move.
+      tx.update(quoteRef, {
+        ...counterOfferFields(actorType, parsed.data.price, parsed.data.leadTime),
+        status: 'revised',
+        negotiationHistory: [...history, newEntry],
+        updatedAt: nowIso,
       });
+
+      // Append timeline event to the project (also transactional, preventing
+      // lost events when two counter-offers race).
+      if (pSnap.exists) {
+        const project = pSnap.data() || {};
+        const timelineEvents = project.timelineEvents || [];
+        timelineEvents.push({
+          id: `evt_${nanoid(9)}`,
+          type: 'QUOTATION_NEGOTIATED',
+          projectId,
+          actorType,
+          actorId: auth.uid,
+          content: `${actorType === 'vendor' ? 'MechMaster' : actorType.toUpperCase()} made a counter-offer: ₹${parsed.data.price} in ${parsed.data.leadTime} days.`,
+          channel: 'internal' as const,
+          timestamp: nowIso,
+        });
+        tx.update(projectRef, { timelineEvents, updatedAt: nowIso });
+      }
+
+      return { ok: true };
+    });
+
+    if (!txResult.ok) {
+      return NextResponse.json({ error: txResult.message }, { status: txResult.code });
     }
 
     return NextResponse.json({ success: true });

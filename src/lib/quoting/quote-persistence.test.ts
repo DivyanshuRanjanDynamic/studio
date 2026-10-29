@@ -90,6 +90,9 @@ const address = {
 function orderInput(items: Array<{ id: string; fileName: string; quote: Record<string, unknown> }>) {
   return {
     userId: 'user_1',
+    // C2 fix: idempotencyKey is now required by orderCreateSchema.
+    // Tests use a deterministic stub value so snapshot comparisons stay stable.
+    idempotencyKey: 'test-idem-key-0001',
     items,
     shopItems: [],
     shippingAddress: address,

@@ -11,6 +11,8 @@ import { ErrorCode } from '@/utils/errors';
 const getProductsByIds = vi.fn();
 const saveOrder = vi.fn();
 const authenticateRequest = vi.fn();
+// BUG-3 fix: createOrder now runs a Firestore transaction for shop items — mock Firebase Admin.
+const mockRunTransaction = vi.fn();
 
 vi.mock('@/repositories/product.repository', () => ({
   ProductRepository: { getProductsByIds: (...a: unknown[]) => getProductsByIds(...a) },
@@ -28,6 +30,14 @@ vi.mock('@/lib/auth-middleware', () => ({
 vi.mock('@/lib/rate-limit', () => ({
   rateLimit: async () => ({ success: true, remaining: 9, reset: Date.now() }),
   rateLimitResponse: () => new Response(null, { status: 429 }),
+}));
+vi.mock('@/lib/firebase-admin', () => ({
+  getFirebaseAdmin: () => ({
+    adminFirestore: {
+      collection: () => ({ doc: () => ({ id: 'mock_order_id' }) }),
+      runTransaction: (...a: unknown[]) => mockRunTransaction(...a),
+    },
+  }),
 }));
 
 const address = {
@@ -72,7 +82,17 @@ beforeEach(() => {
   getProductsByIds.mockReset();
   saveOrder.mockReset();
   authenticateRequest.mockReset();
+  mockRunTransaction.mockReset();
   saveOrder.mockImplementation(async (o: { id: string }) => ok(o.id));
+  // Default: transaction succeeds with enough stock for the test product.
+  mockRunTransaction.mockImplementation(async (fn: (tx: any) => Promise<any>) => {
+    const tx = {
+      get: async () => ({ exists: true, data: () => ({ inventory: 50, name: 'M6 Bolt Kit' }) }),
+      update: () => {},
+      set: () => {},
+    };
+    return fn(tx);
+  });
 });
 
 describe('CheckoutService prices shop items from the catalogue', () => {

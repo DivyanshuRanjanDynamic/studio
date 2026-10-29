@@ -25,25 +25,40 @@ export async function PATCH(
 
   const { id } = await params;
   const appRef = adminFirestore.collection('vendorApplications').doc(id);
-  const appSnap = await appRef.get();
+  const nowIso = new Date().toISOString();
+  let appData: any = null;
+  let alreadyApproved = false;
 
-  if (!appSnap.exists) {
-    return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+  try {
+    await adminFirestore.runTransaction(async (tx: any) => {
+      const snap = await tx.get(appRef);
+      if (!snap.exists) {
+        throw Object.assign(new Error('not_found'), { code: 'not_found' });
+      }
+      const data = snap.data()!;
+      appData = data;
+      if (data.status === 'approved') {
+        alreadyApproved = true;
+        return;
+      }
+      tx.update(appRef, {
+        status: 'approved',
+        reviewedAt: nowIso,
+        reviewedBy: auth.uid,
+        updatedAt: nowIso,
+      });
+    });
+  } catch (err: any) {
+    if (err?.code === 'not_found') {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+    logger.error({ event: 'approve_vendor_tx_failed', id, error: err?.message });
+    return NextResponse.json({ error: 'Failed to approve application' }, { status: 500 });
   }
 
-  const appData = appSnap.data()!;
-  if (appData.status === 'approved') {
+  if (alreadyApproved) {
     return NextResponse.json({ success: true, status: 'approved' });
   }
-
-  const nowIso = new Date().toISOString();
-
-  await appRef.update({
-    status: 'approved',
-    reviewedAt: nowIso,
-    reviewedBy: auth.uid,
-    updatedAt: nowIso,
-  });
 
   if (appData.userId) {
     const batch = adminFirestore.batch();

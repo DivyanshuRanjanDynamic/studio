@@ -53,6 +53,8 @@ export interface QuoteOrder {
   readonly isBalance?: boolean;
   readonly advancePercentage?: number;
   readonly createdAt: string;
+  /** True when shop-item stock was decremented atomically at order creation time. */
+  readonly shopStockReserved?: boolean;
   readonly paidAt?: string;
   readonly shippedAt?: string;
   readonly estimatedDeliveryDate?: string;

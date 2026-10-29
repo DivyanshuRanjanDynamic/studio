@@ -1,4 +1,5 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { NotificationService } from '@/services/notification.service';
 import { projectOwnerContact } from '@/lib/project-contact';
 import { calculateProjectFinances } from '@/utils/finance';
@@ -269,32 +270,42 @@ export const PaymentFulfilmentService = {
       }
 
       const items: Array<{ id: string; name?: string; quantity: number }> = Array.isArray(order.items) ? order.items : [];
-      const products = await Promise.all(items.map((item) => tx.get(db.collection('products').doc(item.id))));
 
       const now = new Date().toISOString();
       const expected = expectedOrderPaise(order);
       if (differs(payment.amountPaise, expected)) {
+        // Still need product refs for the amount-mismatch path
+        await Promise.all(items.map((item) => tx.get(db.collection('products').doc(item.id))));
         return amountMismatch(tx, orderRef, 'paymentAnomaly', payment, expected, now);
       }
 
-      const short = items.filter((item, i) => !products[i].exists || Number(products[i].data()?.inventory ?? 0) < item.quantity);
-      if (short.length === 0) {
-        items.forEach((item, i) => {
-          tx.update(products[i].ref, {
-            inventory: Number(products[i].data()?.inventory ?? 0) - item.quantity,
-            updatedAt: now,
-          });
-        });
+      // BUG-3 fix: when stock was reserved atomically at order creation, skip the
+      // decrement here — it was already done. Only legacy orders (shopStockReserved
+      // absent/false) still need the read-check-decrement path.
+      let orderStatus: string;
+      if (order.shopStockReserved) {
+        orderStatus = 'paid';
       } else {
-        logger.error({
-          event: 'PaymentFulfilment: shop order paid but out of stock',
-          orderId,
-          productIds: short.map((item) => item.id),
-        });
+        const products = await Promise.all(items.map((item) => tx.get(db.collection('products').doc(item.id))));
+        const short = items.filter((item, i) => !products[i].exists || Number(products[i].data()?.inventory ?? 0) < item.quantity);
+        if (short.length === 0) {
+          // C6 fix: use FieldValue.increment for atomic decrement
+          items.forEach((item, i) => {
+            tx.update(products[i].ref, { inventory: FieldValue.increment(-item.quantity), updatedAt: now });
+          });
+          orderStatus = 'paid';
+        } else {
+          logger.error({
+            event: 'PaymentFulfilment: shop order paid but out of stock',
+            orderId,
+            productIds: short.map((item) => item.id),
+          });
+          orderStatus = 'stock_conflict';
+        }
       }
 
       tx.update(orderRef, {
-        status: short.length === 0 ? 'paid' : 'stock_conflict',
+        status: orderStatus,
         paymentStatus: 'paid',
         razorpayPaymentId: payment.razorpayPaymentId,
         paidAt: now,

@@ -15,6 +15,8 @@ import { orderCreateSchema, OrderCreateInput } from '@/validators/order.validato
 import { logger } from '@/utils/logger';
 import { nanoid } from 'nanoid';
 import { calculateProjectFinances, ProjectFinances } from '@/utils/finance';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 /** Cart totals are display copies; anything beyond rounding noise is rejected */
 const PRICE_TOLERANCE_INR = 0.01;
@@ -353,6 +355,51 @@ export const CheckoutService = {
       };
 
       // 4. Persistence
+      // ── BUG-3 fix: if the order contains shop items, the stock check and the order
+      // save must be ONE atomic operation so two concurrent orders can't both pass the
+      // inventory check for the same last unit.
+      //
+      // Previously resolveShopItems read stock non-transactionally; two requests would
+      // both see inventory=1 and both get 200, leaving the second customer to discover
+      // a stock_conflict only after paying.
+      if (shopItems.length > 0) {
+        const { adminFirestore: db } = getFirebaseAdmin();
+        if (!db) return err(internalError('Service unavailable'));
+
+        const shopItemsForReservation: Array<{ id: string; name: string; quantity: number }> = shopItems.map(
+          (item: any) => ({ id: item.id, name: item.name, quantity: Number(item.quantity) })
+        );
+
+        try {
+          const reservationNow = new Date().toISOString();
+          await db.runTransaction(async (tx: any) => {
+            for (const shopItem of shopItemsForReservation) {
+              const ref = db.collection('products').doc(shopItem.id);
+              const snap = await tx.get(ref);
+              const stock = Number(snap.data()?.inventory ?? 0);
+              if (!snap.exists || stock < shopItem.quantity) {
+                throw new AppError({
+                  code: ErrorCode.VALIDATION_FAILED,
+                  message: `"${shopItem.name}" stock changed — only ${stock} unit(s) available. Please refresh your cart.`,
+                  statusCode: 409,
+                });
+              }
+              tx.update(ref, { inventory: FieldValue.increment(-shopItem.quantity), updatedAt: reservationNow });
+            }
+            // Save order in the same transaction so the decrement and the record are atomic.
+            const cleanOrder = JSON.parse(JSON.stringify({ ...order, shopStockReserved: true }));
+            tx.set(db.collection('orders').doc(order.id), cleanOrder);
+          });
+        } catch (e: any) {
+          if (e instanceof AppError) return err(e);
+          logger.error({ event: 'CheckoutService: Stock reservation transaction failed', error: e.message });
+          return err(internalError('Could not reserve stock for shop items. Please try again.'));
+        }
+
+        logger.info({ event: 'CheckoutService: Order created (stock reserved)', orderId, orderNumber });
+        return ok({ ...order, shopStockReserved: true } as QuoteOrder);
+      }
+
       const saveResult = await OrderRepository.saveOrder(order);
       if (!saveResult.success) return err(saveResult.error);
 

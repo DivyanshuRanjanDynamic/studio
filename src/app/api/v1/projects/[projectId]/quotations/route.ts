@@ -57,63 +57,84 @@ export async function POST(
       return forbiddenResponse(`Project is not accepting bids (Status: ${canonical})`);
     }
 
-    // 3. Check for existing bid
-    const existingBid = await QuotationRepository.getVendorQuotationForRfq(projectId, auth.uid);
-    if (existingBid.success && existingBid.data) {
-      return NextResponse.json({ error: 'You have already submitted a bid for this project' }, { status: 409 });
-    }
-
-    // 4. Parse request body
+    // 4. Parse request body (before entering the transaction)
     const body = await req.json();
     const parsed = QuotationSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid bid data', details: parsed.error.flatten() }, { status: 400 });
     }
 
-    // 5. Create Quotation
+    // ── N1 fix: atomic bid creation ─────────────────────────────────────
+    // The duplicate-bid check, quotation doc creation, and project timeline
+    // append are all inside a single Firestore transaction.  Two concurrent
+    // submissions from the same vendor now serialize: the second transaction
+    // re-reads the sentinel doc and sees the first bid.
     const quotationId = `q_${nanoid(12)}`;
     const nowIso = new Date().toISOString();
-    
-    // We update project status to 'quotations_received' if it's currently 'submitted' or 'quote_requested'
-    // but in canonical terms, we stay in 'RFQ_SENT' or 'ACCEPTED'.
-    // Actually, Phase 2-A plan says: "Create a quotations document, push a timeline event".
+    const projectRef = adminFirestore.collection('projectRFQs').doc(projectId);
 
-    const quotation = {
-      id: quotationId,
-      rfqId: projectId,
-      userId: project.userId,
-      vendorId: auth.uid,
-      vendorName: userData.displayName || userData.businessName || 'Verified MechMaster',
-      quotedPrice: parsed.data.quotedPrice,
-      leadTimeDays: parsed.data.leadTimeDays,
-      notes: parsed.data.notes,
-      status: 'pending' as const,
-      negotiationHistory: [],
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
+    // Use a deterministic sentinel doc to detect duplicate bids atomically
+    const sentinelId = `bid_${projectId}_${auth.uid}`;
+    const sentinelRef = adminFirestore.collection('quotation_bids').doc(sentinelId);
 
-    const saveResult = await QuotationRepository.saveQuotation(quotation);
-    if (!saveResult.success) return NextResponse.json({ error: 'Failed to save bid' }, { status: 500 });
+    const txResult = await adminFirestore.runTransaction(async (tx: any) => {
+      // Check for existing bid from this vendor (atomic read)
+      const sentinelSnap = await tx.get(sentinelRef);
+      if (sentinelSnap.exists) {
+        return { ok: false as const, code: 409, message: 'You have already submitted a bid for this project' };
+      }
 
-    // 6. Push Timeline Event to Project
-    const timelineEvent = {
-      id: `evt_${nanoid(9)}`,
-      type: 'QUOTATION_SUBMITTED',
-      projectId: projectId,
-      actorType: 'vendor' as const,
-      actorId: auth.uid,
-      content: `MechMaster submitted a bid of ₹${parsed.data.quotedPrice} with ${parsed.data.leadTimeDays} days lead time.`,
-      channel: 'internal' as const,
-      timestamp: nowIso,
-    };
+      // Re-read the project inside the transaction for the timeline append
+      const pSnap = await tx.get(projectRef);
+      if (!pSnap.exists) return { ok: false as const, code: 404, message: 'Project not found' };
+      const projectData = pSnap.data() || {};
 
-    await ProjectRepository.saveProjectRfq({
-      id: projectId,
-      workflowStatus: 'QUOTATION_SENT',
-      status: 'quotation_sent',
-      timelineEvents: [...(project.timelineEvents || []), timelineEvent],
+      const timelineEvent = {
+        id: `evt_${nanoid(9)}`,
+        type: 'QUOTATION_SUBMITTED',
+        projectId,
+        actorType: 'vendor' as const,
+        actorId: auth.uid,
+        content: `MechMaster submitted a bid of ₹${parsed.data.quotedPrice} with ${parsed.data.leadTimeDays} days lead time.`,
+        channel: 'internal' as const,
+        timestamp: nowIso,
+      };
+      const timelineEvents = [...(projectData.timelineEvents || []), timelineEvent];
+
+      // Claim the bid slot (sentinel)
+      tx.set(sentinelRef, { rfqId: projectId, vendorId: auth.uid, quotationId, createdAt: nowIso });
+
+      // Create the quotation document
+      const quoteRef = adminFirestore.collection('quotations').doc(quotationId);
+      tx.set(quoteRef, {
+        id: quotationId,
+        rfqId: projectId,
+        userId: project.userId,
+        vendorId: auth.uid,
+        vendorName: userData.displayName || userData.businessName || 'Verified MechMaster',
+        quotedPrice: parsed.data.quotedPrice,
+        leadTimeDays: parsed.data.leadTimeDays,
+        notes: parsed.data.notes,
+        status: 'pending',
+        negotiationHistory: [],
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      });
+
+      // Update the project timeline and status atomically
+      tx.update(projectRef, {
+        workflowStatus: 'QUOTATION_SENT',
+        status: 'quotation_sent',
+        timelineEvents,
+        updatedAt: nowIso,
+      });
+
+      return { ok: true as const };
     });
+
+    if (!txResult.ok) {
+      return NextResponse.json({ error: txResult.message }, { status: txResult.code });
+    }
 
     return NextResponse.json({ success: true, quotationId });
   } catch (error: any) {

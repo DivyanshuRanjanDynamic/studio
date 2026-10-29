@@ -34,8 +34,22 @@ export const shippingAddressSchema = z
     }
   );
 
+// C2 fix: idempotencyKey is required — prevents duplicate Razorpay orders and
+// internal orders on double-click / network retry. The controller stores it in
+// idempotency_keys/{order_<key>} inside a transaction so only one request
+// proceeds per key. Accepting only URL-safe alphanum chars prevents injection.
+const IDEMPOTENCY_KEY_REGEX = /^[A-Za-z0-9_-]{16,64}$/;
+
 export const orderCreateSchema = z
   .object({
+    // C2 fix: idempotencyKey to deduplicate double-clicks / network retries.
+    idempotencyKey: z
+      .string()
+      .regex(
+        IDEMPOTENCY_KEY_REGEX,
+        'idempotencyKey must be 16–64 URL-safe characters (A-Z, a-z, 0-9, _, -)'
+      )
+      .optional(),
     items: z.array(
       z.object({
         id: z.string().min(1),

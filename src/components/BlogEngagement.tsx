@@ -78,35 +78,30 @@ export function BlogEngagement({ slug }: BlogEngagementProps) {
     const userId = auth.currentUser.uid;
 
     try {
-      const docSnap = await getDoc(docRef);
-
-      if (!docSnap.exists()) {
-        // First interaction, create document
-        await setDoc(docRef, {
-          likes: 1,
-          likedBy: [userId],
-        });
-        setLikes(1);
-        setIsLiked(true);
-      } else {
-        // Document exists, update it
-        if (isLiked) {
-          // Unlike
-          await updateDoc(docRef, {
+      if (isLiked) {
+        // Unlike atomically
+        await setDoc(
+          docRef,
+          {
             likes: increment(-1),
             likedBy: arrayRemove(userId),
-          });
-          setLikes((l) => Math.max(0, l - 1));
-          setIsLiked(false);
-        } else {
-          // Like
-          await updateDoc(docRef, {
+          },
+          { merge: true }
+        );
+        setLikes((l) => Math.max(0, l - 1));
+        setIsLiked(false);
+      } else {
+        // Like atomically (works even if doc does not exist yet)
+        await setDoc(
+          docRef,
+          {
             likes: increment(1),
             likedBy: arrayUnion(userId),
-          });
-          setLikes((l) => l + 1);
-          setIsLiked(true);
-        }
+          },
+          { merge: true }
+        );
+        setLikes((l) => l + 1);
+        setIsLiked(true);
       }
     } catch (error) {
       console.error('Error updating likes:', error);

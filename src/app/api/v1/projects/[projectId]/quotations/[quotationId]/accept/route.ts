@@ -88,26 +88,34 @@ export async function POST(
         updatedAt: nowIso,
       });
 
-      // Decline all other pending quotes for this project
+      return { ok: true, nowIso };
+    });
+
+    if (!txResult.ok) {
+      return NextResponse.json({ error: txResult.message }, { status: txResult.code });
+    }
+
+    // Post-transaction: Decline all other pending/revised quotes for this project
+    try {
       const others = await adminFirestore.collection('quotations')
         .where('rfqId', '==', projectId)
         .where('status', 'in', ['pending', 'revised'])
         .get();
 
-      others.forEach((doc: any) => {
-        if (doc.id !== quotationId) {
-          tx.update(doc.ref, {
-            status: 'declined',
-            updatedAt: nowIso,
-          });
-        }
-      });
-
-      return { ok: true };
-    });
-
-    if (!txResult.ok) {
-      return NextResponse.json({ error: txResult.message }, { status: txResult.code });
+      if (!others.empty) {
+        const batch = adminFirestore.batch();
+        others.forEach((doc: any) => {
+          if (doc.id !== quotationId) {
+            batch.update(doc.ref, {
+              status: 'declined',
+              updatedAt: txResult.nowIso || new Date().toISOString(),
+            });
+          }
+        });
+        await batch.commit();
+      }
+    } catch (cleanupErr: any) {
+      logger.warn({ event: 'API: Decline other quotations post-tx cleanup failed', error: cleanupErr?.message });
     }
 
     return NextResponse.json({ success: true });

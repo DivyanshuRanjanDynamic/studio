@@ -42,8 +42,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
     }
 
+    const normalizedEmail = body.email.trim().toLowerCase();
+
     try {
-      await adminAuth.getUserByEmail(body.email);
+      await adminAuth.getUserByEmail(normalizedEmail);
       return NextResponse.json(
         {
           error: 'An account with this email already exists. Please login and contact support if needed.',
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
 
     const existingApplication = await adminFirestore
       .collection('vendorApplications')
-      .where('email', '==', body.email)
+      .where('email', '==', normalizedEmail)
       .get();
 
     const hasActiveApplication = existingApplication.docs.some((doc: any) =>
@@ -79,15 +81,28 @@ export async function POST(req: Request) {
       capabilities.push(body.otherCapability);
     }
 
-    const userRecord = await adminAuth.createUser({
-      email: body.email,
-      password: body.password,
-      displayName: body.ownerName,
-      emailVerified: false,
-    });
-    createdUid = userRecord.uid;
+    let userRecord;
+    try {
+      userRecord = await adminAuth.createUser({
+        email: normalizedEmail,
+        password: body.password,
+        displayName: body.ownerName,
+        emailVerified: false,
+      });
+      createdUid = userRecord.uid;
+    } catch (createError: any) {
+      if (createError?.code === 'auth/email-already-exists') {
+        return NextResponse.json(
+          {
+            error: 'An account with this email already exists. Please login and contact support if needed.',
+          },
+          { status: 409 }
+        );
+      }
+      throw createError;
+    }
 
-    const applicationRef = adminFirestore.collection('vendorApplications').doc();
+    const applicationRef = adminFirestore.collection('vendorApplications').doc(userRecord.uid);
     const userRef = adminFirestore.collection('users').doc(userRecord.uid);
 
     const nowIso = new Date().toISOString();

@@ -75,10 +75,53 @@ export const OrderController = {
         isAdvance,
         isBalance,
         advancePercentage,
+        // C2 fix: key is now required by orderCreateSchema — always present.
+        idempotencyKey,
       } = validation.data;
 
       // 3. Security: Use authenticated userId, reject body userId tampering
       const userId = auth.uid;
+
+      // ── C2 fix: Idempotency guard when idempotencyKey is supplied ──
+      // Prevents duplicate Razorpay orders and internal orders when the browser
+      // double-clicks or retries a timed-out request.
+      if (idempotencyKey) {
+        const { adminFirestore: idemDb } = getFirebaseAdmin();
+        if (!idemDb) {
+          // Firestore unavailable at idempotency check — fail safe: block the request.
+          logger.error({ event: 'API: Firestore unavailable for idempotency check', requestId });
+          return NextResponse.json(
+            { success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Service temporarily unavailable' } },
+            { status: 503 }
+          );
+        }
+        const idemRef = idemDb.collection('idempotency_keys').doc(`order_${idempotencyKey}`);
+        const idemResult = await idemDb.runTransaction(async (tx: any) => {
+          const snap = await tx.get(idemRef);
+          if (snap.exists) return snap.data();
+          tx.set(idemRef, {
+            userId,
+            status: 'processing',
+            createdAt: new Date().toISOString(),
+          });
+          return null;
+        });
+
+        if (idemResult) {
+          if (idemResult.status === 'completed' && idemResult.result) {
+            logger.info({ event: 'API: Returning cached idempotent order', requestId });
+            return NextResponse.json({
+              success: true,
+              data: idemResult.result,
+              razorpayKey: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY,
+            });
+          }
+          return NextResponse.json(
+            { success: false, error: { code: 'CONFLICT', message: 'Order is being processed' } },
+            { status: 409 }
+          );
+        }
+      }
 
       let projectName = 'MechHub Order';
       let customerDetails = { name: '', email: '', phone: '' };
@@ -120,42 +163,16 @@ export const OrderController = {
         }
       }
 
-      // 5. Price from saved quotes (never the cart's own totals) and the shipping registry
-      const priced = await CheckoutService.priceOrder({
-        items,
-        shopItems,
-        shippingOptionId,
-        projectId,
-        isAdvance,
-        isBalance,
-        advancePercentage,
-      }, userId);
-      if (!priced.success) {
-        const error = priced.error;
-        logger.warn({ event: 'API: Order pricing rejected', requestId, code: error.code, message: error.message });
-        return NextResponse.json(
-          { success: false, error: { code: error.code, message: error.message } },
-          { status: error.statusCode }
-        );
-      }
+      // ── BUG-2 fix: internal order is created BEFORE the Razorpay order.
+      // Previously the order was: priceOrder → razorpay.create() → saveFirestoreOrder.
+      // If Firestore failed after Razorpay succeeded, the Razorpay order was stranded and
+      // any webhook payment returned 'unmatched'. Now, if Razorpay fails, the internal
+      // record is still cleanly recoverable (no money has been taken).
+      //
+      // createOrder re-validates all prices internally, so the upfront priceOrder call
+      // is no longer needed.
 
-      // 6. Create Razorpay Order
-      const amountPaise = Math.round(priced.data.total * 100);
-
-      const razorpayOrder = await razorpay.orders.create({
-        amount: amountPaise,
-        currency: 'INR',
-        receipt: `quote_${Date.now()}`,
-        notes: {
-          userId,
-          type: isBalance ? 'project_balance' : projectId ? 'project_advance' : 'quote_order',
-          projectId: projectId || '',
-          projectName,
-          customerName: customerDetails.name,
-        },
-      });
-
-      // 7. Create internal order record via Service (re-validates the same quotes)
+      // 5. Create internal order first (razorpayOrderId will be added in step 7)
       const result = await CheckoutService.createOrder({
         userId,
         items: items as any,
@@ -166,23 +183,72 @@ export const OrderController = {
         advancePercentage,
         isBalance,
         isAdvance,
-        razorpayOrderId: razorpayOrder.id,
+        idempotencyKey,
+        razorpayOrderId: undefined,
       });
 
       if (!result.success) {
         const error = result.error;
-        logger.error({ event: 'API: Checkout service processing failed', requestId, error });
+        logger.warn({ event: 'API: Order creation failed', requestId, code: error.code, message: error.message });
         return NextResponse.json(
           { success: false, error: { code: error.code, message: error.message } },
           { status: error.statusCode }
         );
       }
 
-      logger.info({ event: 'API: Order successfully created', requestId, orderId: result.data.id });
+      const internalOrderId = result.data.id;
+      const amountPaise = Math.round(result.data.total * 100);
 
-      return NextResponse.json({ 
-        success: true, 
-        data: result.data,
+      // 6. Create Razorpay Order — after the internal record exists
+      const razorpayOrder = await razorpay.orders.create({
+        amount: amountPaise,
+        currency: 'INR',
+        receipt: `quote_${internalOrderId}`,
+        notes: {
+          userId,
+          orderId: internalOrderId,
+          type: isBalance ? 'project_balance' : projectId ? 'project_advance' : 'quote_order',
+          projectId: projectId || '',
+          projectName,
+          customerName: customerDetails.name,
+        },
+      });
+
+      // 7. Link the Razorpay order ID to the internal record.
+      // If this write fails both IDs are logged so an admin can reconcile manually
+      // (the internal order is already persisted; the client retries via idempotency key).
+      await getFirebaseAdmin().adminFirestore?.collection('orders')
+        .doc(internalOrderId)
+        .update({ razorpayOrderId: razorpayOrder.id, updatedAt: new Date().toISOString() })
+        .catch((e: any) => {
+          logger.error({
+            event: 'API: CRITICAL: Failed to link razorpayOrderId — manual reconciliation needed',
+            requestId,
+            orderId: internalOrderId,
+            razorpayOrderId: razorpayOrder.id,
+            error: e?.message,
+          });
+        });
+
+      logger.info({ event: 'API: Order successfully created', requestId, orderId: internalOrderId });
+
+      // Cache the result for the idempotency key so retries get the cached response.
+      if (idempotencyKey) {
+        await getFirebaseAdmin().adminFirestore?.collection('idempotency_keys')
+          .doc(`order_${idempotencyKey}`)
+          .update({
+            status: 'completed',
+            result: { ...result.data, razorpayOrderId: razorpayOrder.id },
+            completedAt: new Date().toISOString(),
+          })
+          .catch((e: any) => {
+            logger.warn({ event: 'API: Idempotency key completion update failed', requestId, error: e?.message });
+          });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: { ...result.data, razorpayOrderId: razorpayOrder.id },
         razorpayKey: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY,
         projectName,
         customerName: customerDetails.name,

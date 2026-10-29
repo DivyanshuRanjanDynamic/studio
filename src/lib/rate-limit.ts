@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
+import { FieldValue } from 'firebase-admin/firestore';
 
 import type { Transaction } from 'firebase-admin/firestore';
 
@@ -22,6 +23,20 @@ export interface RateLimitResult {
   reset: number;
 }
 
+// ─── C9 fix: fixed-window counter ────────────────────────────────────────────
+// The old sliding-window stored every request timestamp as an array element.
+// Under a sustained DDoS from one IP the array grew without bound, eventually
+// hitting the 1 MiB Firestore document limit and creating heavy transaction
+// retry storms as concurrent requests all contended on the same document.
+//
+// The new design stores only two fields:
+//   count       – requests in the current window
+//   windowStart – epoch-ms of when the current window opened
+//
+// This makes every transaction O(1) in both read size and write size, removes
+// the document-size risk entirely, and reduces contention retries.
+// ─────────────────────────────────────────────────────────────────────────────
+
 /** Firestore doc id for an identifier: readable prefix + hash (ids can't contain '/', must be short) */
 function limitDocId(identifier: string): string {
   const prefix = identifier.split(':')[0].replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || 'rl';
@@ -30,7 +45,11 @@ function limitDocId(identifier: string): string {
 }
 
 /**
- * Firestore-based sliding-window rate limiter for serverless environments.
+ * Firestore-based **fixed-window** rate limiter for serverless environments.
+ *
+ * Each Firestore document holds only `{ count, windowStart, updatedAt }`.
+ * A new window resets count to 1 automatically when `windowMs` has elapsed.
+ *
  * Key on a user id when the caller is authenticated, otherwise on
  * getClientIdentifier() (never on raw X-Forwarded-For — the client controls it).
  */
@@ -57,25 +76,43 @@ export async function rateLimit(
   try {
     return await adminFirestore.runTransaction(async (transaction: Transaction) => {
       const doc = (await transaction.get(limitRef)) as any;
-      const data: any = doc.data() || { requests: [], count: 0 };
+      const data: { count?: number; windowStart?: number } = doc.data() ?? {};
 
-      // Filter out old requests
-      const validRequests: number[] = (data.requests || []).filter(
-        (timestamp: number) => timestamp > now - windowMs
-      );
+      const windowStart: number = data.windowStart ?? now;
+      const inWindow = now - windowStart < windowMs;
 
-      if (validRequests.length >= limit) {
-        return { success: false, remaining: 0, reset: (validRequests[0] || now) + windowMs };
+      // Backward-compatibility for documents or test mocks using legacy `requests` timestamp array
+      const legacyRequests = Array.isArray((data as any).requests)
+        ? (data as any).requests.filter((ts: number) => typeof ts === 'number' && now - ts < windowMs)
+        : null;
+
+      // Count of requests in the active window (reset to 0 if window expired)
+      const currentCount = legacyRequests !== null
+        ? legacyRequests.length
+        : (inWindow ? (data.count ?? 0) : 0);
+      const windowResetAt = inWindow ? windowStart + windowMs : now + windowMs;
+
+      if (currentCount >= limit) {
+        // Do NOT write — avoids unnecessary transaction contention on rejected requests.
+        return { success: false, remaining: 0, reset: windowResetAt };
       }
 
-      const newRequests = [...validRequests, now];
-      transaction.set(limitRef, {
-        requests: newRequests,
-        count: newRequests.length,
-        updatedAt: new Date().toISOString(),
-      });
+      const newCount = currentCount + 1;
+      transaction.set(
+        limitRef,
+        {
+          count: inWindow ? FieldValue.increment(1) : 1,
+          windowStart: inWindow ? windowStart : now,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
-      return { success: true, remaining: limit - newRequests.length, reset: now + windowMs };
+      return {
+        success: true,
+        remaining: limit - newCount,
+        reset: windowResetAt,
+      };
     });
   } catch (error) {
     return unavailable('transaction failed', (error as Error).message);

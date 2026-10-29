@@ -39,7 +39,13 @@ function setPath(obj: Doc, path: string, value: unknown) {
   const keys = path.split('.');
   let cur = obj;
   for (const k of keys.slice(0, -1)) cur = cur[k] = typeof cur[k] === 'object' && cur[k] !== null ? cur[k] : {};
-  cur[keys[keys.length - 1]] = clone(value);
+  const lastKey = keys[keys.length - 1];
+  if (value && typeof value === 'object' && 'operand' in (value as any)) {
+    const prev = typeof cur[lastKey] === 'number' ? cur[lastKey] : 0;
+    cur[lastKey] = prev + Number((value as any).operand);
+  } else {
+    cur[lastKey] = clone(value);
+  }
 }
 
 function deepMerge(target: Doc, src: Doc) {

@@ -106,6 +106,43 @@ export const UserRepository = {
   },
 
   /**
+   * Atomically creates a user document only if one doesn't already exist.
+   * Uses a Firestore transaction so two concurrent provision/session requests
+   * can't both create the same user (TOCTOU race — C4 fix).
+   *
+   * Returns 'created' if the doc was created, 'existed' if it was already there.
+   */
+  async createUserIfNotExists(
+    user: Partial<User> & { id: string }
+  ): Promise<Result<'created' | 'existed', AppError>> {
+    try {
+      const { adminFirestore } = getFirebaseAdmin();
+      if (!adminFirestore) {
+        logger.error({ event: 'UserRepository: Admin Firestore unavailable for createUserIfNotExists', id: user.id });
+        return err(internalError('Service configuration error (Admin Firestore)'));
+      }
+
+      const ref = adminFirestore.collection(COLLECTION_NAME).doc(user.id);
+      const outcome = await adminFirestore.runTransaction(async (tx: any) => {
+        const snap = await tx.get(ref);
+        if (snap.exists) return 'existed' as const;
+        // Clean undefined values — Admin SDK rejects them
+        const cleanData = JSON.parse(JSON.stringify({
+          ...user,
+          updatedAt: new Date().toISOString(),
+        }));
+        tx.set(ref, cleanData);
+        return 'created' as const;
+      });
+
+      return ok(outcome);
+    } catch (e: any) {
+      logger.error({ event: 'UserRepository: createUserIfNotExists failed', error: e.message, id: user.id });
+      return err(internalError('Database error while creating user'));
+    }
+  },
+
+  /**
    * Fetches users by role.
    */
   async getUsersByRole(role: UserRole): Promise<Result<User[], AppError>> {
