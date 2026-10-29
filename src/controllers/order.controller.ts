@@ -98,13 +98,17 @@ export const OrderController = {
         const idemRef = idemDb.collection('idempotency_keys').doc(`order_${idempotencyKey}`);
         const idemResult = await idemDb.runTransaction(async (tx: any) => {
           const snap = await tx.get(idemRef);
-          if (snap.exists) return snap.data();
-          tx.set(idemRef, {
-            userId,
-            status: 'processing',
-            createdAt: new Date().toISOString(),
-          });
-          return null;
+          if (!snap.exists) {
+            tx.set(idemRef, { userId, status: 'processing', createdAt: new Date().toISOString() });
+            return null;
+          }
+          const data = snap.data();
+          // A previously failed attempt left status='failed': allow the retry to proceed.
+          if (data?.status === 'failed') {
+            tx.update(idemRef, { status: 'processing', retriedAt: new Date().toISOString() });
+            return null;
+          }
+          return data;
         });
 
         if (idemResult) {
@@ -116,6 +120,7 @@ export const OrderController = {
               razorpayKey: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY,
             });
           }
+          // status === 'processing': another request is actively creating the order
           return NextResponse.json(
             { success: false, error: { code: 'CONFLICT', message: 'Order is being processed' } },
             { status: 409 }
@@ -261,6 +266,14 @@ export const OrderController = {
         requestId,
         error: e,
       });
+      // Release the idempotency lock so the client can retry with the same key.
+      if (idempotencyKey) {
+        const { adminFirestore: failDb } = getFirebaseAdmin();
+        failDb?.collection('idempotency_keys')
+          .doc(`order_${idempotencyKey}`)
+          .update({ status: 'failed', failedAt: new Date().toISOString() })
+          .catch(() => {});
+      }
       return NextResponse.json(
         {
           success: false,

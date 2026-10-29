@@ -196,10 +196,14 @@ export async function POST(req: NextRequest) {
 
     // Phase 3: Conditional write — store the Razorpay order ID only if no
     // other request has stored one in the meantime.
+    // CRITICAL: capture the winning ID so the response always carries the
+    // ID that was actually stored — not the orphaned one created here.
+    let storedRazorpayOrderId = order.id;
     await db.runTransaction(async (tx: any) => {
       const snap = await tx.get(rfqRef);
       const current = snap.data()?.paymentStatus?.[paymentType];
       // If another request already stored a different Razorpay order ID, keep theirs
+      // and return THEIR id to the client (ours is orphaned — never stored).
       if (current?.razorpayOrderId && current.razorpayOrderId !== order.id) {
         logger.warn({
           event: 'API: Razorpay order race — keeping existing',
@@ -207,6 +211,7 @@ export async function POST(req: NextRequest) {
           existing: current.razorpayOrderId,
           orphaned: order.id,
         });
+        storedRazorpayOrderId = current.razorpayOrderId;
         return;
       }
       tx.update(rfqRef, {
@@ -217,7 +222,7 @@ export async function POST(req: NextRequest) {
 
     // ── Return the order details to the frontend ─────────────────────
     return NextResponse.json({
-      orderId: order.id,
+      orderId: storedRazorpayOrderId,
       amount: txResult.amountPaise,
       currency: 'INR',
       keyId: process.env.RAZORPAY_KEY_ID,
