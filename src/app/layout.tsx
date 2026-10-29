@@ -13,9 +13,8 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://www.mechhub.in'),
   title: 'MechHub',
   description: 'A Managed Marketplace for Custom Manufacturing Needs.',
-  alternates: {
-    canonical: '/',
-  },
+  // No canonical here: metadata is inherited, so a root canonical would mark every
+  // page without its own as a duplicate of the home page. Pages set their own.
   // Emitted only when the Search Console token is configured.
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && {
     verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION },

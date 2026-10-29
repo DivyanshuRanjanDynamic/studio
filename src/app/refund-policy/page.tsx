@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: 'Refund Policy | MechHub',
   description:
     'MechHub Refund Policy — clear guidelines on when and how refunds are processed for custom manufacturing orders.',
+  alternates: {
+    canonical: '/refund-policy',
+  },
 };
 
 export default function RefundPolicyPage() {

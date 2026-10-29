@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: 'NDA Policy | MechHub',
   description:
     'MechHub NDA Policy — how we protect your intellectual property, trade secrets, and proprietary designs throughout the manufacturing process.',
+  alternates: {
+    canonical: '/nda-policy',
+  },
 };
 
 export default function NdaPolicyPage() {

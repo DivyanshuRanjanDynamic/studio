@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'Terms of Service | MechHub',
   description:
     "MechHub Terms of Service — governing the use of India's precision manufacturing marketplace.",
+  alternates: {
+    canonical: '/terms-of-service',
+  },
 };
 
 export default function TermsPage() {

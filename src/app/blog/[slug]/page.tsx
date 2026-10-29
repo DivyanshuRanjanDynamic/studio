@@ -41,6 +41,9 @@ export async function generateMetadata({ params }: PostPageProps) {
   return {
     title: `${post.title} | MechHub Blog`,
     description: post.summary,
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
     openGraph: {
       title: post.title,
       description: post.summary,

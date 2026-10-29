@@ -8,6 +8,7 @@
  * [ ] Testimonials: Update "500+ builders" count with real number
  * [ ] MechMasterSection: Replace mock partner card with real MechMaster profiles
  */
+import type { Metadata } from 'next';
 import '@/components/home/landing.css';
 import { landingFontVars } from '@/components/home/fonts';
 import { cn } from '@/utils';
@@ -33,6 +34,12 @@ const TRUST_POINTS = [
   'Pan India Delivery',
   'Sustainable Manufacturing',
 ];
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default function Home() {
   return (

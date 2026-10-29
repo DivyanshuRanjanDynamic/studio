@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'Privacy Policy | MechHub',
   description:
     'MechHub Privacy Policy — how we collect, use, store, and protect your personal information.',
+  alternates: {
+    canonical: '/privacy-policy',
+  },
 };
 
 export default function PrivacyPolicyPage() {
