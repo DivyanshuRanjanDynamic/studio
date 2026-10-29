@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, useMemo, useEffect } from 'react';
+import { Fragment, Suspense, useCallback, useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
@@ -20,7 +20,7 @@ import {
   ChevronDown,
   ArrowUpRight,
 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -181,9 +181,18 @@ const TRUST_ITEMS = [
   'Pan-India Delivery',
 ];
 
+/**
+ * Reads the URL query in its own Suspense boundary. useSearchParams() suspends during
+ * static prerendering, so keeping it out of ShopPage lets the page shell prerender.
+ */
+function ShopSearchParams({ onChange }: { onChange: (params: ReadonlyURLSearchParams) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => onChange(searchParams), [searchParams, onChange]);
+  return null;
+}
+
 export default function ShopPage() {
   const db = useFirestore();
-  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -200,7 +209,8 @@ export default function ShopPage() {
 
   const { data: products, isLoading, error } = useCollection(productsRef);
 
-  useEffect(() => {
+  // Applies ?category / ?q / ?sort from the URL (see ShopSearchParams below).
+  const applySearchParams = useCallback((searchParams: ReadonlyURLSearchParams) => {
     const categoryFromParams = searchParams.get('category');
     const queryFromParams = searchParams.get('q');
     const sortFromParams = searchParams.get('sort') || searchParams.get('sortBy');
@@ -226,7 +236,7 @@ export default function ShopPage() {
         setSortBy(matched);
       }
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -318,6 +328,9 @@ export default function ShopPage() {
 
   return (
     <V2Shell noFooter>
+      <Suspense fallback={null}>
+        <ShopSearchParams onChange={applySearchParams} />
+      </Suspense>
       {/* Hero */}
       <section className="border-b border-lp-border bg-lp-bg">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20 text-center">

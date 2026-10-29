@@ -10,14 +10,14 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Lora', 'serif'],
-        headline: ['Cormorant Garamond', 'serif'],
-        heading: ['Instrument Serif', 'serif'],
-        libre: ['Libre Baskerville', 'serif'],
-        poppins: ['Poppins', 'sans-serif'],
+        // Variables come from next/font in src/app/fonts.ts
+        body: ['var(--font-lora)', 'serif'],
+        headline: ['var(--font-cormorant)', 'serif'],
+        heading: ['var(--font-instrument-serif)', 'serif'],
+        libre: ['var(--font-libre-baskerville)', 'serif'],
         code: ['monospace'],
         consolas: ['Consolas', 'Monaco', 'monospace'],
-        bankgothic: ['"BankGothic Md BT"', '"Bank Gothic Light"', 'Orbitron', 'sans-serif'],
+        bankgothic: ['"BankGothic Md BT"', '"Bank Gothic Light"', 'sans-serif'],
         'lp-sans': ['var(--lp-font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         'lp-serif': ['var(--lp-font-serif)', 'Georgia', 'serif'],
         'lp-mono': ['var(--lp-font-mono)', 'ui-monospace', 'monospace'],

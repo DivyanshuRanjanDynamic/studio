@@ -1,5 +1,3 @@
-'use client';
-
 import Image from 'next/image';
 import { CtaButton } from './primitives';
 
@@ -14,12 +12,14 @@ const PART_SIZES: Record<string, [number, number]> = {
   '/home/part-4.png': [399, 640],
   '/home/part-5.png': [290, 640],
 };
+// Four copies so each half of the -50% marquee loop is wider than a 1920px screen.
+// Copies reuse the same URLs, so the browser still downloads only five images.
 const PART_STRIP = [...PARTS, ...PARTS, ...PARTS, ...PARTS];
 
 
 // this part should be curved from the middle ,overall these parts moves but in curve line not straught line 
 
-export function Hero({ uploadHref }: { uploadHref: string }) {
+export function Hero() {
   return (
     <section className="lp-hero-dots relative flex min-h-[100svh] max-h-[1100px] flex-col overflow-hidden pt-28">
       <div className="mx-auto max-w-[1400px] px-4 text-center sm:px-5">
@@ -46,10 +46,15 @@ export function Hero({ uploadHref }: { uploadHref: string }) {
           {PART_STRIP.map((src, i) => {
             const [w, h] = PART_SIZES[src];
             return (
-              <div key={i} className="lp-hero-part" style={{ animationDelay: `${1100 + (i % 5) * 140}ms` }}>
+              <div
+                key={i}
+                className="lp-hero-part"
+                aria-hidden={i >= PARTS.length || undefined}
+                style={{ animationDelay: `${1100 + (i % 5) * 140}ms` }}
+              >
                 <Image
                   src={src}
-                  alt="Precision CNC part"
+                  alt={i < PARTS.length ? 'Precision CNC part' : ''}
                   width={w}
                   height={h}
                   priority={i < 5}
@@ -78,7 +83,7 @@ export function Hero({ uploadHref }: { uploadHref: string }) {
             startups, and hobbyists.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <CtaButton href={uploadHref}>Upload Your Design</CtaButton>
+            <CtaButton>Upload Your Design</CtaButton>
             <CtaButton href="/onboard" ghost>
               Become a MechMaster
             </CtaButton>

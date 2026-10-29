@@ -1,13 +1,11 @@
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Asterisk } from 'lucide-react';
-import { Reveal } from './primitives';
+import { Reveal, UploadLink } from './primitives';
 
 const BADGES = ['NDA Protected', '72hr Turnaround', 'Made in India', 'No Minimums'];
 
-export function FinalCTA({ uploadHref }: { uploadHref: string }) {
+export function FinalCTA() {
   return (
     <section className="lp-grid-bg relative overflow-hidden bg-lp-primary px-4 py-32 text-center text-lp-primary-fg sm:px-5">
       <Asterisk className="lp-spin-slow absolute -right-20 -top-20 size-96 opacity-10" strokeWidth={1} aria-hidden="true" />
@@ -22,12 +20,9 @@ export function FinalCTA({ uploadHref }: { uploadHref: string }) {
         </p>
       </Reveal>
       <Reveal delay={200} className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link
-          href={uploadHref}
-          className="lp-label-mono inline-flex items-center gap-2 rounded-sm bg-lp-bg px-5 py-3 text-lp-fg transition-transform hover:scale-105"
-        >
+        <UploadLink className="lp-label-mono inline-flex items-center gap-2 rounded-sm bg-lp-bg px-5 py-3 text-lp-fg transition-transform hover:scale-105">
           → Upload Your Design
-        </Link>
+        </UploadLink>
         <Link
           href="/contact"
           className="lp-label-mono inline-flex items-center gap-2 rounded-sm border border-lp-primary-fg px-5 py-3 transition-colors hover:bg-lp-primary-fg hover:text-lp-primary"

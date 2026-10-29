@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { Check, MapPin, Star } from 'lucide-react';
 import { Reveal, Tag } from './primitives';

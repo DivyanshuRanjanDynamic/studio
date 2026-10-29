@@ -1,8 +1,5 @@
-'use client';
-
-import Link from 'next/link';
 import { Upload } from 'lucide-react';
-import { Reveal, Tag } from './primitives';
+import { Reveal, Tag, UploadLink } from './primitives';
 
 const STEPS = [
   [
@@ -17,7 +14,7 @@ const STEPS = [
   ],
 ];
 
-export function HowItWorks({ uploadHref }: { uploadHref: string }) {
+export function HowItWorks() {
   return (
     <section id="process" className="mx-auto max-w-[1400px] scroll-mt-16 px-4 py-28 sm:px-5">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
@@ -37,8 +34,7 @@ export function HowItWorks({ uploadHref }: { uploadHref: string }) {
             </p>
           </Reveal>
           <Reveal delay={200} className="mt-8 max-w-md">
-            <Link
-              href={uploadHref}
+            <UploadLink
               className="lp-grid-bg flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-sm bg-lp-primary text-lp-primary-fg"
             >
               <Upload className="lp-floaty size-12" strokeWidth={1} />
@@ -48,7 +44,7 @@ export function HowItWorks({ uploadHref }: { uploadHref: string }) {
                 Your Design
               </span>
               <span className="lp-label-mono opacity-80">STEP / DXF / DWG</span>
-            </Link>
+            </UploadLink>
           </Reveal>
         </div>
 

@@ -55,7 +55,8 @@ export function Showreel() {
             <video
               ref={videoRef}
               src={VIDEO_URL}
-              poster="/brag.jpg"
+              // No `poster`: the optimized <Image> overlay below covers the video until
+              // playback starts, and a poster would download the full-size JPEG eagerly.
               preload="none"
               playsInline
               controls={started}

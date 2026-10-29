@@ -8,11 +8,8 @@
  * [ ] Testimonials: Update "500+ builders" count with real number
  * [ ] MechMasterSection: Replace mock partner card with real MechMaster profiles
  */
-'use client';
-
 import '@/components/home/landing.css';
 import { landingFontVars } from '@/components/home/fonts';
-import { useUser } from '@/firebase';
 import { cn } from '@/utils';
 
 import { HomeNav } from '@/components/home/HomeNav';
@@ -38,17 +35,11 @@ const TRUST_POINTS = [
 ];
 
 export default function Home() {
-  const { user } = useUser();
-
-  const uploadHref = user
-    ? '/dashboard?tab=projects'
-    : '/login?tab=register&redirect=/dashboard?tab=projects';
-
   return (
     <div className={cn('lp-root min-h-screen', landingFontVars)} suppressHydrationWarning>
       <HomeNav />
       <main>
-        <Hero uploadHref={uploadHref} />
+        <Hero />
         <Showreel />
         <div className="mt-16">
           <Marquee items={TRUST_POINTS} />
@@ -56,14 +47,14 @@ export default function Home() {
         <SegmentSection />
         <ServicesSection />
         <Marquee items={TRUST_POINTS} dark />
-        <HowItWorks uploadHref={uploadHref} />
+        <HowItWorks />
         <MaterialsCatalog />
         <PromiseSection />
         <WhyMechHub />
         <WordsBanner />
         <Testimonials />
         <MechMasterSection />
-        <FinalCTA uploadHref={uploadHref} />
+        <FinalCTA />
       </main>
       <HomeFooter />
     </div>
