@@ -71,6 +71,9 @@ export default function AboutClient() {
         </div>
       </section>
 
+      {/* Founders  */}
+
+
       {/* Mission */}
       <section className="py-20 md:py-28">
         <div className="mx-auto max-w-[1400px] px-4 sm:px-5">

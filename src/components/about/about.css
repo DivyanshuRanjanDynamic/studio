@@ -1,0 +1,544 @@
+﻿/*
+ * About page motion. Builds on the landing tokens in components/home/landing.css.
+ * Default styles are the finished state, so reduced motion and browsers without
+ * scroll timelines still get a complete page.
+ */
+
+/* â”€â”€ Hero blueprint: flat pattern is drawn, cut, then bent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.about-blueprint {
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.about-fold-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  perspective: 240cqw;
+}
+
+.about-fold-part {
+  position: relative;
+  width: 50cqw;
+  aspect-ratio: 120 / 64;
+  transform: translateY(6cqw) rotateX(58deg) rotateZ(-26deg);
+  transform-style: preserve-3d;
+}
+
+.about-fold-flange {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 120 / 34;
+  transform: rotateX(-90deg);
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+}
+
+.about-sheet {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.about-sheet-top {
+  fill: oklch(95% 0.012 260);
+}
+
+.about-fold-flange .about-sheet-top {
+  fill: oklch(84% 0.03 262);
+}
+
+.about-sheet-edge {
+  fill: oklch(66% 0.08 264);
+}
+
+.about-sheet-line {
+  fill: none;
+  stroke: oklch(100% 0 0);
+  stroke-width: 0.5;
+  stroke-dasharray: 1;
+}
+
+.about-dims {
+  opacity: 0;
+  fill: oklch(100% 0 0);
+  stroke: oklch(100% 0 0);
+  stroke-width: 0.25;
+}
+
+.about-dims text {
+  stroke: none;
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 3.2px;
+  letter-spacing: 0.04em;
+}
+
+.about-fold-shadow {
+  position: absolute;
+  inset: 4% -3% -10% 3%;
+  transform: translateZ(-1.4cqw);
+  background: oklch(20% 0.1 264 / 0.5);
+  filter: blur(2cqw);
+}
+
+.about-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+.about-caption:last-child {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .about-fold-stage {
+    animation: about-stage 13s linear infinite;
+  }
+
+  .about-fold-part {
+    animation: about-sway 13s var(--lp-ease-out) infinite;
+  }
+
+  .about-fold-flange {
+    animation: about-fold 13s var(--lp-ease-spring) infinite;
+  }
+
+  .about-fold-flange .about-sheet-top {
+    animation: about-shade 13s linear infinite;
+  }
+
+  .about-sheet-fill,
+  .about-fold-shadow {
+    animation: about-fill 13s linear infinite;
+  }
+
+  .about-sheet-line {
+    animation: about-draw 13s linear infinite;
+  }
+
+  .about-dims {
+    animation: about-dims 13s linear infinite;
+  }
+
+  .about-caption {
+    animation: about-caption 13s linear infinite;
+  }
+
+  .about-caption:nth-child(2) {
+    animation-name: about-caption-2;
+  }
+
+  .about-caption:nth-child(3) {
+    animation-name: about-caption-3;
+  }
+}
+
+/* â”€â”€ Scroll-lit statement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .about-lit {
+      view-timeline-name: --about-lit;
+    }
+
+    .about-lit-word {
+      animation: about-lit linear both;
+      animation-timeline: --about-lit;
+      animation-range: cover var(--from) cover calc(var(--from) + 7%);
+    }
+  }
+}
+
+/* â”€â”€ Platform flow: packets travelling between the three sides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.about-lane {
+  container-type: size;
+  position: relative;
+  height: 6.5rem;
+}
+
+.about-lane-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--rail);
+  border-left: 1px dashed oklch(var(--lp-ink-foreground) / 0.25);
+}
+
+.about-packet {
+  --to: 0 calc(100cqh - 100%);
+  position: absolute;
+  top: 0;
+  left: var(--rail);
+  margin-left: -1.6rem;
+  width: 3.2rem;
+  padding: 0.15rem 0;
+  text-align: center;
+  font-size: 0.6rem;
+  white-space: nowrap;
+  animation: about-packet 3.6s linear infinite;
+}
+
+.about-packet-back {
+  animation-direction: reverse;
+  animation-delay: -1.8s;
+}
+
+@media (min-width: 1024px) {
+  .about-lane {
+    height: auto;
+    min-height: 6rem;
+  }
+
+  .about-lane-rail {
+    top: var(--rail);
+    right: 0;
+    bottom: auto;
+    left: 0;
+    border-top: 1px dashed oklch(var(--lp-ink-foreground) / 0.25);
+    border-left: 0;
+  }
+
+  .about-packet {
+    --to: calc(100cqw - 100%) 0;
+    top: var(--rail);
+    left: 0;
+    margin-top: -0.65rem;
+    margin-left: 0;
+  }
+}
+
+/* â”€â”€ How it works: panels play when their step is on screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.about-rise {
+  opacity: 0;
+  translate: 0 12px;
+  transition:
+    opacity 0.5s var(--lp-ease-out),
+    translate 0.5s var(--lp-ease-out);
+  transition-delay: calc(var(--i, 0) * 130ms + 150ms);
+}
+
+:is(.lp-in, [data-on='true']) .about-rise {
+  opacity: 1;
+  translate: none;
+}
+
+.about-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.5s var(--lp-ease-out) 0.2s;
+}
+
+:is(.lp-in, [data-on='true']) .about-progress {
+  transform: none;
+}
+
+.about-truck {
+  left: 0;
+  transition:
+    left 1.8s var(--lp-ease-out) 0.2s,
+    translate 1.8s var(--lp-ease-out) 0.2s;
+}
+
+:is(.lp-in, [data-on='true']) .about-truck {
+  left: 100%;
+  translate: -100% 0;
+}
+
+/* â”€â”€ Service index â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.about-svc-row {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: color 0.35s var(--lp-ease-out);
+}
+
+.about-svc-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: oklch(var(--lp-primary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s var(--lp-ease-out);
+}
+
+.about-svc-row[data-active='true'] {
+  color: oklch(var(--lp-primary-foreground));
+}
+
+.about-svc-row[data-active='true']::before {
+  transform: none;
+}
+
+/* â”€â”€ Rolling numbers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.about-odo {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.about-odo > span {
+  display: block;
+  transform: translateY(-90%);
+  transition: transform 1.8s var(--lp-ease-spring) var(--delay, 0ms);
+}
+
+.about-odo i {
+  display: block;
+  height: 1em;
+  font-style: normal;
+}
+
+.lp-in .about-odo > span {
+  transform: translateY(calc(var(--digit) * -10%));
+}
+
+/* â”€â”€ Founder portraits: scanned in from blueprint blue to full colour â”€â”€â”€â”€â”€â”€â”€ */
+
+.about-portrait {
+  --scan: 1.5s;
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: oklch(var(--lp-primary));
+}
+
+.about-portrait-img {
+  transform: scale(var(--zoom, 1));
+  transition: transform 0.9s var(--lp-ease-out);
+}
+
+@media (hover: hover) {
+  .group:hover .about-portrait-img {
+    transform: scale(calc(var(--zoom, 1) * 1.04));
+  }
+}
+
+.about-portrait-tint {
+  position: absolute;
+  inset: 0;
+  filter: grayscale(1) contrast(1.1);
+  mix-blend-mode: luminosity;
+  opacity: 0.7;
+}
+
+.about-portrait-colour {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path var(--scan) cubic-bezier(0.6, 0, 0.3, 1) var(--delay, 0ms);
+}
+
+.lp-in .about-portrait-colour {
+  clip-path: inset(0);
+}
+
+.about-portrait-scan {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: oklch(100% 0 0);
+  box-shadow: 0 0 18px 4px oklch(var(--lp-primary));
+  opacity: 0;
+}
+
+.lp-in .about-portrait-scan {
+  animation: about-scan var(--scan) cubic-bezier(0.6, 0, 0.3, 1) var(--delay, 0ms) both;
+}
+
+.about-portrait-mark {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border: 0 solid oklch(100% 0 0);
+  mix-blend-mode: difference;
+}
+
+/* â”€â”€ Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+@keyframes about-stage {
+  0% {
+    opacity: 0;
+  }
+  3%,
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes about-sway {
+  0%,
+  48% {
+    transform: translateY(6cqw) rotateX(58deg) rotateZ(-26deg);
+  }
+  100% {
+    transform: translateY(6cqw) rotateX(58deg) rotateZ(-34deg);
+  }
+}
+
+@keyframes about-fold {
+  0%,
+  48% {
+    transform: rotateX(0deg);
+  }
+  66%,
+  100% {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes about-shade {
+  0%,
+  48% {
+    fill: oklch(95% 0.012 260);
+  }
+  66%,
+  100% {
+    fill: oklch(84% 0.03 262);
+  }
+}
+
+@keyframes about-draw {
+  0%,
+  4% {
+    stroke-dashoffset: 1;
+  }
+  28%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes about-fill {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  38%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes about-dims {
+  0%,
+  16% {
+    opacity: 0;
+  }
+  26%,
+  40% {
+    opacity: 1;
+  }
+  47%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes about-caption {
+  0%,
+  28% {
+    opacity: 1;
+  }
+  31%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes about-caption-2 {
+  0%,
+  29% {
+    opacity: 0;
+  }
+  32%,
+  46% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes about-caption-3 {
+  0%,
+  47% {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes about-lit {
+  from {
+    opacity: 0.14;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes about-packet {
+  0% {
+    translate: 0 0;
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    translate: var(--to);
+    opacity: 0;
+  }
+}
+
+@keyframes about-scan {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-packet {
+    display: none;
+  }
+
+  .about-portrait-scan {
+    display: none;
+  }
+}

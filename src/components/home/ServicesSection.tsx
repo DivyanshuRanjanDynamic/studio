@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Reveal, Tag } from './primitives';
 
-const SERVICES = [
+export const SERVICES = [
   {
     name: 'Precision Sheet Cutting',
     category: 'Sheet Metal',
