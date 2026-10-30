@@ -10,7 +10,7 @@ import { NextRequest } from 'next/server';
 import { collectionData as col, failNextFakeTransaction, fakeDb, resetFakeFirestore } from './fake-firestore';
 
 vi.mock('@/lib/firebase-admin', () => ({ getFirebaseAdmin: () => ({ adminFirestore: fakeDb }) }));
-vi.mock('@/firebase/config', () => ({ db: {} }));
+vi.mock('@/firebase/db', () => ({ db: {} }));
 const sendAllAsync = vi.fn();
 vi.mock('@/services/notification.service', () => ({ NotificationService: { sendAllAsync: (...a: unknown[]) => sendAllAsync(...a) } }));
 

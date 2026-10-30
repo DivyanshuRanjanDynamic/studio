@@ -1,5 +1,5 @@
 import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { db } from '@/firebase/db';
 import { Result, ok, err } from '@/utils/result';
 import { AppError, internalError, notFoundError } from '@/utils/errors';
 import { UploadedFile } from '@/types/quoting';

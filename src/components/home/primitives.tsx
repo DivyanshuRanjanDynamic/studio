@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Asterisk } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/provider';
 import { cn } from '@/utils';
 
 /** Fades/blurs its children up into place the first time they scroll into view. */

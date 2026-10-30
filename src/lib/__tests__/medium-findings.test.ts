@@ -11,7 +11,7 @@ import { collectionData as col, fakeDb, resetFakeFirestore } from './fake-firest
 
 const adminAuth = { updateUser: vi.fn(), createCustomToken: vi.fn() };
 vi.mock('@/lib/firebase-admin', () => ({ getFirebaseAdmin: () => ({ adminFirestore: fakeDb, adminAuth }) }));
-vi.mock('@/firebase/config', () => ({ db: {} }));
+vi.mock('@/firebase/db', () => ({ db: {} }));
 vi.mock('@/lib/rate-limit', () => ({
   rateLimit: async () => ({ success: true, remaining: 10, reset: Date.now() + 60_000 }),
   rateLimitResponse: () => new Response(null, { status: 429 }),

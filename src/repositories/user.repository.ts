@@ -1,4 +1,4 @@
-import { db } from '@/firebase/config';
+import { db } from '@/firebase/db';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { Result, ok, err } from '@/utils/result';
 import { AppError, internalError, notFoundError } from '@/utils/errors';

@@ -17,7 +17,7 @@ const fakeAdminFirestore = {
 vi.mock('@/lib/firebase-admin', () => ({
   getFirebaseAdmin: () => ({ adminFirestore: fakeAdminFirestore }),
 }));
-vi.mock('@/firebase/config', () => ({ db: {} }));
+vi.mock('@/firebase/db', () => ({ db: {} }));
 
 
 describe('QuotesRepository (Admin SDK path)', () => {

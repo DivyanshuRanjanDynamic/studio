@@ -1,4 +1,4 @@
-import { db } from '@/firebase/config';
+import { db } from '@/firebase/db';
 import { doc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase';
 

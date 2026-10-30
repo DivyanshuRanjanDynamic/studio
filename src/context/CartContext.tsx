@@ -1,8 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useUser, useFirestore, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import React, { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+import { useUser } from '@/firebase/provider';
+
+// Firestore sync for signed-in users, loaded on demand (see CartCloudSync).
+const CartCloudSync = dynamic(() => import('./CartCloudSync'), { ssr: false });
 
 export interface CartItem {
   id: string;
@@ -35,7 +38,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const { user } = useUser();
-  const db = useFirestore();
 
   // 1. Load from local storage on mount
   useEffect(() => {
@@ -58,30 +60,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mechhub_cart', JSON.stringify(items));
   }, [items]);
 
-  // 3. Sync with Firestore ONLY after initialization to prevent overwriting cloud with empty local state too early
-  useEffect(() => {
-    if (user && db && isInitialized) {
-      setDocumentNonBlocking(doc(db, 'users', user.uid), { cart: items }, { merge: true });
-    }
-  }, [items, user, db, isInitialized]);
-
-  // If user logs in, load cart from Firestore
-  const userDocRef = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return doc(db, 'users', user.uid);
-  }, [db, user]);
-
-  const { data: userData } = useDoc(userDocRef);
-
-  // Load from Firestore only ONCE on initialization
-  useEffect(() => {
-    if (userData && !isInitialized) {
-      if (userData.cart && Array.isArray(userData.cart) && items.length === 0) {
-        setItems(userData.cart);
-      }
-      setIsInitialized(true);
-    }
-  }, [userData, isInitialized, items.length]);
+  // 3. Signed-in users: CartCloudSync loads the saved cart once, then writes changes back.
+  // The saved cart only replaces an empty local cart.
+  const handleCloudCart = useCallback((cloudCart: CartItem[] | null) => {
+    if (cloudCart) setItems((prev) => (prev.length === 0 ? cloudCart : prev));
+    setIsInitialized(true);
+  }, []);
 
   const addItem = (newItem: CartItem) => {
     setItems((prev) => {
@@ -141,6 +125,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsCartOpen,
       }}
     >
+      {user && (
+        <CartCloudSync
+          uid={user.uid}
+          items={items}
+          isInitialized={isInitialized}
+          onCloudCart={handleCloudCart}
+        />
+      )}
       {children}
     </CartContext.Provider>
   );

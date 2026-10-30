@@ -8,7 +8,7 @@ import { collectionData as col, fakeDb, resetFakeFirestore } from './fake-firest
 // ═══════════════════════════════════════════════════
 
 vi.mock('@/lib/firebase-admin', () => ({ getFirebaseAdmin: () => ({ adminFirestore: fakeDb }) }));
-vi.mock('@/firebase/config', () => ({ db: {} }));
+vi.mock('@/firebase/db', () => ({ db: {} }));
 
 let caller: { uid: string; role: string; status: string };
 vi.mock('@/lib/auth-middleware', async (importOriginal) => ({

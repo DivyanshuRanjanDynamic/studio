@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
 import { ChevronRight, LayoutDashboard, LogOut, MapPin, Menu, Package, Pencil, ShoppingCart, User as UserIcon, X } from 'lucide-react';
-import { useAuth, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase/provider';
+import type { NavProfile } from './UserProfileSync';
 import { useCart } from '@/context/CartContext';
 import { CartSidebar } from '@/components/CartSidebar';
 import { useQuoteCartContext } from '@/context/QuoteCartContext';
@@ -19,6 +20,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getDashboardHrefByRole } from '@/lib/roles';
 import { cn } from '@/utils';
+
+// Profile lookup for signed-in users, loaded on demand (see UserProfileSync).
+const UserProfileSync = dynamic(() => import('./UserProfileSync'), { ssr: false });
 
 const NAV_LINKS = [
   { href: '/services', label: 'Services' },
@@ -34,18 +38,15 @@ const menuItemClass =
 export function HomeNav() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const db = useFirestore();
   const router = useRouter();
   const { totalItems, setIsCartOpen } = useCart();
   const quoteCart = useQuoteCartContext();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return doc(db, 'users', user.uid);
-  }, [db, user?.uid]);
-  const { data: profile } = useDoc(userProfileRef);
+  const [loadedProfile, setLoadedProfile] = useState<NavProfile | null>(null);
+  // Ignore a profile left over from a previous sign-in.
+  const profile = user ? loadedProfile : null;
 
   const displayName = profile?.fullName || user?.email?.split('@')[0] || 'Account';
   const role = profile?.role || 'customer';
@@ -84,6 +85,7 @@ export function HomeNav() {
 
   return (
     <>
+      {user && <UserProfileSync uid={user.uid} onProfile={setLoadedProfile} />}
       <header
         className={cn(
           'fixed inset-x-0 top-0 z-50 transition-all',
