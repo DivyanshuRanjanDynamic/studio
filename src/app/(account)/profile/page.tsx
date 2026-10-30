@@ -26,6 +26,7 @@ import {
   UserIcon,
 } from 'lucide-react';
 import { getDashboardHrefByRole } from '@/lib/roles';
+import { AccountLoader } from '@/components/PageLoaders';
 
 type ProfileSection = 'personal' | 'organization' | 'security' | 'preferences';
 
@@ -155,13 +156,7 @@ export default function ProfilePage() {
   };
 
   if (isUserLoading || isProfileLoading) {
-    return (
-      <V2Shell>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <Loader2 className="size-10 animate-spin text-lp-primary" />
-        </div>
-      </V2Shell>
-    );
+    return <AccountLoader />;
   }
 
   if (!user) return null;

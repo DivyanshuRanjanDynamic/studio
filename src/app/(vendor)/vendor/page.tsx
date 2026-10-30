@@ -62,6 +62,7 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import Image from 'next/image';
 import { isVendorRole } from '@/lib/roles';
+import { VendorLoader } from '@/components/PageLoaders';
 
 export default function VendorPortal() {
   const router = useRouter();
@@ -417,12 +418,7 @@ export default function VendorPortal() {
     }
   };
 
-  if (isVendorConfirmed === null || isUserLoading)
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
-    );
+  if (isVendorConfirmed === null || isUserLoading) return <VendorLoader />;
   if (!isVendorConfirmed) return null;
 
   return (

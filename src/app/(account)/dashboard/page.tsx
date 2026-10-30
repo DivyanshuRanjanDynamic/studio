@@ -97,6 +97,7 @@ import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { getIdTokenResult, signOut } from 'firebase/auth';
 import { CreateProjectModal } from '@/components/CreateProjectModal';
 import { calculateProjectFinances } from '@/utils/finance';
+import { AccountLoader } from '@/components/PageLoaders';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   // Legacy / Basic mappings
@@ -274,7 +275,9 @@ function UserDashboardContent() {
     if (currentTab === activeTab) return;
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', activeTab);
-    router.replace(`/dashboard?${params.toString()}`, { scroll: false });
+    // Native history update (Next.js keeps useSearchParams in sync): router.replace
+    // would send a server request for every tab click, and the tab state is local.
+    window.history.replaceState(null, '', `/dashboard?${params.toString()}`);
   }, [activeTab, router, searchParams]);
 
   const handleDashboardTabChange = (value: string) => {
@@ -784,12 +787,7 @@ function UserDashboardContent() {
     return Math.round(rfqsWithLead.reduce((s, r) => s + (r.leadTimeDays || 0), 0) / rfqsWithLead.length);
   }, [sortedRfqs]);
 
-  if (isUserLoading || !user)
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
+  if (isUserLoading || !user) return <AccountLoader />;
 
   if (!isProfileLoading && profile?.role === 'vendor_pending') {
     return (
@@ -1949,11 +1947,7 @@ function UserDashboardContent() {
 
 export default function UserDashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-lp-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lp-primary"></div>
-      </div>
-    }>
+    <Suspense fallback={<AccountLoader />}>
       <UserDashboardContent />
     </Suspense>
   );

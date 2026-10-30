@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
+import { AccountLoader } from '@/components/PageLoaders';
 
 function OrderConfirmationContent() {
   const params = useParams();
@@ -38,11 +39,7 @@ function OrderConfirmationContent() {
   const { data: order, isLoading, error } = useDoc(orderRef);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2F5FA7]"></div>
-      </div>
-    );
+    return <AccountLoader />;
   }
 
   if (error || !order) {
@@ -348,11 +345,7 @@ function OrderConfirmationContent() {
 
 export default function OrderConfirmationPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2F5FA7]"></div>
-      </div>
-    }>
+    <Suspense fallback={<AccountLoader />}>
       <OrderConfirmationContent />
     </Suspense>
   );

@@ -91,6 +91,7 @@ import { calculateProjectFinances } from '@/utils/finance';
 import { ProjectCostSummary } from '@/components/projects/ProjectCostSummary';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AccountLoader } from '@/components/PageLoaders';
 
 interface ProjectDetailPageProps {
   params: Promise<{ projectId: string }>;
@@ -821,11 +822,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
   // Only show full-page loader on INITIAL load (no cached data exists yet)
   if (isUserLoading || (isProjectLoading && !project)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-lp-bg">
-        <Loader2 className="w-8 h-8 text-lp-primary animate-spin" />
-      </div>
-    );
+    return <AccountLoader />;
   }
 
   // Only show error if we truly have NO data (not even cached) AND loading is done

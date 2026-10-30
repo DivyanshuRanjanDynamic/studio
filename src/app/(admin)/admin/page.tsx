@@ -138,6 +138,7 @@ import { ContactQueries } from '@/components/admin/ContactQueries';
 import { RfqInstantCosts } from '@/components/admin/RfqInstantCosts';
 import { PricingCalibration } from '@/components/admin/PricingCalibration';
 import { MechMasterDetailDrawer } from '@/components/admin/MechMasterDetailDrawer';
+import { AdminLoader } from '@/components/admin/AdminLoader';
 
 // Constants moved to @/config/constants
 
@@ -1143,15 +1144,7 @@ export default function AdminPanel() {
     }
   };
 
-  if (isAdminConfirmed === null || isUserLoading)
-    return (
-      <div className={`lp-root adm-dots flex min-h-screen items-center justify-center ${landingFontVars}`}>
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-5 animate-spin text-lp-primary" />
-          <span className="adm-mono text-lp-muted-fg">Loading admin panel</span>
-        </div>
-      </div>
-    );
+  if (isAdminConfirmed === null || isUserLoading) return <AdminLoader />;
   if (!isAdminConfirmed) return null;
 
   return (

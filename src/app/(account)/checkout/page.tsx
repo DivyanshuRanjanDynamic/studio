@@ -40,6 +40,7 @@ import { OrderConfirmation } from '@/components/checkout/OrderConfirmation';
 import { ShopCart } from '@/components/checkout/ShopCart';
 import { Badge as UI_Badge } from '@/components/ui/badge';
 import { resolveUserFriendlyMessage } from '@/lib/error-mapping';
+import { AccountLoader } from '@/components/PageLoaders';
 
 export default function CheckoutPage() {
   const shopCart = useCart();
@@ -85,11 +86,7 @@ export default function CheckoutPage() {
   }, [checkout.error, toast]);
 
   if (isUserLoading || !quoteCart.isInitialized) {
-    return (
-      <div className={cn('lp-root min-h-screen bg-lp-bg flex items-center justify-center', landingFontVars)}>
-        <Loader2 className="w-10 h-10 text-lp-primary animate-spin" />
-      </div>
-    );
+    return <AccountLoader />;
   }
 
   if (!user) return null;
