@@ -20,9 +20,9 @@ const OLD_WAY = [
 const MECHHUB_WAY = [
   ['Upload once. Get an instant or rapid quote.', ' One platform, one price.'],
   ['Real-time order tracking', ' from upload to delivery. Full visibility, always.'],
-  ['Order 1 part or 1000.', ' Zero minimums. Built for builders at every scale.'],
+  ['Order 1 part or 1000.', ' No minimum quantity, just a small minimum order value.'],
   ['Every design covered by NDA and encrypted', ' with AES-256. Your IP stays yours.'],
-  ['All services under one roof.', ' One order, one delivery, zero overhead.'],
+  ['All services through one partner network.', ' One order, one delivery, zero overhead.'],
 ];
 
 export function WhyMechHub() {

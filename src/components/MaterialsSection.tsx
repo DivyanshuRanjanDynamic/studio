@@ -327,7 +327,7 @@ export function MaterialsSection() {
           <ScrollReveal variant="fade-up" delay={150}>
             <p className="text-slate-500 text-sm sm:text-base max-w-lg mx-auto font-normal leading-relaxed mb-6">
               Every material is stocked, cut to order, and shipped fast.
-              <br className="hidden sm:inline" /> No minimums. No surprises.
+              <br className="hidden sm:inline" /> No minimum quantity. No surprises.
             </p>
           </ScrollReveal>
 

@@ -5,7 +5,7 @@ import { ServiceIndex } from './ServiceIndex';
 const DIGITS = Array.from({ length: 10 }, (_, digit) => digit);
 
 const NUMBERS = [
-  { value: '72', suffix: 'hr', label: 'Average turnaround' },
+  { value: '72', suffix: 'hr', label: 'Typical turnaround' },
   { value: '9', label: 'Manufacturing capabilities' },
   { value: '0', label: 'Minimum order quantity' },
   { value: '1', label: 'Platform for the whole order' },
@@ -46,7 +46,7 @@ export function AboutServices() {
           </Reveal>
           <Reveal delay={150} className="lg:self-end">
             <p className="max-w-md text-lp-muted-fg lg:ml-auto">
-              Cut it, machine it, bend it and finish it, all under one roof. One order, one delivery, zero overhead.
+              Cut it, machine it, bend it and finish it, all through our partner network. One order, one delivery, zero overhead.
             </p>
           </Reveal>
         </div>

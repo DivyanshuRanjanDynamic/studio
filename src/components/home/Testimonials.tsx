@@ -26,16 +26,14 @@ const TESTIMONIALS = [
   },
 ];
 
-// TODO: Update "500+ builders" count with real number
 const METRICS = [
-  ['500+', 'Builders on MechHub'],
-  ['72hr', 'Avg. Turnaround'],
-  ['150+', 'Active Projects'],
-  ['100%', 'NDA Protected'],
+  ['500+', 'Orders Delivered'],
+  ['72hr', 'Typical Turnaround'],
+  ['100+', 'Repeat Customers'],
+  ['10+', 'Active MechMasters'],
 ];
 
-// TODO: Replace with real university/company logos
-const TRUSTED_TEAMS = ['IIT Bombay', 'NIT Trichy', 'BITS Pilani', 'Startup Teams'];
+const AUDIENCES = ['Startups', 'College Clubs', 'Industrial Buyers', 'Businesses'];
 
 const BANNER_WORDS = [
   'Custom Manufacturing',
@@ -128,11 +126,11 @@ export function Testimonials() {
       </div>
 
       <div className="mt-10 text-center">
-        <p className="lp-label-mono text-lp-muted-fg">Trusted by Students, Startups and Innovation Teams</p>
+        <p className="lp-label-mono text-lp-muted-fg">Built for Teams That Make Real Things</p>
         <div className="mt-5 flex flex-wrap justify-center gap-x-12 gap-y-3 text-2xl text-lp-muted-fg">
-          {TRUSTED_TEAMS.map((team) => (
-            <span key={team} className="font-lp-serif italic transition-colors hover:text-lp-primary">
-              {team}
+          {AUDIENCES.map((audience) => (
+            <span key={audience} className="font-lp-serif italic transition-colors hover:text-lp-primary">
+              {audience}
             </span>
           ))}
         </div>

@@ -39,6 +39,7 @@ import { useSheetQuote } from '@/hooks/use-sheet-quote';
 import { useCncQuote } from '@/hooks/use-cnc-quote';
 import { useQuoteCartContext } from '@/context/QuoteCartContext';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import { useSavedQuote } from '@/hooks/use-saved-quote';
 import { isCncQuote, isSheetQuoteResult } from '@/lib/quoting/pricing-engine';
 import { getSheetMaterial } from '@/lib/quoting/sheet-rates';
@@ -743,6 +744,7 @@ function InstantQuoteContent() {
   const handleAddToCart = (): void => {
     if (reviewQuote && canOrder) {
       cart.addToCart(reviewQuote, reviewFileName);
+      trackEvent('add_to_cart', { currency: 'INR', value: Math.round(reviewQuote.totalPrice) });
       toast({
         title: 'Part added to cart',
         description: `${reviewFileName} · ${reviewQuote.parameters.quantity} pcs · ₹${Math.round(reviewQuote.totalPrice).toLocaleString('en-IN')}`,
@@ -753,6 +755,7 @@ function InstantQuoteContent() {
   const handleProceedToCheckout = (): void => {
     if (reviewQuote && canOrder) {
       cart.addToCart(reviewQuote, reviewFileName);
+      trackEvent('add_to_cart', { currency: 'INR', value: Math.round(reviewQuote.totalPrice) });
       router.push('/checkout');
     }
   };

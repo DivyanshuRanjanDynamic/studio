@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 
 export default function ContactClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,6 +41,7 @@ export default function ContactClient() {
         throw new Error(error.error || 'Submission failed');
       }
       setIsSubmitted(true);
+      trackEvent('contact_submitted');
       toast({ title: 'Message Sent!', description: "We'll get back to you within 24 hours." });
     } catch (err: any) {
       toast({ title: 'Something went wrong', description: err.message || 'Please try again later.', variant: 'destructive' });

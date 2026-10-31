@@ -9,6 +9,7 @@ import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Check, Loader2, FileText, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import { V2Shell } from '@/components/V2Shell';
 import { Reveal, Tag } from '@/components/home/primitives';
 
@@ -110,6 +111,7 @@ function ConsultationPageContent() {
       }
 
       setIsSubmitted(true);
+      trackEvent('consultation_requested');
       toast({
         title: 'Request Sent!',
         description: 'Our experts will contact you within 24 hours.',

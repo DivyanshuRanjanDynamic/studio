@@ -74,13 +74,13 @@ export function Hero() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/home/flag-in.svg" alt="India" className="inline h-2.5" />
           <br />
-          72hr avg. turnaround
+          72hr typical turnaround
         </p>
 
         <div className="lp-hero-fade order-1 text-center md:order-2" style={{ animationDelay: '1400ms' }}>
           <p className="mx-auto max-w-xs text-sm text-lp-muted-fg">
-            Upload a design and get precision engineered parts delivered with transparency. Built for students,
-            startups, and hobbyists.
+            Upload a design and get precision engineered parts delivered with transparency. Built for startups,
+            college clubs, industrial buyers, and businesses.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <CtaButton>Upload Your Design</CtaButton>
@@ -91,7 +91,7 @@ export function Hero() {
         </div>
 
         <p className="lp-hero-fade lp-label-mono order-3 md:text-right" style={{ animationDelay: '1600ms' }}>
-          Over 500+ parts
+          500+ orders
           <br />
           delivered with transparency
         </p>

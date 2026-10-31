@@ -93,6 +93,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { checkIsAdmin } from '@/lib/auth-utils';
 import { bearerHeader } from '@/lib/auth-header';
+import { trackEvent, trackPurchase } from '@/lib/analytics';
 import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { getIdTokenResult, signOut } from 'firebase/auth';
 import { CreateProjectModal } from '@/components/CreateProjectModal';
@@ -559,6 +560,7 @@ function UserDashboardContent() {
         throw new Error(data.error || 'Failed to accept quotation');
       }
 
+      trackEvent('quote_accepted', { source: 'vendor_offer' });
       toast({
         title: 'Offer Accepted!',
         description: 'Please complete the advance payment to begin production.',
@@ -595,6 +597,8 @@ function UserDashboardContent() {
 
       const orderData = await res.json();
 
+      trackEvent('begin_checkout', { currency: 'INR', value: orderData.amount / 100 });
+
       // Step 2: open Razorpay (loads checkout.js on demand; the order fixes the amount)
       await openRazorpayCheckout({
         key: orderData.keyId,
@@ -623,6 +627,7 @@ function UserDashboardContent() {
 
             if (!verifyRes.ok) throw new Error('Payment verification failed');
 
+            trackPurchase(orderData.orderId, orderData.amount / 100, type === 'advance' ? 'advance' : 'balance');
             toast({
               title: type === 'advance' ? '✅ Advance Paid!' : '✅ Payment Complete!',
               description:

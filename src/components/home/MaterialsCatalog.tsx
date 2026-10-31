@@ -201,7 +201,7 @@ export function MaterialsCatalog({ headingAs: Heading = 'h2' }: { headingAs?: 'h
           </Reveal>
           <Reveal delay={150}>
             <p className="max-w-xs text-sm opacity-60">
-              Every material is stocked, cut to order, and shipped fast. No minimums. No surprises.
+              Every material is stocked, cut to order, and shipped fast. No minimum quantity. No surprises.
             </p>
           </Reveal>
         </div>

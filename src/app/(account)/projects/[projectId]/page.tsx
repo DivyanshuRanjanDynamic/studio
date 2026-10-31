@@ -12,6 +12,7 @@ import {
 } from '@/firebase';
 import { doc, query, collection, where, deleteDoc, updateDoc } from 'firebase/firestore';
 import { bearerHeader } from '@/lib/auth-header';
+import { trackEvent, trackPurchase } from '@/lib/analytics';
 import { openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import { V2Shell } from '@/components/V2Shell';
 import { landingFontVars } from '@/components/home/fonts';
@@ -597,6 +598,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         throw new Error(body.error || 'Failed to request a quote');
       }
 
+      trackEvent('quote_requested', { source: 'project' });
       toast({
         title: 'Quote Requested!',
         description: 'Your order is being reviewed. You will receive your quotation shortly.',
@@ -653,6 +655,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         status: 'accepted',
         updatedAt: new Date().toISOString(),
       });
+      trackEvent('quote_accepted', { source: 'project' });
       toast({
         title: 'Quote Accepted',
         description: 'Please provide delivery details and pay the advance to start production.',
@@ -707,6 +710,8 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         throw new Error(error?.message || 'Failed to create order');
       }
 
+      trackEvent('begin_checkout', { currency: 'INR', value: order.total });
+
       // 2. Open Razorpay (the server order fixes the amount charged)
       await openRazorpayCheckout({
         key: razorpayKey,
@@ -734,6 +739,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             });
             const verifyResult = await verifyRes.json().catch(() => ({}));
             if (verifyRes.ok && verifyResult.success) {
+              trackPurchase(order.razorpayOrderId, order.total, isAdvance ? 'advance' : 'balance');
               toast({
                 title: 'Payment Successful',
                 description: isAdvance

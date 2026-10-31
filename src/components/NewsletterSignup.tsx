@@ -62,7 +62,7 @@ export function NewsletterSignup() {
     >
       <h4 className="text-sm font-bold text-[#1E3A66]">MechHub Precision</h4>
       <p className="text-xs text-blue-200 leading-relaxed">
-        Join 500+ professionals receiving manufacturing insights.
+        Get manufacturing insights in your inbox.
       </p>
       <Input
         type="email"

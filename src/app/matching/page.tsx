@@ -20,6 +20,7 @@ import {
 import { V2Shell } from '@/components/V2Shell';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import {
   useUser,
   useFirestore,
@@ -157,6 +158,7 @@ export default function MatchingPage() {
       }
 
       localStorage.removeItem('pendingRfqDetails');
+      trackEvent('quote_requested', { source: 'matching' });
       toast({
         title: 'RFQ Submitted Successfully!',
         description: 'Selected MechMasters have been notified to review your design.',

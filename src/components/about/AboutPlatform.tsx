@@ -50,8 +50,8 @@ export function AboutPlatform() {
             <div className="lp-label-mono mt-8 opacity-60">You</div>
             <h3 className="mt-2 text-2xl">Builders</h3>
             <p className="mt-3 text-sm opacity-70">
-              Students, startups and hobbyists upload a design, approve a quote and track the order. One part or
-              1,000+, with zero minimums.
+              Startups, college clubs, industrial buyers and businesses upload a design, approve a quote and track the
+              order. One part or 1,000+, with no minimum quantity.
             </p>
           </Reveal>
 

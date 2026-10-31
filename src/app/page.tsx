@@ -1,12 +1,8 @@
 /*
  * MECHHUB HOMEPAGE — OUTSTANDING TODOs
  * ─────────────────────────────────────
- * [ ] Showreel:   Replace stat numbers with real MechHub metrics
  * [ ] Showreel:   S3 video URL uses a signed URL — replace with a permanent embed
  * [ ] Testimonials: Replace placeholder quotes with real customer quotes
- * [ ] Testimonials: Replace placeholder logos with real university/company logos
- * [ ] Testimonials: Update "500+ builders" count with real number
- * [ ] MechMasterSection: Replace mock partner card with real MechMaster profiles
  */
 import type { Metadata } from 'next';
 import '@/components/home/landing.css';
@@ -38,7 +34,7 @@ const TRUST_POINTS = [
 // Copy mirrors claims the page itself makes (hero, trust marquee, 72hr stat).
 const HOME_TITLE = 'Custom Manufacturing, Made Fast & Affordable | MechHub';
 const HOME_DESCRIPTION =
-  'Upload your design and get CNC machined, laser cut and bent parts delivered across India. Instant quotes, verified vendors, 72-hour average turnaround.';
+  'Upload your design and get CNC machined, laser cut and bent parts delivered across India. Instant quotes, verified vendors, 72-hour typical turnaround.';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,

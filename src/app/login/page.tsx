@@ -28,10 +28,12 @@ import {
   signOut,
   updateProfile,
   signInWithPopup,
+  getAdditionalUserInfo,
   deleteUser,
   GoogleAuthProvider,
   User,
 } from 'firebase/auth';
+import { trackEvent } from '@/lib/analytics';
 import { resolveUserFriendlyMessage } from '@/lib/error-mapping';
 import { getSafeRedirectPath } from '@/lib/auth-safety';
 import { isVendorRole } from '@/lib/roles';
@@ -352,6 +354,7 @@ function LoginPageContent() {
         const errorData = await provisionRes.json().catch(() => ({}));
         throw new Error(errorData.error || 'Profile creation failed during registration');
       }
+      trackEvent('sign_up', { method: 'email', role: loginRole });
 
       // 2. Send verification email
       await fetch('/api/v1/auth/send-verification', {
@@ -452,7 +455,10 @@ function LoginPageContent() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      if (getAdditionalUserInfo(result)?.isNewUser) {
+        trackEvent('sign_up', { method: 'google', role: loginRole });
+      }
     } catch (error: any) {
       setLoading(false);
       if (error.code !== 'auth/popup-closed-by-user') {

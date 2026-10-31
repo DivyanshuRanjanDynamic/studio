@@ -23,6 +23,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import {
   VENDOR_CAPABILITIES,
   NDA_AGREEMENT_TEXT,
@@ -337,6 +338,7 @@ export default function VendorOnboardingPage() {
       }
 
       setSubmitted(true);
+      trackEvent('vendor_application_submitted');
       setForm(INITIAL_STATE);
       setTouched({});
     } catch (error: any) {

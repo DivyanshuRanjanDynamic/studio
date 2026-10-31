@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -74,6 +75,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
       };
 
       const projectRef = await addDocumentNonBlocking(collection(db, 'projectRFQs'), projectData);
+      trackEvent('project_created');
 
       toast({
         title: 'Project Created!',

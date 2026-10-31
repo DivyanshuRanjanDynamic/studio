@@ -43,6 +43,7 @@ import { STLViewer } from '@/components/viewer/STLViewer';
 import { FlatPatternViewer } from '@/components/viewer/FlatPatternViewer';
 import { convertStepFile, stlBase64ToBuffer } from '@/services/stepConverter.service';
 import { detectDesignPattern } from '@/utils/design-patterns';
+import { trackEvent } from '@/lib/analytics';
 
 import {
   ChevronLeft,
@@ -457,6 +458,7 @@ export function PartCreationWizard({
       }
 
       const part = created.data;
+      trackEvent('part_added', { service: selectedService ?? undefined, quantity, instant_priced: Boolean(part.instantQuote) });
       toast({
         title: 'Part Added Successfully',
         description: part.instantQuote

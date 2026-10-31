@@ -31,6 +31,8 @@ export const metadata: Metadata = {
 
 import Script from 'next/script';
 
+const GA_ID = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -58,6 +60,14 @@ export default function RootLayout({
         {/* Vercel Analytics only exists on Vercel. On Firebase App Hosting its script
             (/_vercel/insights/script.js) 404s and logs an error on every page. */}
         {process.env.VERCEL === '1' && <Analytics />}
+        {GA_ID && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}');`}
+            </Script>
+          </>
+        )}
         <Script
           id="json-ld-org"
           type="application/ld+json"

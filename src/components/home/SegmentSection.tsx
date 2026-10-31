@@ -19,7 +19,7 @@ const SEGMENTS = [
   {
     title: 'Drones & UAVs',
     image: '/home/seg-drone.jpg',
-    body: 'Carbon fiber frames, aluminium arms, custom mounts, cut to your exact geometry. No minimums. No vendor negotiations. Just upload and fly.',
+    body: 'Carbon fiber frames, aluminium arms, custom mounts, cut to your exact geometry. No minimum quantity. No vendor chasing. Just upload and fly.',
     pills: ['Carbon Fiber', '3D Printing', 'Precision Cutting'],
     cta: 'Get Your Drone Parts',
     href: '/login',
@@ -34,7 +34,7 @@ const SEGMENTS = [
   },
 ];
 
-const AUDIENCE = ['Startups', 'Manufacturers', 'Designers', 'Student Teams'];
+const AUDIENCE = ['Startups', 'College Clubs', 'Industrial Buyers', 'Businesses'];
 const ASSURANCES = ['From CAD files to real parts', 'CNC Precision', 'Quality Checked', 'On-time Delivery'];
 
 export function SegmentSection() {

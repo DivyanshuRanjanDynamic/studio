@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Asterisk } from 'lucide-react';
 import { Reveal, UploadLink } from './primitives';
 
-const BADGES = ['NDA Protected', '72hr Turnaround', 'Made in India', 'No Minimums'];
+const BADGES = ['NDA Protected', '72hr Turnaround', 'Made in India', 'No Minimum Quantity'];
 
 export function FinalCTA() {
   return (
@@ -16,7 +16,7 @@ export function FinalCTA() {
       </Reveal>
       <Reveal delay={100}>
         <p className="mx-auto mt-6 max-w-md text-sm opacity-85">
-          Upload your design and get a quote in minutes. No minimums. No negotiation. Just fast, quality parts.
+          Upload your design and get a quote in minutes. No minimum quantity. No vendor chasing. Just fast, quality parts.
         </p>
       </Reveal>
       <Reveal delay={200} className="mt-8 flex flex-wrap justify-center gap-3">

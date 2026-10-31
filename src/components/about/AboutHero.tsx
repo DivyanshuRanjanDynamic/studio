@@ -133,7 +133,7 @@ export function AboutHero() {
             </CtaButton>
           </div>
           <p className="lp-hero-fade lp-label-mono mt-8 text-lp-muted-fg" style={{ animationDelay: '900ms' }}>
-            Built in India for students, startups and hobbyists
+            Built in India for startups, college clubs, industrial buyers and businesses
           </p>
         </div>
 

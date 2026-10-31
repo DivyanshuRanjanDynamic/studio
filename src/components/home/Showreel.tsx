@@ -14,13 +14,13 @@ const CHAPTERS = [
   { start: 0, end: 10, title: 'Upload your design', body: 'Drop a STEP, DXF or DWG file into an NDA-protected portal.' },
   { start: 10, end: 14, title: 'Get a price in seconds', body: 'Pick the process, material and thickness. The quote updates instantly.' },
   { start: 14, end: 17, title: 'See every rupee', body: 'Material, cut length, pierces and setup, line by line. No hidden fees, ever.' },
-  { start: 17, end: 21.5, title: 'Receive your parts', body: 'Made at a vetted facility and delivered in 72 hours on average.' },
+  { start: 17, end: 21.5, title: 'Receive your parts', body: 'Made by a verified MechMaster under NDA and typically delivered in 72 hours.' },
 ];
 
 const STATS = [
-  ['500+', 'Parts Delivered'],
-  ['14+', 'Materials in Stock'],
-  ['72hr', 'Avg. Turnaround'],
+  ['500+', 'Orders Delivered'],
+  ['10+', 'Active MechMasters'],
+  ['72hr', 'Typical Turnaround'],
   ['100%', 'NDA Protected'],
 ];
 

@@ -10,7 +10,7 @@ const STEPS = [
   ['Get Your Quote', 'Receive an instant or rapid quote with full cost breakdown — no hidden fees, ever.'],
   [
     'Receive Your Parts',
-    'We manufacture at our vetted facility and deliver directly to your door, with real-time tracking.',
+    'A verified MechMaster makes your parts under a full NDA contract, and we deliver them to your door with real-time tracking.',
   ],
 ];
 

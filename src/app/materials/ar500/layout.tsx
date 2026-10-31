@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'AR500 Steel Sheet Metal | Laser Cut to Order | MechHub',
+  title: 'AR500 Steel Plate | Laser Cut to Order | MechHub',
   description:
-    'AR500 abrasion-resistant steel sheet in 5 thicknesses, laser cut to your design with ±.005" tolerance. For parts that face extreme abrasion. Ships in 2–4 days.',
+    'AR500 abrasion-resistant steel plate, laser cut to your design by verified MechMasters across India. For parts in severe wear. Quoted by our engineers.',
   alternates: {
     canonical: '/materials/ar500',
   },

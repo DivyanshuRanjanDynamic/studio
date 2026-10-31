@@ -8,6 +8,7 @@ import {
   type QuoteOrder,
 } from '@/models/order.model';
 import { type QuoteCartItem } from '@/types/quoting';
+import { trackEvent, trackPurchase } from '@/lib/analytics';
 import { logger } from '@/utils/logger';
 import { useRouter } from 'next/navigation';
 
@@ -91,6 +92,7 @@ export function useQuoteCheckout(
           throw new Error(result.error?.message || 'Failed to create order');
         }
 
+        trackEvent('begin_checkout', { currency: 'INR', value: result.data.total });
         setOrder({
           ...result.data,
           _serverRazorpayKey: result.razorpayKey // attaching dynamic key
@@ -147,6 +149,7 @@ export function useQuoteCheckout(
         }
 
         logger.info({ event: 'Payment verified successfully', orderId: order.id });
+        trackPurchase(paymentData.razorpay_order_id, order.total, 'full');
         setStep('success');
         clearCart();
         clearShopCart();

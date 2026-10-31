@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check, MapPin, Star } from 'lucide-react';
+import { Check, MapPin, ShieldCheck } from 'lucide-react';
 import { Reveal, Tag } from './primitives';
 
 const BUYER_BADGES = ['QC Inspected', 'NDA Signed', 'On-Time Rated'];
@@ -14,7 +14,6 @@ const SUPPLIER_STATS = [
   ['100%', 'Transparent'],
 ];
 
-// TODO: Replace mock partner card with real MechMaster profiles
 export function MechMasterSection() {
   return (
     <section id="network" className="scroll-mt-16 bg-lp-ink py-28 text-lp-ink-fg">
@@ -48,7 +47,7 @@ export function MechMasterSection() {
                   <div className="text-lg">Verified MechMaster</div>
                   <div className="flex items-center gap-1 text-xs opacity-60">
                     <MapPin className="size-3" />
-                    Mumbai, India
+                    Partner network, India
                   </div>
                 </div>
                 <span className="lp-tag">Verified</span>
@@ -62,8 +61,8 @@ export function MechMasterSection() {
                 ))}
               </div>
               <div className="mt-5 flex items-center gap-2 text-sm">
-                <Star className="size-4 fill-lp-primary text-lp-primary" />
-                4.9 · 120 orders completed
+                <ShieldCheck className="size-4 text-lp-primary" />
+                Full NDA contract signed
               </div>
             </div>
           </Reveal>
