@@ -94,8 +94,8 @@ export function WhyMechHub() {
 
         <Reveal className="mt-14 text-center">
           <p className="mx-auto max-w-3xl text-2xl leading-snug md:text-4xl md:leading-snug">
-            &ldquo;MechHub is the only Indian manufacturing platform built specifically for{' '}
-            <span className="lp-accent-serif">prototypes and small teams</span> — not factories.&rdquo;
+            From a single prototype to <span className="lp-accent-serif">1,000+ parts</span>, one platform for
+            startups, college clubs and industrial buyers.
           </p>
           <p className="lp-label-mono mt-4 text-lp-muted-fg">💡 Better parts. Faster builds. For every creator.</p>
         </Reveal>
