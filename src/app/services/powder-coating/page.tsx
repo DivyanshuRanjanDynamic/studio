@@ -1,5 +1,3 @@
-'use client';
-
 import { ServicePageTemplate } from '@/components/services/ServicePageTemplate';
 import { POWDER_COATING } from '@/lib/services/service-pages';
 

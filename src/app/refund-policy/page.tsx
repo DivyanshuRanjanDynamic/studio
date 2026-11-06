@@ -1,151 +1,134 @@
-import Link from 'next/link';
 import { Metadata } from 'next';
-import { Info } from 'lucide-react';
-import { LegalLayout } from '@/components/LegalLayout';
+import { Accent } from '@/components/home/primitives';
+import { LegalPage, type LegalSection } from '@/components/legal/LegalPage';
+import { LEGAL } from '@/lib/legal';
 
 export const metadata: Metadata = {
   title: 'Refund Policy | MechHub',
   description:
-    'MechHub Refund Policy — clear guidelines on when and how refunds are processed for custom manufacturing orders.',
+    'When you can cancel a MechHub order, what you get back at each stage, and how quality problems with your parts are put right.',
   alternates: {
     canonical: '/refund-policy',
   },
 };
 
+const STAGES = [
+  {
+    stage: 'Before material is bought',
+    outcome: 'Full refund',
+    detail: 'Your order has not entered production yet, so you get everything back.',
+  },
+  {
+    stage: 'Material bought, fabrication not started',
+    outcome: 'Refund minus material',
+    detail: 'You are refunded in full, less the verifiable cost of raw material bought specifically for your order.',
+  },
+  {
+    stage: 'Fabrication started',
+    outcome: 'No refund',
+    detail: 'Once cutting, machining or other fabrication begins, the material is altered for good and cannot be reused.',
+  },
+];
+
+const SECTIONS: LegalSection[] = [
+  {
+    id: 'why-custom-is-different',
+    title: 'Why custom parts are different',
+    body: (
+      <>
+        <p>
+          Every part on MechHub is made to your exact specification. Once production starts, the raw material is
+          permanently altered and cannot be returned to stock or sold to anyone else.
+        </p>
+        <p>
+          This policy protects you fully when something goes wrong on our side, while being fair to the MechMasters who
+          make your parts.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'cancellations',
+    title: 'Cancelling an order',
+    body: (
+      <>
+        <p>What you get back depends on how far your order has progressed:</p>
+        <div className="not-prose grid gap-2 sm:grid-cols-3">
+          {STAGES.map((s, i) => (
+            <div key={s.stage} className="rounded-xl border border-lp-border bg-lp-card p-4">
+              <p className="lp-mono text-lp-primary">Stage {i + 1}</p>
+              <p className="title-4 mt-2 text-lp-fg">{s.stage}</p>
+              <p className="lp-mono mt-2 text-lp-fg">{s.outcome}</p>
+              <p className="caption-2 mt-2 text-lp-muted-fg">{s.detail}</p>
+            </div>
+          ))}
+        </div>
+      </>
+    ),
+  },
+  {
+    id: 'quality',
+    title: 'When parts do not match your specification',
+    body: (
+      <>
+        <p>
+          If your parts do not conform to the specifications, tolerances or material stated in your drawing, you are
+          entitled to a remedy.
+        </p>
+        <h3>To be eligible</h3>
+        <ul>
+          <li>Report the problem within 7 business days of receiving your parts.</li>
+          <li>Share measurement evidence, such as CMM or calliper readings.</li>
+          <li>The problem must come from manufacturing. Errors in the design itself are not covered.</li>
+        </ul>
+        <h3>What we offer</h3>
+        <ul>
+          <li>
+            <strong>Remake</strong> the parts at no cost to you
+          </li>
+          <li>
+            <strong>Partial refund</strong> for minor deviations
+          </li>
+          <li>
+            <strong>Full refund</strong> for parts that cannot be used
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: 'raising-a-claim',
+    title: 'How to raise a claim',
+    body: (
+      <>
+        <p>
+          Email <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a> with your order number, a short description of the
+          problem, photos of the affected parts and your measurements. We will review the evidence with the MechMaster and
+          confirm which remedy applies.
+        </p>
+        <p>Refunds are paid back to the payment method you used for the order.</p>
+      </>
+    ),
+  },
+];
+
 export default function RefundPolicyPage() {
   return (
-    <LegalLayout>
-      <div className="space-y-4 mb-12 pt-8">
-        <span className="lp-label-mono text-lp-primary border border-lp-border px-3 py-1 bg-lp-accent inline-block">
-          Legal Protocols
-        </span>
-        <h1 className="text-4xl md:text-5xl font-medium tracking-tight">
-          Refund Policy
-        </h1>
-        <p className="lp-label-mono text-lp-muted-fg">Effective Date: 4 March 2025</p>
-      </div>
-
-      <div className="prose prose-neutral max-w-none space-y-12 text-lp-muted-fg p-8 md:p-14 border border-lp-border bg-lp-bg relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-
-        <section className="p-8 bg-lp-accent border border-lp-border relative overflow-hidden">
-          <h2 className="text-xl font-medium text-lp-primary mb-3 flex items-center gap-2">
-            <Info className="size-5" /> Manufacturing Reality
-          </h2>
-          <p className="text-sm leading-relaxed text-lp-fg">
-            Custom manufacturing is fundamentally different from off-the-shelf product purchases.
-            Every part is manufactured to your exact specifications. Once production begins, the
-            raw material is irreversibly altered and cannot be returned to stock or resold.
-          </p>
-          <p className="mt-3 text-sm text-lp-primary/80 italic">
-            This policy ensures fair protection for buyers during genuine quality failures while
-            respecting the custom nature of fabrication.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-medium text-lp-fg mb-6 flex items-center gap-3">
-            <span className="text-lp-primary/20 font-medium text-4xl">01</span> Cancellation
-            Protocol
-          </h2>
-          <ul className="space-y-4 p-0 list-none">
-            <li className="p-4 bg-lp-accent border border-lp-border flex gap-4 items-start">
-              <div className="size-1.5 bg-lp-primary mt-1.5 shrink-0" />
-              <div>
-                <p className="font-medium text-lp-fg">Pre-Material Procurement (100% Refund)</p>
-                <p className="text-sm">
-                  Full refund if the order has not entered the institutional production pipeline.
-                </p>
-              </div>
-            </li>
-            <li className="p-4 bg-lp-accent border border-lp-border flex gap-4 items-start">
-              <div className="size-1.5 bg-lp-primary mt-1.5 shrink-0" />
-              <div>
-                <p className="font-medium text-lp-fg">Post-Procurement / Pre-Milling/Turning</p>
-                <p className="text-sm">
-                  Refund minus verifiable raw material costs purchased specifically for the order.
-                </p>
-              </div>
-            </li>
-            <li className="p-4 bg-lp-accent border border-lp-border border-l-4 border-l-red-400 flex gap-4 items-start">
-              <div className="size-1.5 bg-red-400 mt-1.5 shrink-0" />
-              <div>
-                <p className="font-medium text-lp-fg">
-                  Active Milling/Turning/Fabrication (Non-Refundable)
-                </p>
-                <p className="text-sm">
-                  No refund is available once fabrication has commenced, as materials are
-                  irreversibly altered.
-                </p>
-              </div>
-            </li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-medium text-lp-fg mb-6 flex items-center gap-3">
-            <span className="text-lp-primary/20 font-medium text-4xl">02</span> Quality Conformance
-          </h2>
-          <p className="mb-6">
-            If parts do not conform to specifications, tolerances, or material requirements stated
-            in your drawing, you are entitled to a remedy.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="lp-label-mono text-lp-primary">Eligibility</h3>
-              <ul className="space-y-3 p-0 list-none text-sm">
-                <li className="flex gap-2">
-                  <div className="size-1.5 bg-lp-primary/60 mt-1.5 shrink-0" />
-                  <span>Report within 7 business days</span>
-                </li>
-                <li className="flex gap-2">
-                  <div className="size-1.5 bg-lp-primary/60 mt-1.5 shrink-0" />
-                  <span>Provide measurement evidence (CMM, Calliper)</span>
-                </li>
-                <li className="flex gap-2">
-                  <div className="size-1.5 bg-red-400 mt-1.5 shrink-0" />
-                  <span>Design-originated errors are not covered</span>
-                </li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h3 className="lp-label-mono text-lp-primary">Remedy Options</h3>
-              <ul className="space-y-3 p-0 list-none text-sm">
-                <li className="flex gap-2">
-                  <div className="size-1.5 bg-lp-primary mt-1.5 shrink-0" />
-                  <span>Re-manufacture at no cost</span>
-                </li>
-                <li className="flex gap-2">
-                  <div className="size-1.5 bg-lp-primary mt-1.5 shrink-0" />
-                  <span>Partial refund for minor deviations</span>
-                </li>
-                <li className="flex gap-2">
-                  <div className="size-1.5 bg-lp-primary mt-1.5 shrink-0" />
-                  <span>Full refund for unusable parts</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section className="p-10 bg-lp-card border border-lp-border mt-12">
-          <h2 className="text-2xl font-medium text-lp-fg mb-6">Liaison & Support</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <p className="lp-label-mono text-lp-primary">Corporate Oversight</p>
-              <p className="text-lp-fg font-medium">Synchubb Innovations Pvt Ltd</p>
-              <p className="text-xs text-lp-muted-fg">VIT Vellore, Tamil Nadu, India</p>
-            </div>
-            <div className="space-y-2">
-              <p className="lp-label-mono text-lp-primary">Resolution Email</p>
-              <Link href="mailto:outreach@mechhub.in" className="text-lp-fg font-medium hover:underline">
-                outreach@mechhub.in
-              </Link>
-              <p className="lp-label-mono text-lp-muted-fg">+91 9117203884</p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </LegalLayout>
+    <LegalPage
+      path="/refund-policy"
+      title={
+        <>
+          Refund <Accent>policy</Accent>
+        </>
+      }
+      intro="When you can cancel an order, what you get back at each stage, and how we put things right if your parts are not to specification."
+      summary={[
+        'Cancel before material is bought for a full refund.',
+        'After material is bought, you get back everything except its cost.',
+        'Once fabrication starts, the order cannot be refunded.',
+        'Parts not to spec? Report within 7 business days for a remake or refund.',
+      ]}
+      sections={SECTIONS}
+    />
   );
 }

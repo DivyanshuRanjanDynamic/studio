@@ -1,70 +1,66 @@
-import { Upload } from 'lucide-react';
-import { Reveal, Tag, UploadLink } from './primitives';
+import type { ReactNode } from 'react';
+import { quoteShowcase } from '@/lib/services/service-facts';
+import { Accent, CtaButton, Reveal, SectionHeader } from './primitives';
+import { DeliveryScene, QuoteScene, UploadScene } from './scenes';
 
-const STEPS = [
-  [
-    'Choose Options',
-    'Select your manufacturing process, material, thickness, and finishing options like anodizing or powder coating.',
-  ],
-  ['Upload Your Design', 'Upload your STEP, DXF, or DWG file through our secure, NDA-protected portal.'],
-  ['Get Your Quote', 'Receive an instant or rapid quote with full cost breakdown — no hidden fees, ever.'],
-  [
-    'Receive Your Parts',
-    'A verified MechMaster makes your parts under a full NDA contract, and we deliver them to your door with real-time tracking.',
-  ],
-];
-
+/** How it works: three steps, each shown with a mockup of the screen it happens on. */
 export function HowItWorks() {
+  const showcase = quoteShowcase();
+  const steps: { title: string; body: string; scene: ReactNode }[] = [
+    {
+      title: 'Upload your design',
+      body: 'Drop a STEP file into the NDA protected portal, then pick the process, material and thickness.',
+      scene: <UploadScene />,
+    },
+    {
+      title: 'Get an instant quote',
+      body: 'The price updates as you choose, and drops per part as the quantity grows. The prices shown are live output from our quote engine.',
+      scene: <QuoteScene showcase={showcase} />,
+    },
+    {
+      title: 'Receive your parts',
+      body: 'A vetted MechMaster makes them under NDA. Track every stage until they reach your door, in 72 hours on average.',
+      scene: <DeliveryScene />,
+    },
+  ];
+
   return (
-    <section id="process" className="mx-auto max-w-[1400px] scroll-mt-16 px-4 py-28 sm:px-5">
-      <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
-        <div className="self-start lg:sticky lg:top-28">
-          <Reveal>
-            <Tag>The Process</Tag>
-          </Reveal>
-          <Reveal delay={100}>
-            <h2 className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
-              See How It <span className="lp-accent-serif">Works</span>
-            </h2>
-          </Reveal>
-          <Reveal delay={150}>
-            <p className="mt-5 max-w-sm text-lp-muted-fg">From design file to delivered part — in days, not weeks.</p>
-            <p className="mt-3 max-w-sm text-sm text-lp-muted-fg">
-              Watch how a student team got their drone frame manufactured and delivered in 72 hours.
-            </p>
-          </Reveal>
-          <Reveal delay={200} className="mt-8 max-w-md">
-            <UploadLink
-              className="lp-grid-bg flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-sm bg-lp-primary text-lp-primary-fg"
-            >
-              <Upload className="lp-floaty size-12" strokeWidth={1} />
-              <span className="text-center text-2xl">
-                Drag &amp; Drop
-                <br />
-                Your Design
-              </span>
-              <span className="lp-label-mono opacity-80">STEP / DXF / DWG</span>
-            </UploadLink>
+    <section id="how-it-works" aria-labelledby="how-heading" className="scroll-mt-24 px-4 py-16 md:py-24">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+          <SectionHeader
+            id="how-heading"
+            kicker="How it works"
+            title={
+              <>
+                Custom manufacturing <br className="hidden md:block" />
+                made <Accent>easy</Accent>
+              </>
+            }
+          />
+          <Reveal className="md:pb-2">
+            <CtaButton>Upload your design</CtaButton>
           </Reveal>
         </div>
 
-        <div className="space-y-4">
-          {STEPS.map(([title, body], i) => (
-            <Reveal
-              key={title}
-              delay={i * 60}
-              className="group flex gap-6 border border-lp-border bg-lp-card p-7 hover:translate-x-2 hover:border-lp-primary"
-            >
-              <span className="font-lp-serif text-6xl italic leading-none text-lp-primary/30 transition-colors group-hover:text-lp-primary">
-                0{i + 1}
-              </span>
-              <div>
-                <h4 className="text-2xl">{title}</h4>
-                <p className="mt-2 text-sm text-lp-muted-fg">{body}</p>
+        <ol className="mt-12 grid gap-4 md:grid-cols-3">
+          {steps.map((step, i) => (
+            <Reveal as="li" key={step.title} delay={i * 80} className="flex flex-col rounded-2xl border border-lp-border bg-lp-card p-1">
+              <div className="relative">
+                {step.scene}
+                <span className="lp-mono absolute left-3 top-3 z-20 rounded bg-lp-bg px-2 py-1 text-lp-primary">Step 0{i + 1}</span>
+              </div>
+              <div className="p-4 md:p-6">
+                <h3 className="heading-6">{step.title}</h3>
+                <p className="body-6 mt-2 text-lp-muted-fg">{step.body}</p>
               </div>
             </Reveal>
           ))}
-        </div>
+        </ol>
+        <p className="caption-5 mt-4 text-lp-muted-fg">
+          Example quote: {showcase.part} in {showcase.material}, standard turnaround, price per part excluding GST. A single
+          part carries the order minimum.
+        </p>
       </div>
     </section>
   );

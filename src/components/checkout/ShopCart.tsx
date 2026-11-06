@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Trash2, Package, IndianRupee, Minus, Plus } from 'lucide-react';
-import type { CartItem } from '@/context/CartContext';
 import Image from 'next/image';
+import { Minus, Package, Plus, Trash } from '@phosphor-icons/react/dist/ssr';
+import type { CartItem } from '@/context/CartContext';
 
 interface ShopCartProps {
   items: CartItem[];
@@ -12,103 +12,78 @@ interface ShopCartProps {
   isLoading?: boolean;
 }
 
-/**
- * ShopCart — Displays the list of pre-defined shop products in the checkout flow.
- */
+/** ShopCart — ready made shop products in the checkout, with quantity controls. */
 export function ShopCart({ items, onRemove, onUpdateQuantity, isLoading }: ShopCartProps) {
   if (items.length === 0) return null;
+  const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2 px-1">
-        <Package className="w-4 h-4 text-[#2F5FA7]" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2F5FA7]">
-          {items.reduce((sum, i) => sum + i.quantity, 0)} PRODUCT{items.length > 1 ? 'S' : ''} IN
-          CART
-        </span>
-      </div>
+    <section aria-labelledby="shop-cart-heading">
+      <h2 id="shop-cart-heading" className="lp-mono flex items-center gap-2 text-lp-muted-fg">
+        <Package aria-hidden="true" className="size-4 text-lp-primary" weight="bold" />
+        {count} shop {count > 1 ? 'products' : 'product'}
+      </h2>
 
-      <div className="space-y-3">
+      <ul className="mt-4 space-y-2">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-            <div className="flex items-start gap-5">
-              {/* Product Image */}
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+          <li key={item.id} className="rounded-2xl border border-lp-border bg-lp-bg p-4 transition-colors duration-300 ease-lp hover:border-lp-primary/30 md:p-6">
+            <div className="flex items-start gap-4">
+              <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-lp-muted">
                 {item.image ? (
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={64}
-                    height={64}
-                    className="object-cover w-full h-full"
-                  />
+                  <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
                 ) : (
-                  <Package className="w-8 h-8 text-slate-300" />
+                  <Package aria-hidden="true" className="size-6 text-lp-muted-fg" />
                 )}
-              </div>
-
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="font-bold text-slate-900 truncate uppercase tracking-tight">
-                    {item.name}
-                  </h4>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="title-3 truncate">{item.name}</h3>
                   <button
+                    type="button"
                     onClick={() => onRemove(item.id)}
                     disabled={isLoading}
-                    className="text-slate-300 hover:text-red-500 p-1 transition-colors"
+                    aria-label={`Remove ${item.name}`}
+                    className="lp-press flex size-8 shrink-0 items-center justify-center rounded-full text-lp-muted-fg hover:bg-lp-destructive/10 hover:text-lp-destructive"
                   >
-                    <Trash2 size={16} />
+                    <Trash aria-hidden="true" className="size-4" />
                   </button>
                 </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
+                <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
                   <div>
-                    <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
-                      SKU
-                    </span>
-                    <span className="text-[11px] font-bold text-slate-700 font-mono tracking-widest">
-                      {item.sku}
-                    </span>
+                    <p className="lp-mono text-lp-muted-fg">SKU</p>
+                    <p className="caption-1 lp-num mt-1">{item.sku}</p>
                   </div>
-
-                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                  <div className="flex items-center gap-1 rounded-full border border-lp-border p-1" role="group" aria-label={`Quantity of ${item.name}`}>
                     <button
+                      type="button"
                       onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                      className="text-blue-100 hover:text-[#2F5FA7] transition-colors"
+                      aria-label="Decrease quantity"
+                      className="lp-press flex size-8 items-center justify-center rounded-full hover:bg-lp-muted"
                     >
-                      <Minus size={12} strokeWidth={3} />
+                      <Minus aria-hidden="true" className="size-3" weight="bold" />
                     </button>
-                    <span className="text-[11px] font-black text-slate-700 min-w-[20px] text-center">
+                    <span className="title-4 lp-num w-8 text-center" aria-live="polite">
                       {item.quantity}
                     </span>
                     <button
+                      type="button"
                       onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      className="text-blue-100 hover:text-[#2F5FA7] transition-colors"
+                      aria-label="Increase quantity"
+                      className="lp-press flex size-8 items-center justify-center rounded-full hover:bg-lp-muted"
                     >
-                      <Plus size={12} strokeWidth={3} />
+                      <Plus aria-hidden="true" className="size-3" weight="bold" />
                     </button>
                   </div>
-
-                  <div className="text-right ml-auto">
-                    <span className="block text-[9px] font-bold text-blue-100 uppercase tracking-widest">
-                      Price
-                    </span>
-                    <span className="text-[13px] font-bold text-[#2F5FA7]">
-                      ₹{(item.salePrice * item.quantity).toLocaleString('en-IN')}
-                    </span>
+                  <div className="text-right">
+                    <p className="lp-mono text-lp-muted-fg">Price</p>
+                    <p className="title-3 lp-num mt-1 text-lp-primary">₹{(item.salePrice * item.quantity).toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }

@@ -217,6 +217,28 @@ const sheetQuote = (analysis = REF_SHEET_PLATE, req: Partial<SheetQuoteRequest> 
   return r.success ? r.data : null;
 };
 
+/**
+ * One real instant quote for the marketing site's visuals: the reference 200 × 100 mm
+ * plate in 2 mm Aluminium 5052, priced by the same engine as customer uploads.
+ * Only the public outputs (price per part, lead time); never the internal cost lines.
+ */
+export function quoteShowcase() {
+  const materialId = 'al-5052';
+  const quantities = [1, 10, 100] as const;
+  const quotes = quantities.map((quantity) => ({ quantity, quote: sheetQuote(REF_SHEET_PLATE, { materialId, quantity }) }));
+  return {
+    part: '200 × 100 mm plate, 4 holes',
+    material: `${SHEET_MATERIALS[materialId].name}, 2 mm`,
+    process: 'Laser cutting',
+    cutLengthMm: Math.round(REF_SHEET_PLATE.cutLengthMm),
+    pierces: REF_SHEET_PLATE.pierces,
+    leadTimeDays: quotes[1].quote?.leadTimeDays ?? null,
+    prices: quotes
+      .filter((q) => q.quote)
+      .map((q) => ({ quantity: q.quantity, perPart: q.quote!.pricePerPart, label: inr(q.quote!.pricePerPart) })),
+  };
+}
+
 export function sheetCuttingExample(): FactTable {
   const materials: Array<[string, number]> = [['ms-crca', 2], ['ss-304', 2], ['al-5052', 2], ['acrylic', 3], ['mdf', 3.2]];
   return {

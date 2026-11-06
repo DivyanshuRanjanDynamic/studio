@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
-import { ServicesPageClient } from './ServicesPageClient';
+import { V2Shell } from '@/components/V2Shell';
+import { ServicesSection } from '@/components/home/ServicesSection';
+import { FinalCTA } from '@/components/home/FinalCTA';
 
 export const metadata: Metadata = {
   title: 'Manufacturing Services | MechHub Precision Fabrication',
@@ -11,5 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default function ServicesPage() {
-  return <ServicesPageClient />;
+  return (
+    <V2Shell>
+      <ServicesSection headingAs="h1" />
+      <FinalCTA />
+    </V2Shell>
+  );
 }

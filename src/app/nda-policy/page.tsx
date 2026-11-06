@@ -1,110 +1,95 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Lock } from 'lucide-react';
-import { LegalLayout } from '@/components/LegalLayout';
+import { Accent } from '@/components/home/primitives';
+import { LegalPage, type LegalSection } from '@/components/legal/LegalPage';
+import { LEGAL } from '@/lib/legal';
 
 export const metadata: Metadata = {
   title: 'NDA Policy | MechHub',
   description:
-    'MechHub NDA Policy — how we protect your intellectual property, trade secrets, and proprietary designs throughout the manufacturing process.',
+    'How MechHub keeps your CAD files and designs confidential: what is covered, and what MechHub and every MechMaster must do.',
   alternates: {
     canonical: '/nda-policy',
   },
 };
 
+const SECTIONS: LegalSection[] = [
+  {
+    id: 'default-protection',
+    title: 'Protected by default',
+    body: (
+      <p>
+        Every design file you upload to MechHub is automatically covered by our NDA framework. You do not need to sign a
+        separate agreement for each order, and the same confidentiality applies to every part you make with us.
+      </p>
+    ),
+  },
+  {
+    id: 'what-is-covered',
+    title: 'What we keep confidential',
+    body: (
+      <ul>
+        <li>CAD files and 3D models</li>
+        <li>Material and tolerance specifications</li>
+        <li>Your own manufacturing processes</li>
+        <li>Your company&apos;s identity and order volumes</li>
+        <li>Revision history for each project</li>
+        <li>Quotes and pricing</li>
+      </ul>
+    ),
+  },
+  {
+    id: 'mechhub-obligations',
+    title: 'What MechHub commits to',
+    body: (
+      <ul>
+        <li>We never distribute your files to anyone outside your order.</li>
+        <li>Inside MechHub, access is limited by role, so only people working on your order can see it.</li>
+        <li>MechMasters receive only the information they need to make your parts.</li>
+      </ul>
+    ),
+  },
+  {
+    id: 'mechmaster-obligations',
+    title: 'What every MechMaster commits to',
+    body: (
+      <ul>
+        <li>MechMasters are verified partners under contract with MechHub.</li>
+        <li>They may not copy, photograph or keep your CAD data.</li>
+        <li>They may not manufacture your design, or a copy of it, for anyone else.</li>
+      </ul>
+    ),
+  },
+  {
+    id: 'your-own-nda',
+    title: 'Need your own agreement?',
+    body: (
+      <p>
+        If your organisation needs its own NDA in place before sharing a design, email{' '}
+        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a> and we will discuss it with you. How we handle personal data is
+        covered separately in our <Link href="/privacy-policy">privacy policy</Link>.
+      </p>
+    ),
+  },
+];
+
 export default function NdaPolicyPage() {
   return (
-    <LegalLayout>
-      <div className="space-y-4 mb-12 pt-8">
-        <span className="lp-label-mono text-lp-primary border border-lp-border px-3 py-1 bg-lp-accent inline-block">
-          Legal Protocols
-        </span>
-        <h1 className="text-4xl md:text-5xl font-medium tracking-tight">
-          NDA Policy
-        </h1>
-        <p className="lp-label-mono text-lp-muted-fg">Effective Date: 4 March 2025</p>
-      </div>
-
-      <div className="prose prose-neutral max-w-none space-y-12 text-lp-muted-fg p-8 md:p-14 border border-lp-border bg-lp-bg relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-
-        <section className="p-8 bg-lp-accent border border-lp-border relative overflow-hidden">
-          <h2 className="text-xl font-medium text-lp-primary mb-3 flex items-center gap-2">
-            <Lock className="size-5" /> Default IP Protection
-          </h2>
-          <p className="text-sm leading-relaxed text-lp-fg">
-            Every design file uploaded to MechHub is automatically protected by our centralized
-            NDA framework. This eliminates the friction of individual agreements while maintaining
-            institutional-grade confidentiality for every order.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-medium text-lp-fg mb-6 flex items-center gap-3">
-            <span className="text-lp-primary/20 font-medium text-4xl">01</span> Confidential Scope
-          </h2>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 list-none p-0">
-            {[
-              'CAD Files & 3D Engineering Models',
-              'Material & Tolerance Specifications',
-              'Proprietary Manufacturing Processes',
-              'Corporate Identity & Business Volume',
-              'Project-Specific Revision Histories',
-              'Quotation & Pricing Structures',
-            ].map((item) => (
-              <li
-                key={item}
-                className="p-3 bg-lp-accent border border-lp-border text-sm text-lp-fg flex items-center gap-3"
-              >
-                <div className="size-1.5 bg-lp-primary shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-medium text-lp-fg mb-6 flex items-center gap-3">
-            <span className="text-lp-primary/20 font-medium text-4xl">02</span> Mandatory
-            Obligations
-          </h2>
-          <div className="space-y-6">
-            <div className="p-6 border border-lp-border bg-lp-card">
-              <h3 className="lp-label-mono text-lp-primary mb-4">MechHub Operations</h3>
-              <p className="text-sm leading-relaxed">
-                Institutional commitment to zero-distribution with strict internal role-based
-                access. Data shared with MechMasters is limited to fabrication requirements.
-              </p>
-            </div>
-            <div className="p-6 border border-lp-border bg-lp-card">
-              <h3 className="lp-label-mono text-lp-primary mb-4">MechMaster Network</h3>
-              <p className="text-sm leading-relaxed">
-                Verified partners are contractually prohibited from copying, photographing, or
-                retaining CAD data. Reverse-manufacturing of designs for external entities is
-                strictly banned.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="p-10 bg-lp-card border border-lp-border mt-12">
-          <h2 className="text-2xl font-medium text-lp-fg mb-6">Institutional Governance</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <p className="lp-label-mono text-lp-primary">Corporate Entity</p>
-              <p className="text-lp-fg font-medium">Synchubb Innovations Pvt Ltd</p>
-              <p className="text-xs text-lp-muted-fg">VIT Vellore, Tamil Nadu, India</p>
-            </div>
-            <div className="space-y-2">
-              <p className="lp-label-mono text-lp-primary">Legal Resolution</p>
-              <Link href="mailto:outreach@mechhub.in" className="text-lp-fg font-medium hover:underline">
-                outreach@mechhub.in
-              </Link>
-              <p className="lp-label-mono text-lp-muted-fg">+91 9117203884</p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </LegalLayout>
+    <LegalPage
+      path="/nda-policy"
+      title={
+        <>
+          NDA <Accent>policy</Accent>
+        </>
+      }
+      intro="Your designs are your competitive edge. Here is how MechHub and every MechMaster keep them confidential."
+      summary={[
+        'Every upload is covered automatically. No per order paperwork.',
+        'Files, specifications, pricing and your identity all stay confidential.',
+        'MechMasters see only what they need to make your parts.',
+        'Copying, photographing, keeping or reselling your design is prohibited.',
+      ]}
+      sections={SECTIONS}
+    />
   );
 }

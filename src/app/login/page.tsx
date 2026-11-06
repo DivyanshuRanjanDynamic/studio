@@ -1,26 +1,27 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useUser, useFirestore } from '@/firebase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import '@/components/home/landing.css';
-import { landingFontVars } from '@/components/home/fonts';
 import { cn } from '@/utils';
-import { Loader2, UserPlus, LogIn, ShieldCheck, Factory, User as UserIcon, Clock, CheckCircle2, ArrowLeft } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Clock,
+  EnvelopeSimple,
+  Eye,
+  EyeSlash,
+  Factory,
+  ShieldCheck,
+  SignIn,
+  User as UserIcon,
+  UserPlus,
+} from '@phosphor-icons/react/dist/ssr';
+import { AuthShell, AuthSkeleton, fieldClass } from '@/components/auth/AuthShell';
+import { Accent, Tag } from '@/components/home/primitives';
+import { buttonClass } from '@/components/home/button';
 import { useToast } from '@/hooks/use-toast';
 import {
   signInWithEmailAndPassword,
@@ -474,544 +475,372 @@ function LoginPageContent() {
     }
   };
 
+  const role = loginRole;
+  const signOutAndReset = async (after: () => void) => {
+    await signOut(auth);
+    await fetch('/api/v1/auth/session', { method: 'DELETE' });
+    after();
+  };
+
   if (isUserLoading || (user && !verificationState && !isPendingReview)) {
     return (
-      <div className={cn('lp-root min-h-screen flex items-center justify-center', landingFontVars)}>
-        <Loader2 className="w-10 h-10 animate-spin text-lp-primary" />
-      </div>
+      <AuthShell role={role}>
+        <AuthSkeleton />
+      </AuthShell>
     );
   }
 
   if (verificationState) {
     return (
-      <div className={cn('lp-root min-h-screen lp-hero-dots relative flex flex-col pt-12', landingFontVars)}>
-        <div className="absolute top-8 left-8 z-50">
-          <Link href="/" className="lp-label-mono flex items-center gap-2 text-lp-muted-fg hover:text-lp-primary transition-colors group">
-            <div className="flex size-10 items-center justify-center border border-lp-border bg-lp-bg">
-              <ArrowLeft className="size-5" />
-            </div>
-            Back to Hub
-          </Link>
+      <AuthShell role={role}>
+        <div className="text-center">
+          <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-lp-primary/10 text-lp-primary">
+            <EnvelopeSimple aria-hidden="true" className="size-8" weight="duotone" />
+          </span>
+          <h1 className="heading-4 mt-6">
+            Check your <Accent>inbox</Accent>
+          </h1>
+          <p className="body-6 mt-2 text-lp-muted-fg">
+            We sent a verification link to <span className="body-4 text-lp-fg">{verificationState.email}</span>.
+          </p>
         </div>
-        <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-          <div className="w-full max-w-md border border-lp-border bg-lp-bg text-center p-8">
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-            <div className="mx-auto flex size-16 items-center justify-center bg-lp-accent text-lp-primary mb-6">
-              <ShieldCheck className="size-8" />
-            </div>
-            <h2 className="text-2xl font-medium tracking-tight">Check Your Inbox</h2>
-            <p className="mt-2 text-sm text-lp-muted-fg">
-              We&apos;ve sent a verification link to{' '}
-              <strong className="text-lp-primary">{verificationState.email}</strong>.
-            </p>
-            <div className="mt-8 space-y-3">
-              <Button
-                onClick={async () => {
-                  await signOut(auth);
-                  await fetch('/api/v1/auth/session', { method: 'DELETE' });
-                  setVerificationState(null);
-                }}
-                className="lp-label-mono w-full h-12 bg-lp-bg border border-lp-border text-lp-fg hover:bg-lp-accent rounded-sm"
-              >
-                Back to Sign In
-              </Button>
-              <Button
-                onClick={handleResend}
-                disabled={resendCooldown > 0}
-                variant="ghost"
-                className="lp-label-mono w-full h-12 text-lp-primary rounded-sm"
-              >
-                {resendCooldown > 0
-                  ? `Resend available in ${resendCooldown}s`
-                  : 'Resend Verification Email'}
-              </Button>
-            </div>
-          </div>
+
+        <ol className="mt-8 space-y-2">
+          {['Open the email from MechHub', 'Click the verification link', 'Come back here and sign in'].map((step, i) => (
+            <li key={step} className="flex items-center gap-3 rounded-xl border border-lp-border bg-lp-card px-4 py-3">
+              <span className="lp-mono flex size-6 shrink-0 items-center justify-center rounded-full bg-lp-primary text-lp-primary-fg">
+                {i + 1}
+              </span>
+              <span className="body-5">{step}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-8 space-y-2">
+          <button type="button" onClick={() => signOutAndReset(() => setVerificationState(null))} className={cn(buttonClass('primary'), 'w-full')}>
+            Back to sign in
+          </button>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resendCooldown > 0}
+            className={cn(buttonClass('secondary'), 'w-full disabled:cursor-not-allowed disabled:opacity-60')}
+          >
+            {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend verification email'}
+          </button>
         </div>
-      </div>
+        <p className="caption-2 mt-6 text-center text-lp-muted-fg">Not there? Check your spam or promotions folder.</p>
+      </AuthShell>
     );
   }
 
   if (isPendingReview) {
+    const stages = [
+      { title: 'Application received', body: `Your application for ${isPendingReview.email} is safe with us.`, done: true },
+      { title: 'Engineering review', body: 'We are checking your workshop’s capabilities and capacity.', done: false },
+      { title: 'Portal access', body: 'You will be able to sign in and receive orders once approved.', done: false },
+    ];
     return (
-      <div className={cn('lp-root min-h-screen lp-hero-dots relative flex flex-col pt-12', landingFontVars)}>
-        <div className="absolute top-8 left-8 z-50">
-          <Link href="/" className="lp-label-mono flex items-center gap-2 text-lp-muted-fg hover:text-lp-primary transition-colors group">
-            <div className="flex size-10 items-center justify-center border border-lp-border bg-lp-bg">
-              <ArrowLeft className="size-5" />
-            </div>
-            Back to Hub
-          </Link>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-          <div className="w-full max-w-md border border-lp-border bg-lp-bg text-center p-10 relative">
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-amber-500" />
+      <AuthShell role="vendor">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-lp-primary/10 text-lp-primary">
+          <Clock aria-hidden="true" className="size-8" weight="duotone" />
+        </span>
+        <h1 className="heading-4 mt-6 text-center">
+          Review in <Accent>progress</Accent>
+        </h1>
+        <p className="body-6 mt-2 text-center text-lp-muted-fg">
+          Our engineering team is reviewing <span className="body-4 text-lp-fg">{isPendingReview.name}</span>’s
+          manufacturing capabilities. We keep the bar high so every buyer gets reliable parts.
+        </p>
 
-            <div className="mx-auto flex size-20 items-center justify-center bg-amber-50 text-amber-500 mb-8">
-              <Clock className="size-10" />
-            </div>
-
-            <h2 className="text-3xl font-medium tracking-tight">Review in Progress</h2>
-
-            <p className="mt-3 text-sm text-lp-muted-fg leading-relaxed px-2">
-              Our engineering team is currently verifying <strong className="text-lp-primary">{isPendingReview.name}&apos;s</strong> manufacturing capabilities. We maintain high standards to ensure quality across the network.
-            </p>
-
-            <div className="mt-8 mb-8 space-y-4 text-left border-y border-lp-border py-8">
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="flex size-6 items-center justify-center bg-emerald-500 text-white rounded-full">
-                    <CheckCircle2 className="size-4" />
-                  </div>
-                  <div className="w-0.5 h-10 bg-emerald-100 mt-1" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    Profile Received
-                    <span className="lp-label-mono bg-emerald-50 text-emerald-600 px-2 py-0.5">Done</span>
-                  </p>
-                  <p className="text-xs text-lp-muted-fg">Your application for {isPendingReview.email} is safe with us.</p>
-                </div>
+        <ol className="mt-8">
+          {stages.map((s, i) => (
+            <li key={s.title} className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <span
+                  className={cn(
+                    'flex size-6 shrink-0 items-center justify-center rounded-full',
+                    s.done ? 'bg-lp-primary text-lp-primary-fg' : i === 1 ? 'border-2 border-lp-primary bg-lp-bg' : 'border border-lp-border bg-lp-bg'
+                  )}
+                >
+                  {s.done && <Check aria-hidden="true" className="size-3" weight="bold" />}
+                </span>
+                {i < stages.length - 1 && <span aria-hidden="true" className="my-1 w-px flex-1 bg-lp-border" />}
               </div>
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="flex size-6 items-center justify-center bg-amber-100 border-2 border-amber-200 rounded-full animate-pulse">
-                    <div className="size-2 bg-amber-500 rounded-full" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    Engineering Audit
-                    <span className="lp-label-mono bg-amber-50 text-amber-600 px-2 py-0.5 animate-pulse">Live</span>
-                  </p>
-                  <p className="text-xs text-lp-muted-fg">Verifying workshop precision and bandwidth.</p>
-                </div>
+              <div className="pb-6">
+                <p className="title-4 flex items-center gap-2">
+                  {s.title}
+                  <span className={cn('lp-mono rounded px-1', s.done ? 'bg-lp-primary/10 text-lp-primary' : i === 1 ? 'bg-lp-muted text-lp-fg' : 'text-lp-muted-fg')}>
+                    {s.done ? 'Done' : i === 1 ? 'Now' : 'Next'}
+                  </span>
+                </p>
+                <p className="caption-2 mt-1 text-lp-muted-fg">{s.body}</p>
               </div>
-            </div>
+            </li>
+          ))}
+        </ol>
 
-            <Button
-              onClick={async () => {
-                await signOut(auth);
-                await fetch('/api/v1/auth/session', { method: 'DELETE' });
-                setIsPendingReview(null);
-              }}
-              variant="outline"
-              className="lp-label-mono w-full h-12 border-lp-border text-lp-muted-fg hover:bg-lp-accent rounded-sm active:scale-[0.98]"
-            >
-              Securely Logout & Exit
-            </Button>
-          </div>
-        </div>
-      </div>
+        <button type="button" onClick={() => signOutAndReset(() => setIsPendingReview(null))} className={cn(buttonClass('secondary'), 'w-full')}>
+          Sign out
+        </button>
+      </AuthShell>
     );
   }
 
+  const tab = searchParams.get('tab') === 'login' ? 'login' : 'register';
+
   return (
-    <div className={cn('lp-root min-h-screen relative flex flex-col', landingFontVars)}>
-      <div className="absolute top-8 left-8 z-50">
-        <Link href="/" className="lp-label-mono flex items-center gap-2 text-lp-muted-fg hover:text-lp-primary transition-colors group">
-          <div className="flex size-10 items-center justify-center border border-lp-border bg-lp-bg">
-            <ArrowLeft className="size-5" />
-          </div>
-          Exit to Hub
-        </Link>
+    <AuthShell role={role}>
+      <div className="text-center">
+        <Tag>{role === 'vendor' ? 'MechMaster portal' : 'Customer portal'}</Tag>
+        <h1 className="heading-3 mt-4">
+          {role === 'vendor' ? (
+            <>
+              Welcome, <Accent>MechMaster</Accent>
+            </>
+          ) : (
+            <>
+              Welcome to <Accent>MechHub</Accent>
+            </>
+          )}
+        </h1>
+        <p className="body-6 mt-2 text-lp-muted-fg">
+          {role === 'vendor'
+            ? 'Manage your workshop orders and quotes.'
+            : 'Upload a STEP file, get an instant quote and track every order.'}
+        </p>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row">
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
-          <div className="w-full max-w-md space-y-8">
-            <div className="flex flex-col items-center gap-4 mb-2 lg:hidden">
-              <div className="text-center space-y-2">
-                <h1 className="text-3xl font-medium tracking-tight">
-                  {loginRole === 'vendor' ? 'MechMaster Access' : 'Secure Access'}
-                </h1>
-                <p className="text-xs text-lp-muted-fg leading-relaxed">
-                  {loginRole === 'vendor'
-                    ? 'Connect your factory to our managed supply chain.'
-                    : 'The precision manufacturing portal for innovators.'}
-                </p>
-              </div>
-            </div>
+      {/* Who is signing in */}
+      <div role="radiogroup" aria-label="Account type" className="mx-auto mt-8 grid max-w-[320px] grid-cols-2 gap-1 rounded-full border border-lp-border bg-lp-card p-1">
+        {(
+          [
+            { value: 'customer', label: 'Customer', icon: UserIcon },
+            { value: 'vendor', label: 'MechMaster', icon: Factory },
+          ] as const
+        ).map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={role === value}
+            onClick={() => setLoginRole(value)}
+            className={cn(
+              'button-sm flex items-center justify-center gap-2 rounded-full px-3 py-2 transition-colors duration-300 ease-lp',
+              role === value ? 'bg-lp-bg text-lp-primary shadow-sm' : 'text-lp-muted-fg hover:text-lp-fg'
+            )}
+          >
+            <Icon aria-hidden="true" className="size-4" weight={role === value ? 'fill' : 'regular'} />
+            {label}
+          </button>
+        ))}
+      </div>
 
-            {/* Role Toggle */}
-            <div className="mb-6 p-1 bg-lp-accent flex relative max-w-[280px] mx-auto border border-lp-border">
-              <button
-                onClick={() => setLoginRole('customer')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 lp-label-mono transition-all relative z-10 ${loginRole === 'customer' ? 'text-lp-primary bg-lp-bg' : 'text-lp-muted-fg hover:text-lp-fg'}`}
-              >
-                <UserIcon className="size-3.5" />
-                Customers
-              </button>
-              <button
-                onClick={() => setLoginRole('vendor')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 lp-label-mono transition-all relative z-10 ${loginRole === 'vendor' ? 'text-lp-primary bg-lp-bg' : 'text-lp-muted-fg hover:text-lp-fg'}`}
-              >
-                <Factory className="size-3.5" />
-                Vendors
-              </button>
-            </div>
-
-            <Tabs
-              defaultValue={searchParams.get('tab') === 'login' ? 'login' : 'register'}
-              className="w-full"
+      <Tabs defaultValue={tab} className="mt-6 w-full">
+        <TabsList className="grid h-auto w-full grid-cols-2 rounded-none border-b border-lp-border bg-transparent p-0">
+          {[
+            { value: 'register', label: role === 'vendor' ? 'Join the network' : 'Create account' },
+            { value: 'login', label: 'Sign in' },
+          ].map((t) => (
+            <TabsTrigger
+              key={t.value}
+              value={t.value}
+              className="button-sm -mb-px rounded-none border-b-2 border-transparent px-3 py-3 text-lp-muted-fg shadow-none transition-colors duration-300 ease-lp hover:text-lp-fg data-[state=active]:border-lp-primary data-[state=active]:bg-transparent data-[state=active]:text-lp-fg data-[state=active]:shadow-none"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-lp-accent border border-lp-border p-1">
-                <TabsTrigger
-                  value="register"
-                  className="lp-label-mono data-[state=active]:bg-lp-bg data-[state=active]:text-lp-primary transition-all text-lp-muted-fg rounded-sm"
+              {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="login" className="mt-6">
+          {isForgotPassword ? (
+            <div>
+              <h2 className="heading-6">Reset your password</h2>
+              <p className="body-6 mt-1 text-lp-muted-fg">
+                {resetEmailSent
+                  ? 'If an account exists for that email, a reset link is on its way.'
+                  : `Enter your ${role === 'vendor' ? 'registered' : 'verified'} email and we will send you a reset link.`}
+              </p>
+              {!resetEmailSent ? (
+                <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
+                  <Field id="reset-email" label="Email">
+                    <input id="reset-email" name="email" type="email" autoComplete="email" placeholder="you@company.in" required className={fieldClass()} />
+                  </Field>
+                  <button type="submit" disabled={loading} aria-busy={loading} className={cn(buttonClass('primary'), 'w-full disabled:opacity-60')}>
+                    {loading ? 'Sending link' : 'Send reset link'}
+                  </button>
+                  <button type="button" onClick={() => setIsForgotPassword(false)} disabled={loading} className={cn(buttonClass('secondary'), 'w-full')}>
+                    Back to sign in
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setResetEmailSent(false);
+                  }}
+                  className={cn(buttonClass('secondary'), 'mt-6 w-full')}
                 >
-                  {loginRole === 'vendor' ? 'Join Portal' : 'Register'}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="login"
-                  className="lp-label-mono data-[state=active]:bg-lp-bg data-[state=active]:text-lp-primary transition-all text-lp-muted-fg rounded-sm"
-                >
-                  Sign In
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                {isForgotPassword ? (
-                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
-                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-                    <CardHeader>
-                      <CardTitle className="text-2xl font-medium tracking-tight">
-                        Reset Password
-                      </CardTitle>
-                      <CardDescription className="text-lp-muted-fg leading-relaxed">
-                        {resetEmailSent
-                          ? 'Check your email for a reset link.'
-                          : `Enter your ${loginRole === 'vendor' ? 'registered' : 'verified'} email to receive a recovery link.`}
-                      </CardDescription>
-                    </CardHeader>
-                    {!resetEmailSent ? (
-                      <form onSubmit={handleForgotPassword}>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="reset-email" className="lp-label-mono text-lp-primary">
-                              Work Email
-                            </Label>
-                            <Input
-                              id="reset-email"
-                              name="email"
-                              type="email"
-                              placeholder="engineering@company.com"
-                              className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                              required
-                            />
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex flex-col gap-4">
-                          <Button
-                            type="submit"
-                            className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
-                            disabled={loading}
-                          >
-                            {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                            Send Reset Link
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            type="button"
-                            className="w-full text-lp-muted-fg hover:text-lp-primary hover:bg-lp-accent rounded-sm"
-                            onClick={() => setIsForgotPassword(false)}
-                            disabled={loading}
-                          >
-                            Back to Sign In
-                          </Button>
-                        </CardFooter>
-                      </form>
-                    ) : (
-                      <CardFooter className="flex flex-col gap-4 pb-8">
-                        <Button
-                          variant="outline"
-                          type="button"
-                          className="w-full border-lp-border hover:bg-lp-accent text-lp-fg rounded-sm"
-                          onClick={() => {
-                            setIsForgotPassword(false);
-                            setResetEmailSent(false);
-                          }}
-                        >
-                          Return to Sign In
-                        </Button>
-                      </CardFooter>
-                    )}
-                  </Card>
-                ) : (
-                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
-                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-                    <CardHeader>
-                      <CardTitle className="text-2xl font-medium tracking-tight">
-                        {loginRole === 'vendor' ? 'Vendor Portal' : 'Customer Portal'}
-                      </CardTitle>
-                      <CardDescription className="text-lp-muted-fg leading-relaxed">
-                        {loginRole === 'vendor'
-                          ? 'Access your workshop orders and quoting tools.'
-                          : 'The precision manufacturing portal for innovators.'}
-                      </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={handleSignIn}>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="lp-label-mono text-lp-primary">
-                            Work Email
-                          </Label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            placeholder="engineering@company.com"
-                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="password" className="lp-label-mono text-lp-primary">
-                              Security Password
-                            </Label>
-                            <button
-                              type="button"
-                              onClick={() => setIsForgotPassword(true)}
-                              className="text-xs text-lp-primary hover:text-lp-primary/70 transition-colors"
-                            >
-                              Forgot password?
-                            </button>
-                          </div>
-                          <Input
-                            id="password"
-                            name="password"
-                            type="password"
-                            placeholder="••••••••"
-                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                            required
-                          />
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex flex-col gap-4">
-                        <Button
-                          type="submit"
-                          className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <Loader2 className="mr-2 size-4 animate-spin" />
-                          ) : (
-                            <LogIn className="mr-2 size-4" />
-                          )}
-                          Log In to Hub
-                        </Button>
-                        <div className="relative w-full py-2">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-lp-border"></span>
-                          </div>
-                          <div className="relative flex justify-center">
-                            <span className="lp-label-mono bg-lp-bg px-3 text-lp-muted-fg">
-                              Or continue with
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          type="button"
-                          className="w-full h-12 bg-lp-bg hover:bg-lp-accent text-lp-fg border-lp-border rounded-sm text-sm gap-3 transition-all active:scale-[0.98]"
-                          onClick={handleGoogleSignIn}
-                          disabled={loading}
-                        >
-                          <GoogleIcon className="size-5" />
-                          Sign in with Google
-                        </Button>
-                      </CardFooter>
-                    </form>
-                  </Card>
-                )}
-              </TabsContent>
-
-              <TabsContent value="register">
-                {loginRole === 'vendor' ? (
-                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
-                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-                    <CardHeader>
-                      <CardTitle className="text-2xl font-medium tracking-tight flex items-center gap-3">
-                        Join as Partner
-                      </CardTitle>
-                      <CardDescription className="text-lp-muted-fg leading-relaxed">
-                        Become a verified MechMaster. Scale your workshop and access global production RFQs.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 pb-8">
-                      <div className="space-y-4">
-                        <div className="flex gap-4 items-start bg-lp-accent p-4 border border-lp-border">
-                          <ShieldCheck className="size-6 text-lp-primary shrink-0" />
-                          <div>
-                            <p className="text-sm font-medium">Vetted Network</p>
-                            <p className="text-xs text-lp-muted-fg">Join elite manufacturing partners verified for precision and trust.</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-4 items-start bg-lp-accent p-4 border border-lp-border">
-                          <CheckCircle2 className="size-6 text-emerald-500 shrink-0" />
-                          <div>
-                            <p className="text-sm font-medium">Exclusive Demand</p>
-                            <p className="text-xs text-lp-muted-fg">Access high-value projects directly from global innovators.</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button
-                        onClick={() => router.push('/onboard')}
-                        className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
-                      >
-                        Apply for MechMaster Role
-                        <UserPlus className="size-4 group-hover:translate-x-0.5 transition-transform" />
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ) : (
-                  <Card className="border-lp-border bg-lp-bg relative overflow-hidden rounded-sm shadow-none">
-                    <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-                    <CardHeader>
-                      <CardTitle className="text-2xl font-medium tracking-tight">
-                        Create Hub Account
-                      </CardTitle>
-                      <CardDescription className="text-lp-muted-fg leading-relaxed">
-                        Join the managed manufacturing network.
-                      </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={handleSignUp}>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center gap-2 p-3 bg-lp-accent border border-lp-border">
-                          <UserIcon className="size-4 text-lp-primary" />
-                          <span className="lp-label-mono text-lp-primary">
-                            Account Type:
-                          </span>
-                          <span className="lp-label-mono text-lp-fg">
-                            Innovator
-                          </span>
-                          <CheckCircle2 className="size-4 text-emerald-500 ml-auto" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reg-name" className="lp-label-mono text-lp-primary">
-                            Full Name
-                          </Label>
-                          <Input
-                            id="reg-name"
-                            name="fullName"
-                            type="text"
-                            placeholder="John Doe"
-                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reg-email" className="lp-label-mono text-lp-primary">
-                            Work Email
-                          </Label>
-                          <Input
-                            id="reg-email"
-                            name="email"
-                            type="email"
-                            placeholder="name@organization.com"
-                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reg-password" className="lp-label-mono text-lp-primary">
-                            Create Password
-                          </Label>
-                          <Input
-                            id="reg-password"
-                            name="password"
-                            type="password"
-                            placeholder="Min. 8 characters"
-                            className="h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                            minLength={8}
-                            required
-                          />
-                        </div>
-                        <div className="pt-2 flex items-center gap-2 lp-label-mono text-lp-muted-fg">
-                          <ShieldCheck className="size-4 text-lp-primary" />
-                          All accounts subject to verification & NDA protocols.
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex flex-col gap-4">
-                        <Button
-                          type="submit"
-                          className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <Loader2 className="mr-2 size-4 animate-spin" />
-                          ) : (
-                            <UserPlus className="mr-2 size-4" />
-                          )}
-                          Register as Innovator
-                        </Button>
-                      </CardFooter>
-                    </form>
-                  </Card>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-
-        <div className="hidden lg:block lg:w-1/2 relative overflow-hidden h-screen fixed right-0 top-0 h-[900px] w-[800px]">
-          <Image
-            src="/manufacturing_clean.png"
-            alt="Manufacturing Facility"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-lp-ink/90 via-lp-ink/40 to-lp-ink/20" />
-
-          <div className="absolute bottom-24 left-24 right-24 space-y-6 z-20">
-            <div className="lp-label-mono inline-flex items-center gap-2 px-3 py-1 border border-lp-primary/30 bg-lp-primary/10 backdrop-blur-xl text-lp-primary">
-              <span className="size-2 bg-lp-primary rounded-full animate-ping" />
-              Industry 4.0 Verified
+                  Return to sign in
+                </button>
+              )}
             </div>
+          ) : (
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <button type="button" onClick={handleGoogleSignIn} disabled={loading} className={cn(buttonClass('secondary'), 'w-full gap-3 py-3')}>
+                <GoogleIcon className="size-5" aria-hidden="true" />
+                Continue with Google
+              </button>
+              <Divider />
+              <Field id="email" label="Email">
+                <input id="email" name="email" type="email" autoComplete="email" placeholder="you@company.in" required className={fieldClass()} />
+              </Field>
+              <Field
+                id="password"
+                label="Password"
+                action={
+                  <button type="button" onClick={() => setIsForgotPassword(true)} className="caption-1 rounded text-lp-primary hover:opacity-80">
+                    Forgot password?
+                  </button>
+                }
+              >
+                <PasswordInput id="password" name="password" autoComplete="current-password" required />
+              </Field>
+              <button type="submit" disabled={loading} aria-busy={loading} className={cn(buttonClass('primary'), 'w-full py-3 disabled:opacity-60')}>
+                {loading ? 'Signing in' : 'Sign in'}
+                {!loading && <SignIn aria-hidden="true" className="size-4" weight="bold" />}
+              </button>
+            </form>
+          )}
+        </TabsContent>
 
-            <h2 className="text-4xl font-medium text-white leading-[1.05] tracking-tight">
-              The Hub of <br />
-              <span className="font-lp-serif italic opacity-70">Managed</span> <br />
-              Manufacturing.
-            </h2>
-
-            <p className="text-white/60 text-md max-w-sm leading-relaxed">
-              Experience the future of on-demand production with MechHub&apos;s secure, automated supply
-              chain network.
-            </p>
-
-            <div className="pt-8 grid grid-cols-3 gap-8 border-t border-white/10">
-              <div>
-                <div className="text-white text-xl font-medium">99.9%</div>
-                <div className="lp-label-mono text-white/40">Quality Yield</div>
-              </div>
-              <div>
-                <div className="text-white text-xl font-medium">24h</div>
-                <div className="lp-label-mono text-white/40">Rapid Response</div>
-              </div>
-              <div>
-                <div className="text-white text-xl font-medium">ISO</div>
-                <div className="lp-label-mono text-white/40">Certified Ops</div>
-              </div>
+        <TabsContent value="register" className="mt-6">
+          {role === 'vendor' ? (
+            <div>
+              <h2 className="heading-6">Become a MechMaster</h2>
+              <p className="body-6 mt-1 text-lp-muted-fg">
+                Run a laser cutter, CNC unit or fabrication shop? Apply to join the network and receive orders through
+                MechHub.
+              </p>
+              <ul className="mt-6 space-y-2">
+                {[
+                  { icon: ShieldCheck, title: 'Vetted network', body: 'Every partner passes our technical and delivery checks.' },
+                  { icon: Factory, title: 'Steady demand', body: 'Orders from verified buyers, with drawings and specs sorted.' },
+                ].map(({ icon: Icon, title, body }) => (
+                  <li key={title} className="flex gap-3 rounded-xl border border-lp-border bg-lp-card p-4">
+                    <Icon aria-hidden="true" className="size-5 shrink-0 text-lp-primary" weight="duotone" />
+                    <span>
+                      <span className="title-4 block">{title}</span>
+                      <span className="caption-2 text-lp-muted-fg">{body}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" onClick={() => router.push('/onboard')} className={cn(buttonClass('primary'), 'mt-6 w-full py-3')}>
+                Apply to join
+                <ArrowRight aria-hidden="true" className="size-4" weight="bold" />
+              </button>
             </div>
-          </div>
-        </div>
+          ) : (
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <button type="button" onClick={handleGoogleSignIn} disabled={loading} className={cn(buttonClass('secondary'), 'w-full gap-3 py-3')}>
+                <GoogleIcon className="size-5" aria-hidden="true" />
+                Sign up with Google
+              </button>
+              <Divider />
+              <Field id="reg-name" label="Full name">
+                <input id="reg-name" name="fullName" type="text" autoComplete="name" placeholder="Aarav Mehta" required className={fieldClass()} />
+              </Field>
+              <Field id="reg-email" label="Email">
+                <input id="reg-email" name="email" type="email" autoComplete="email" placeholder="you@company.in" required className={fieldClass()} />
+              </Field>
+              <Field id="reg-password" label="Password" hint="At least 8 characters">
+                <PasswordInput id="reg-password" name="password" autoComplete="new-password" minLength={8} required />
+              </Field>
+              <button type="submit" disabled={loading} aria-busy={loading} className={cn(buttonClass('primary'), 'w-full py-3 disabled:opacity-60')}>
+                {loading ? 'Creating your account' : 'Create account'}
+                {!loading && <UserPlus aria-hidden="true" className="size-4" weight="bold" />}
+              </button>
+              <p className="caption-2 flex items-start gap-2 text-lp-muted-fg">
+                <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-lp-primary" />
+                <span>
+                  By creating an account you agree to our <Link href="/terms-of-service" className="text-lp-primary underline underline-offset-4">terms</Link> and{' '}
+                  <Link href="/privacy-policy" className="text-lp-primary underline underline-offset-4">privacy policy</Link>. Every file you upload is covered by our NDA.
+                </span>
+              </p>
+            </form>
+          )}
+        </TabsContent>
+      </Tabs>
+    </AuthShell>
+  );
+}
+
+function Field({
+  id,
+  label,
+  hint,
+  action,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor={id} className="title-4">
+          {label}
+        </label>
+        {action}
       </div>
+      {children}
+      {hint && <p className="caption-5 text-lp-muted-fg">{hint}</p>}
+    </div>
+  );
+}
+
+function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input {...props} type={visible ? 'text' : 'password'} placeholder="••••••••" className={cn(fieldClass(), 'pr-12')} />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        aria-pressed={visible}
+        className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-lp-muted-fg transition-colors duration-300 ease-lp hover:bg-lp-muted hover:text-lp-fg"
+      >
+        {visible ? <EyeSlash aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+      </button>
+    </div>
+  );
+}
+
+function Divider() {
+  return (
+    <div className="flex items-center gap-3" role="separator">
+      <span className="h-px flex-1 bg-lp-border" />
+      <span className="lp-mono text-lp-muted-fg">or with email</span>
+      <span className="h-px flex-1 bg-lp-border" />
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className={cn('lp-root min-h-screen flex items-center justify-center', landingFontVars)}>
-        <Loader2 className="size-10 text-lp-primary animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <AuthShell>
+          <AuthSkeleton />
+        </AuthShell>
+      }
+    >
       <LoginPageContent />
     </Suspense>
   );

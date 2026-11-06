@@ -1,104 +1,61 @@
 import Link from 'next/link';
-import { Check, MapPin, ShieldCheck } from 'lucide-react';
-import { Reveal, Tag } from './primitives';
+import { ArrowRight, Check, SealCheck, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
+import { Accent, Reveal, SectionHeader } from './primitives';
+import { buttonClass } from './button';
 
-const BUYER_BADGES = ['QC Inspected', 'NDA Signed', 'On-Time Rated'];
+const VETTING = ['Technical and delivery quality checks', 'Full NDA contract signed', 'QC inspection on every order'];
 const SUPPLIER_BENEFITS = [
-  'Steady order flow from verified buyers',
-  'No sales calls — orders come to you',
-  'Transparent payout with every delivery',
-];
-const SUPPLIER_STATS = [
-  ['₹0', 'Setup Cost'],
-  ['24hr', 'Onboarding'],
-  ['100%', 'Transparent'],
+  'Orders from verified buyers, with drawings and specs already sorted',
+  'No sales calls. Work arrives through the MechHub platform',
+  'A clear payout on every delivery',
 ];
 
+/** The partner network: who makes the parts, and how shops can join. */
 export function MechMasterSection() {
   return (
-    <section id="network" className="scroll-mt-16 bg-lp-ink py-28 text-lp-ink-fg">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-5">
-        <Reveal>
-          <Tag>The Network</Tag>
-        </Reveal>
-        <Reveal delay={100}>
-          <h2 className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
-            Powered by Verified <span className="font-lp-serif italic opacity-70">MechMasters</span>
-          </h2>
-        </Reveal>
+    <section id="network" aria-labelledby="network-heading" className="scroll-mt-24 bg-lp-ink px-4 py-16 text-lp-ink-fg md:py-24">
+      <div className="mx-auto max-w-[1200px]">
+        <SectionHeader
+          inverted
+          id="network-heading"
+          kicker="The network"
+          title={<>Made by vetted <Accent light>MechMasters</Accent></>}
+          lead="Your parts never go to a black box. Every order is made by a MechMaster, a manufacturing partner who has passed our technical and delivery checks."
+        />
 
-        <div className="mt-14 grid gap-6 lg:grid-cols-2">
-          <Reveal className="border border-lp-ink-fg/15 p-8">
-            <h3 className="text-3xl">Vetted Manufacturing Partners</h3>
-            <p className="mt-3 text-sm opacity-70">
-              Your parts aren&apos;t made in a black box. Every order goes to a MechHub-certified MechMaster — a
-              verified manufacturing partner who has passed our technical and delivery quality standards.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {BUYER_BADGES.map((badge) => (
-                <span key={badge} className="lp-label-mono border border-lp-ink-fg/25 px-2 py-1">
-                  ✓ {badge}
-                </span>
+        <div className="mt-12 grid gap-4 lg:grid-cols-2">
+          <Reveal as="article" className="rounded-2xl border border-lp-ink-fg/15 p-6 md:p-8">
+            <SealCheck aria-hidden="true" className="size-8 text-lp-primary" weight="duotone" />
+            <h3 className="heading-5 mt-6">How partners are vetted</h3>
+            <ul className="mt-6 space-y-4">
+              {VETTING.map((item) => (
+                <li key={item} className="body-6 flex gap-3 text-lp-ink-fg/80">
+                  <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-lp-primary" weight="bold" />
+                  {item}
+                </li>
               ))}
-            </div>
-            <div className="mt-8 rounded-sm bg-lp-ink-fg/5 p-6 transition-transform hover:scale-[1.02]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-lg">Verified MechMaster</div>
-                  <div className="flex items-center gap-1 text-xs opacity-60">
-                    <MapPin className="size-3" />
-                    Partner network, India
-                  </div>
-                </div>
-                <span className="lp-tag">Verified</span>
-              </div>
-              <div className="lp-label-mono mt-5 opacity-60">Capabilities</div>
-              <div className="mt-2 flex gap-2">
-                {['Sheet Cutting', 'CNC', 'Bending'].map((cap) => (
-                  <span key={cap} className="border border-lp-ink-fg/25 px-2 py-1 text-xs">
-                    {cap}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-5 flex items-center gap-2 text-sm">
-                <ShieldCheck className="size-4 text-lp-primary" />
-                Full NDA contract signed
-              </div>
-            </div>
+            </ul>
           </Reveal>
 
-          <Reveal delay={100} className="lp-grid-bg flex flex-col justify-between bg-lp-primary p-8 text-lp-primary-fg">
+          <Reveal as="article" delay={80} className="flex flex-col justify-between gap-8 rounded-2xl bg-lp-primary p-6 text-lp-primary-fg md:p-8">
             <div>
-              <h3 className="text-3xl">Become a MechMaster</h3>
-              <p className="mt-3 text-sm opacity-85">
-                Own a machine shop? CNC unit? Laser cutter? Join India&apos;s fastest-growing manufacturing network
-                and get orders directly through the MechHub platform.
+              <h3 className="heading-5">Run a machine shop? Become a MechMaster</h3>
+              <p className="body-6 mt-2 text-lp-primary-fg/80">
+                Laser cutter, CNC unit or fabrication shop: join the network and get orders straight through MechHub.
               </p>
-              <ul className="mt-6 space-y-2 text-sm">
+              <ul className="mt-6 space-y-4">
                 {SUPPLIER_BENEFITS.map((benefit) => (
-                  <li key={benefit} className="flex gap-2">
-                    <Check className="size-4 shrink-0" />
+                  <li key={benefit} className="body-6 flex gap-3">
+                    <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" weight="bold" />
                     {benefit}
                   </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <div className="mt-8 grid grid-cols-3 gap-4 border-t border-lp-primary-fg/30 pt-6">
-                {SUPPLIER_STATS.map(([value, label]) => (
-                  <div key={label}>
-                    <div className="text-3xl">{value}</div>
-                    <div className="lp-label-mono opacity-75">{label}</div>
-                  </div>
-                ))}
-              </div>
-              <Link
-                href="/onboard"
-                className="lp-label-mono mt-8 inline-flex items-center gap-2 rounded-sm bg-lp-bg px-5 py-3 text-lp-fg transition-transform hover:scale-105"
-              >
-                → Apply to Join
-              </Link>
-            </div>
+            <Link href="/onboard" className={`${buttonClass('inverted')} self-start`}>
+              Apply to join
+              <ArrowRight aria-hidden="true" className="size-4" weight="bold" />
+            </Link>
           </Reveal>
         </div>
       </div>

@@ -30,6 +30,8 @@ import {
   SERVICE_DISPLAY_NAMES,
 } from '@/models/project.model';
 import { PartCreationWizard } from '@/components/part-creation/PartCreationWizard';
+import { Tag } from '@/components/home/primitives';
+import { buttonClass } from '@/components/home/button';
 import {
   ChevronLeft,
   Plus,
@@ -191,7 +193,7 @@ function NegotiationDialog({
   const [proposedPrice, setProposedPrice] = useState(currentPrice.toString());
 
   return (
-    <DialogContent className={`lp-root ${landingFontVars} sm:max-w-md bg-lp-card`}>
+    <DialogContent className={`lp-root lp-app ${landingFontVars} sm:max-w-md bg-lp-card`}>
       <DialogHeader>
         <DialogTitle className="uppercase tracking-widest text-xs font-bold text-lp-fg">
           Negotiate Quotation
@@ -312,7 +314,7 @@ function AddressDialog({
   };
 
   return (
-    <DialogContent className={`lp-root ${landingFontVars} sm:max-w-lg bg-lp-card`}>
+    <DialogContent className={`lp-root lp-app ${landingFontVars} sm:max-w-lg bg-lp-card`}>
       <DialogHeader>
         <DialogTitle className="uppercase tracking-widest text-xs font-bold text-lp-fg">
           Delivery Address
@@ -869,94 +871,76 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const basePrice = project.finalPrice || project.quotedPrice || partsSubtotal || 0;
 
   return (
-    <V2Shell noFooter>
-      <div className="pb-12 relative">
-      {/* Background */}
-      <div
-        className="absolute inset-0 bg-lp-bg/50"
-        style={{
-          backgroundImage: 'radial-gradient(oklch(0.55 0.05 250 / 0.06) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-
-      <div className="container mx-auto px-4 relative z-10">
+    <V2Shell noFooter className="lp-app">
+      <div className="px-4 pb-16 pt-8 md:pt-12">
+      <div className="mx-auto max-w-[1200px]">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
+          <button
+            type="button"
             onClick={() => router.push('/dashboard')}
-            className="mb-4 -ml-2 text-lp-muted-fg hover:text-lp-primary"
+            className="caption-1 -ml-2 inline-flex items-center gap-2 rounded-full px-2 py-1 text-lp-muted-fg transition-colors duration-300 ease-lp hover:bg-lp-muted hover:text-lp-fg"
           >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back to Dashboard
-          </Button>
+            <ChevronLeft className="size-4" aria-hidden="true" />
+            Back to dashboard
+          </button>
 
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 md:gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-3 mb-3 md:mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight uppercase text-lp-fg leading-tight">
-                  {project.projectName}
-                </h1>
-                <Badge
-                  variant="outline"
-                  className={`${statusInfo.color} text-[9px] md:text-[10px] uppercase tracking-wider font-bold px-2 py-1`}
-                >
-                  {statusInfo.label}
-                </Badge>
+          <div className="mt-4 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Tag>Project</Tag>
+                <span className={`lp-mono rounded-full border px-2 py-1 ${statusInfo.color}`}>{statusInfo.label}</span>
               </div>
-              <p className="text-lp-muted-fg text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="shrink-0">Project RFQ</span>
-                <span className="w-1 h-1 rounded-full bg-lp-muted-fg" />
+              <h1 className="heading-2 mt-4 break-words">{project.projectName}</h1>
+              <p className="lp-mono mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-lp-muted-fg">
+                <span>Created {project.createdAt ? new Date(project.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}</span>
                 <span>
-                  Created{' '}
-                  {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : 'N/A'}
+                  {projectParts.length} {projectParts.length === 1 ? 'part' : 'parts'}
                 </span>
+                {basePrice > 0 && <span>Value ₹{basePrice.toLocaleString('en-IN')}</span>}
               </p>
             </div>
 
             {project.status === 'draft' && (
-              <Button
-                onClick={() => setIsPartWizardOpen(true)}
-                className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-lp-primary hover:bg-lp-primary/80 text-white shadow-sm transition-all border-none"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Part
-              </Button>
+              <button type="button" onClick={() => setIsPartWizardOpen(true)} className={buttonClass('primary', 'md', true)}>
+                Add a part
+                <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                  <Plus className="size-4" />
+                </span>
+              </button>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left Column - Parts List */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             <Tabs defaultValue="parts" className="space-y-6">
-              <TabsList className="bg-lp-card border border-lp-border p-1 rounded-sm shadow-sm w-full flex overflow-x-auto no-scrollbar justify-start md:justify-center">
-                <TabsTrigger
-                  value="parts"
-                  className="px-4 md:px-6 data-[state=active]:bg-lp-accent/50 data-[state=active]:text-lp-primary data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[100px] flex-shrink-0"
-                >
-                  <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
-                  Parts ({projectParts.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="details"
-                  className="px-4 md:px-6 data-[state=active]:bg-lp-accent/50 data-[state=active]:text-lp-primary data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[100px] flex-shrink-0"
-                >
-                  <FileText className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
-                  Details
-                </TabsTrigger>
-                {(project.status === 'quotation_sent' ||
-                  project.status === 'negotiation' ||
-                  (project.negotiationHistory && project.negotiationHistory.length > 0)) && (
+              <TabsList className="flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-lp-border bg-transparent p-0 no-scrollbar">
+                {[
+                  { value: 'parts', label: `Parts (${projectParts.length})`, icon: Layers, show: true },
+                  { value: 'details', label: 'Details', icon: FileText, show: true },
+                  {
+                    value: 'negotiation',
+                    label: 'Negotiation',
+                    icon: MessageSquare,
+                    show:
+                      project.status === 'quotation_sent' ||
+                      project.status === 'negotiation' ||
+                      !!(project.negotiationHistory && project.negotiationHistory.length > 0),
+                  },
+                ]
+                  .filter((t) => t.show)
+                  .map(({ value, label, icon: Icon }) => (
                     <TabsTrigger
-                      value="negotiation"
-                      className="px-4 md:px-6 data-[state=active]:bg-lp-accent/50 data-[state=active]:text-lp-primary data-[state=active]:shadow-sm rounded-lg transition-all font-bold tracking-widest uppercase text-[9px] md:text-[10px] min-w-[120px] flex-shrink-0"
+                      key={value}
+                      value={value}
+                      className="button-sm -mb-px flex shrink-0 items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-lp-muted-fg shadow-none transition-colors duration-300 ease-lp hover:text-lp-fg data-[state=active]:border-lp-primary data-[state=active]:bg-transparent data-[state=active]:text-lp-fg data-[state=active]:shadow-none"
                     >
-                      <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-2" />
-                      Negotiation
+                      <Icon className="size-4" aria-hidden="true" />
+                      {label}
                     </TabsTrigger>
-                  )}
+                  ))}
               </TabsList>
 
               <TabsContent value="parts" className="space-y-4">
@@ -1812,7 +1796,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           if (!open) setPendingPartDeleteId(null);
         }}
       >
-        <AlertDialogContent className={`lp-root ${landingFontVars} bg-lp-card`}>
+        <AlertDialogContent className={`lp-root lp-app ${landingFontVars} bg-lp-card`}>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lp-fg font-bold uppercase tracking-widest text-xs">Delete Part?</AlertDialogTitle>
             <AlertDialogDescription className="text-[10px] uppercase tracking-widest font-bold">

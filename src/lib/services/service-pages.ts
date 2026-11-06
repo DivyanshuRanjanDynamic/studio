@@ -4,13 +4,13 @@
 // via service-facts.ts; nothing is hard-coded here that the engine disagrees with.
 // ═══════════════════════════════════════════════════
 
+// Phosphor icons (design system SKILL B6), aliased to the names the configs already use.
 import {
-  Scissors, Zap, Target, Wrench, Layers, Maximize2, ShieldCheck,
-  Settings, Droplets, Palette, Gauge, Thermometer, CircleDot,
-  Box, Ruler, Clock, FileCode2, Truck, CheckCircle2, Hammer,
-  ArrowDownToLine, CircleDotDashed, Drill, Cog, Factory,
-  type LucideIcon,
-} from 'lucide-react';
+  Scissors, Lightning as Zap, Target, Wrench, Stack as Layers, ArrowsOut as Maximize2, ShieldCheck,
+  Gear as Settings, Drop as Droplets, Palette, Gauge, Thermometer, Record as CircleDot,
+  Cube as Box, Ruler, Clock, FileCode as FileCode2, Truck, CheckCircle as CheckCircle2, Hammer,
+  ArrowLineDown as ArrowDownToLine, CircleDashed as CircleDotDashed, Screwdriver as Drill, GearSix as Cog, Factory,
+} from '@phosphor-icons/react/dist/ssr';
 import type { Metadata } from 'next';
 import type { ServicePageConfig } from '@/components/services/ServicePageTemplate';
 import * as F from './service-facts';
@@ -27,7 +27,7 @@ export const PRECISION_SHEET_CUTTING: ServicePageConfig = {
   heroTitle: 'Industrial Grade',
   heroSubtitle: 'Sheet Metal Cutting',
   heroDescription:
-    'Fiber laser and CO₂ laser cutting for metals, acrylics and wood composites. Upload a DXF or STEP file and get an instant price — parts ship in as little as 2 days.',
+    'Fiber laser and CO₂ laser cutting for metals, acrylics and wood composites. Upload a STEP file and get an instant price — parts ship in as little as 2 days.',
   heroBadge: 'Precision Fabrication',
   heroIcon: Scissors,
   heroImage: '/sheet_cutting_service.png',
@@ -86,14 +86,14 @@ export const PRECISION_SHEET_CUTTING: ServicePageConfig = {
   processSubtitle: 'Cut Parts',
   processImage: '/process.png',
   processSteps: [
-    { step: '01', title: 'Upload Your File', description: 'Upload a DXF or STEP file. Our engine parses geometry instantly.', icon: FileCode2 },
+    { step: '01', title: 'Upload Your File', description: 'Upload a STEP file. Our engine parses geometry instantly.', icon: FileCode2 },
     { step: '02', title: 'Instant Quote & DFM', description: 'See a real-time price and automated DFM feedback. Adjust material, thickness and quantity.', icon: Zap },
     { step: '03', title: 'Precision Cutting', description: 'Parts are nested and cut on our fiber or CO₂ lasers, then deburred.', icon: Scissors },
     { step: '04', title: 'Inspection & Delivery', description: 'Every part is measured, packed and shipped to your facility.', icon: Truck },
   ],
 
   faq: [
-    { q: 'What file formats do you accept?', a: 'DXF (2D, 1:1 scale) and STEP (3D — we flatten automatically). AI and EPS files are accepted via engineer review.' },
+    { q: 'What file formats do you accept?', a: 'STEP files. Sheet parts are flattened automatically. Other formats are reviewed by an engineer.' },
     { q: 'What is your cutting tolerance?', a: '± 0.1 mm for fiber laser on metals up to 6 mm. Thicker plates and CO₂ cuts may be slightly wider.' },
     { q: 'Is there a minimum order?', a: `You can order one part. The minimum order value is ₹${F.ORDER_MINIMUMS.sheet.toLocaleString('en-IN')} per line item.` },
     { q: 'Can I add bending, tapping or a finish?', a: 'Yes — bending, thread tapping, hardware insertion, powder coating and anodising are all available as add-ons in the same order.' },
@@ -171,7 +171,7 @@ export const BENDING: ServicePageConfig = {
   processSubtitle: 'Bent Parts',
   processImage: '/process.png',
   processSteps: [
-    { step: '01', title: 'Upload Your DXF / STEP', description: 'Our engine detects bend lines and unfolds the part automatically.', icon: FileCode2 },
+    { step: '01', title: 'Upload Your STEP File', description: 'Our engine detects bend lines and unfolds the part automatically.', icon: FileCode2 },
     { step: '02', title: 'Instant Price', description: 'See cutting + bending cost per part. Adjust quantity and turnaround.', icon: Zap },
     { step: '03', title: 'Cut & Bend', description: 'Profiles are laser-cut, then bent on a CNC press brake with automatic back-gauge.', icon: ArrowDownToLine },
     { step: '04', title: 'Ship', description: 'Parts are inspected, packed and dispatched.', icon: Truck },
@@ -453,7 +453,7 @@ export const TAPPING: ServicePageConfig = {
     },
     {
       title: 'Auto-Detection',
-      desc: 'Upload a STEP or DXF with holes — our engine detects diameters and matches them to tap standards.',
+      desc: 'Upload a STEP file with holes — our engine detects diameters and matches them to tap standards.',
       icon: CircleDotDashed,
     },
   ],
@@ -477,7 +477,7 @@ export const TAPPING: ServicePageConfig = {
   dfmIntro:
     'Good pilot holes make reliable threads.',
   dfmRules: [
-    { id: 'P', title: 'Pilot Hole Size', desc: 'Your DXF/STEP must have the correct pilot diameter for the thread. Our engine checks it and warns if it is off.' },
+    { id: 'P', title: 'Pilot Hole Size', desc: 'Your STEP file must have the correct pilot diameter for the thread. Our engine checks it and warns if it is off.' },
     { id: 'M', title: 'Minimum Material', desc: 'Material thickness ≥ 1.5× thread pitch to guarantee full engagement.' },
     { id: 'B', title: 'Blind Hole Depth', desc: 'Allow 3–5 mm extra depth beyond the required thread length for chip clearance.' },
   ],
@@ -487,7 +487,7 @@ export const TAPPING: ServicePageConfig = {
   processSubtitle: 'Works',
   processImage: '/process.png',
   processSteps: [
-    { step: '01', title: 'Hole Detection', description: 'Holes are identified from your STEP or DXF and matched to the nearest tap standard.', icon: CircleDotDashed },
+    { step: '01', title: 'Hole Detection', description: 'Holes are identified from your STEP file and matched to the nearest tap standard.', icon: CircleDotDashed },
     { step: '02', title: 'Tap Selection', description: 'The engine picks the right tap and calculates depth, speed and feed for your material.', icon: Settings },
     { step: '03', title: 'Automated Tapping', description: 'Multi-spindle tapping with torque control. Through-hole and blind-hole supported.', icon: Drill },
     { step: '04', title: 'Thread Gauge Check', description: 'Go / no-go gauges verify every tapped hole before shipping.', icon: CheckCircle2 },

@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { CreditCard, LockKey, ShieldCheck, WarningCircle } from '@phosphor-icons/react/dist/ssr';
 import { logger } from '@/utils/logger';
 import { loadRazorpay, openRazorpayCheckout } from '@/lib/razorpay-checkout';
 import type { QuoteOrder } from '@/models/order.model';
+import { buttonClass } from '@/components/home/button';
+import { cn } from '@/utils';
 
 interface PaymentSectionProps {
   order: QuoteOrder;
@@ -17,11 +19,7 @@ interface PaymentSectionProps {
  * Opens Razorpay Checkout for the server-created order (src/lib/razorpay-checkout)
  * and hands the signed response to the verification callback.
  */
-export function PaymentSection({
-  order,
-  onSuccess,
-  isLoading: externalLoading,
-}: PaymentSectionProps) {
+export function PaymentSection({ order, onSuccess, isLoading: externalLoading }: PaymentSectionProps) {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [internalLoading, setInternalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,63 +75,57 @@ export function PaymentSection({
   };
 
   const isLoading = externalLoading || internalLoading || !isScriptLoaded;
+  const label = externalLoading
+    ? 'Confirming your payment'
+    : internalLoading
+      ? 'Opening Razorpay'
+      : !isScriptLoaded
+        ? 'Preparing secure checkout'
+        : `Pay ₹${order.total.toLocaleString('en-IN')}`;
 
   return (
-    <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-50 pb-6">
+    <section aria-labelledby="pay-heading" className="rounded-2xl border border-lp-border bg-lp-bg p-6 md:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-lp-border pb-6">
         <div>
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2F5FA7] flex items-center gap-2 mb-1">
-            <CreditCard size={14} /> Total Payment
-          </h3>
-          <p className="text-2xl font-bold text-slate-900">
-            ₹{order.total.toLocaleString('en-IN')}
-          </p>
+          <h2 id="pay-heading" className="lp-mono flex items-center gap-2 text-lp-muted-fg">
+            <CreditCard aria-hidden="true" className="size-4 text-lp-primary" weight="bold" />
+            Amount to pay
+          </h2>
+          <p className="heading-3 lp-num mt-2">₹{order.total.toLocaleString('en-IN')}</p>
         </div>
-        <div className="text-right">
-          <span className="text-[9px] font-bold text-blue-100 uppercase tracking-widest block">
-            Including GST (18%)
-          </span>
-          <span className="text-[11px] font-bold text-blue-200">
-            ₹{order.gst.toLocaleString('en-IN')}
-          </span>
-        </div>
+        <p className="caption-2 text-right text-lp-muted-fg">
+          Includes GST (18%)
+          <span className="lp-num block text-lp-fg">₹{order.gst.toLocaleString('en-IN')}</span>
+        </p>
       </div>
 
+      <p className="caption-2 mt-6 text-lp-muted-fg">
+        Order <span className="lp-num text-lp-fg">#{order.orderNumber}</span> · delivering to {order.shippingAddress.fullName},{' '}
+        {order.shippingAddress.city}
+      </p>
+
       {error && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3 animate-pulse">
-          <AlertCircle className="text-red-500 w-4 h-4 mt-0.5 shrink-0" />
-          <p className="text-[11px] font-bold text-red-600 uppercase leading-snug">{error}</p>
-        </div>
+        <p role="alert" className="body-6 mt-6 flex items-start gap-2 rounded-xl border border-lp-destructive/40 p-3 text-lp-destructive">
+          <WarningCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" weight="bold" />
+          {error}
+        </p>
       )}
 
       <button
+        type="button"
         onClick={handlePayment}
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-[#1E3A66] disabled:opacity-40 shadow-xl text-white font-bold tracking-widest uppercase text-[11px] py-5 px-10 rounded-2xl transition-all transform active:scale-95 flex items-center justify-center gap-3"
+        aria-busy={isLoading}
+        className={cn(buttonClass('primary'), 'mt-6 w-full py-3 disabled:cursor-wait disabled:opacity-60')}
       >
-        {isLoading ? (
-          <>
-            <Loader2 className="animate-spin" size={16} />
-            Initializing...
-          </>
-        ) : (
-          <>
-            <ShieldCheck size={18} /> Pay & Place Order
-          </>
-        )}
+        <LockKey aria-hidden="true" className="size-4" weight="bold" />
+        {label}
       </button>
 
-      <div className="pt-4 flex items-center justify-center gap-6 opacity-40">
-        <img
-          src="https://razorpay.com/assets/razorpay-logo-white.svg"
-          alt="Razorpay"
-          className="h-4 grayscale invert"
-        />
-        <div className="h-4 w-px bg-slate-300" />
-        <span className="text-[9px] font-bold text-blue-100 uppercase tracking-widest">
-          PCI-DSS Secure
-        </span>
-      </div>
-    </div>
+      <p className="caption-5 mt-4 flex items-center justify-center gap-2 text-lp-muted-fg">
+        <ShieldCheck aria-hidden="true" className="size-4 text-lp-primary" />
+        Payments are processed by Razorpay. MechHub never stores your card details.
+      </p>
+    </section>
   );
 }

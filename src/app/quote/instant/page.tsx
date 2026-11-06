@@ -1,35 +1,31 @@
 'use client';
 
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense, type ReactNode } from 'react';
 import {
-  UploadCloud,
-  FileText,
-  CheckCircle,
-  ChevronRight,
-  ChevronLeft,
-  X,
-  Loader2,
-  Info,
-  AlertTriangle,
-  AlertCircle,
-  Copy,
+  ArrowRight,
+  ArrowsClockwise,
+  CaretDown,
+  CaretLeft,
+  CaretUp,
   Check,
-  Download,
-  Trash2,
-  Layers,
+  CheckCircle,
   Clock,
-  Zap,
-  Shield,
-  ChevronDown,
-  ChevronUp,
-  Cog,
-  RotateCcw,
-  RefreshCw,
-  LogIn,
+  Cube,
+  FileCode,
+  Gear,
+  Info,
+  Lightning,
+  LockKey,
+  ShareNetwork,
+  ShoppingCartSimple,
+  SignIn,
+  Stack,
+  Trash,
+  UploadSimple,
+  Warning,
+  WarningCircle,
   Wrench,
-  Boxes,
-  Cpu,
-} from 'lucide-react';
+} from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { V2Shell } from '@/components/V2Shell';
@@ -55,6 +51,10 @@ import type { SaveQuoteInput } from '@/services/quoteApi.service';
 import { CncTappingPicker } from '@/components/quote/CncTappingPicker';
 import { getTapName } from '@/config/manufacturing';
 import type { AnyQuoteResult, DFMIssue, QuantityTier, QuoteProcessMode } from '@/types/quoting';
+import { Accent, Tag } from '@/components/home/primitives';
+import { buttonClass } from '@/components/home/button';
+import { fieldClass } from '@/components/auth/AuthShell';
+import { cn } from '@/utils';
 
 // ═══════════════════════════════════════════════════
 // Instant Quote Page — File Upload → Configure → Review
@@ -66,12 +66,12 @@ const PROCESS_OPTIONS: ReadonlyArray<{
   mode: QuoteProcessMode;
   label: string;
   hint: string;
-  Icon: typeof Zap;
+  Icon: typeof Lightning;
 }> = [
-    { mode: 'laser', label: 'Laser Cutting', hint: 'Sheet parts · DXF / STEP', Icon: Zap },
-    { mode: 'cnc_milling', label: 'CNC Milling', hint: 'Prismatic parts · STEP', Icon: Cog },
-    { mode: 'cnc_turning', label: 'CNC Turning', hint: 'Round parts · STEP', Icon: RotateCcw },
-  ];
+  { mode: 'laser', label: 'Laser cutting', hint: 'Sheet parts', Icon: Lightning },
+  { mode: 'cnc_milling', label: 'CNC milling', hint: 'Prismatic parts', Icon: Gear },
+  { mode: 'cnc_turning', label: 'CNC turning', hint: 'Round parts', Icon: ArrowsClockwise },
+];
 
 const formatInr = (n: number): string =>
   `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -136,6 +136,102 @@ function quoteSpecRows(q: AnyQuoteResult): ReadonlyArray<readonly [string, strin
   ];
 }
 
+/* ── Shared presentation ───────────────────────────────────────────────────── */
+
+type Row = readonly [string, string];
+
+/** One cost card in the transparency breakdown: what it is, what it costs, how it was measured. */
+function CostCard({
+  icon: Icon,
+  label,
+  cost,
+  title,
+  rows,
+  subRows,
+  note,
+}: {
+  icon: typeof Lightning;
+  label: string;
+  cost?: string;
+  title: string;
+  rows: ReadonlyArray<Row>;
+  subRows?: ReadonlyArray<Row>;
+  note: string;
+}) {
+  return (
+    <article className="flex flex-col justify-between gap-6 rounded-2xl border border-lp-border bg-lp-bg p-6">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="lp-mono flex items-center gap-2 text-lp-muted-fg">
+            <Icon aria-hidden="true" className="size-4 text-lp-primary" weight="bold" />
+            {label}
+          </span>
+          {cost && (
+            <span className="title-4 lp-num">
+              {cost}
+              <span className="caption-5 text-lp-muted-fg"> /unit</span>
+            </span>
+          )}
+        </div>
+        <h4 className="title-3 mt-4">{title}</h4>
+        <dl className="mt-4 space-y-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-4">
+              <dt className="caption-2 text-lp-muted-fg">{k}</dt>
+              <dd className="caption-1 lp-num text-right">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        {subRows && subRows.length > 0 && (
+          <dl className="mt-4 space-y-1 border-t border-lp-border pt-4">
+            {subRows.map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4">
+                <dt className="caption-5 text-lp-muted-fg">{k}</dt>
+                <dd className="caption-4 lp-num text-right">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+      <p className="caption-5 rounded-xl bg-lp-muted px-3 py-2 text-lp-muted-fg">{note}</p>
+    </article>
+  );
+}
+
+function TransparencyShell({
+  icon: Icon,
+  title,
+  lead,
+  children,
+}: {
+  icon: typeof Lightning;
+  title: string;
+  lead: string;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby="transparency-heading" className="rounded-3xl border border-lp-border bg-lp-card p-6 md:p-8">
+      <div className="flex flex-col justify-between gap-4 border-b border-lp-border pb-6 md:flex-row md:items-end">
+        <div>
+          <p className="lp-mono flex items-center gap-2 text-lp-primary">
+            <Icon aria-hidden="true" className="size-4" weight="bold" />
+            Cost and time transparency
+          </p>
+          <h3 id="transparency-heading" className="heading-5 mt-2">
+            {title}
+          </h3>
+          <p className="body-6 mt-1 max-w-[640px] text-lp-muted-fg">{lead}</p>
+        </div>
+        <span className="lp-mono flex shrink-0 items-center gap-2 rounded-full bg-lp-primary/10 px-3 py-1 text-lp-primary">
+          <CheckCircle aria-hidden="true" className="size-4" weight="fill" />
+          Every line shown
+        </span>
+      </div>
+      <div className="mt-6">{children}</div>
+    </section>
+  );
+}
+
 function ManufacturingTransparencySection({
   quote,
   quantity,
@@ -163,7 +259,6 @@ function ManufacturingTransparencySection({
     const process = quote.process;
     const machineHourlyRate = DEFAULT_CNC_SHOP_RATES.machineRatePerHour[process] ?? 1000;
     const setupHourlyRate = DEFAULT_CNC_SHOP_RATES.setupRatePerHour;
-    const programmingHourlyRate = DEFAULT_CNC_SHOP_RATES.programmingRatePerHour;
     const machinabilityGroup = cncData?.machinabilityGroup ?? 'aluminium';
     const times = analysis.machiningTime[machinabilityGroup];
 
@@ -172,231 +267,78 @@ function ManufacturingTransparencySection({
     const totalProgCostBatch = quote.breakdown.programmingCost * quantity;
 
     return (
-      <div className="bg-lp-card border border-lp-border rounded-sm p-8 md:p-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* Section Title */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lp-border pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-lp-primary lp-label-mono mb-1.5">
-              <Cpu size={16} />
-              <span>Manufacturing & Time Transparency</span>
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold text-lp-fg tracking-tight">
-              Cost & Time Breakup
-            </h3>
-            <p className="text-xs text-lp-muted-fg mt-1 max-w-2xl">
-              Calculated using simulated cutter paths, physical material removal rates (MRR), and fixturing setups from your CAD geometry.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-2 rounded-sm text-xs font-bold shrink-0">
-            <CheckCircle size={15} />
-            <span>Fair & Transparent Pricing</span>
-          </div>
+      <TransparencyShell
+        icon={Gear}
+        title="Cost and time breakdown"
+        lead="Calculated from simulated cutter paths, material removal rates and fixturing setups read from your CAD geometry."
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          <CostCard
+            icon={Cube}
+            label="Raw material"
+            cost={formatInr(quote.breakdown.materialCost)}
+            title={material?.name ?? quote.parameters.materialId}
+            rows={[
+              ['Stock size', formatCncStock(stock)],
+              ['Raw stock mass', stockMassKg > 0 ? `${stockMassKg.toFixed(2)} kg` : '—'],
+              ['Part net mass', partMassKg > 0 ? `${partMassKg.toFixed(2)} kg` : '—'],
+              ['Removed chips', `${scrapMassKg > 0 ? `${scrapMassKg.toFixed(2)} kg` : '—'} (${((stock?.removalRatio ?? 0) * 100).toFixed(0)}%)`],
+              ['Material rate', `₹${stockPrice} / kg`],
+            ]}
+            note="Sized from the standard plate and bar catalogue with face off allowances."
+          />
+          <CostCard
+            icon={Gear}
+            label="Machining"
+            cost={formatInr(quote.breakdown.machiningCost)}
+            title={CNC_PROCESS_LABELS[process]}
+            rows={[
+              ['Cycle time per part', formatDuration(quote.breakdown.cycleTimeMin)],
+              ...(quantity > 1 ? ([['Total batch machining', formatDuration(totalBatchCycleMin)]] as const) : []),
+              ['Machine hour rate', `₹${machineHourlyRate.toLocaleString('en-IN')} / hr`],
+            ]}
+            subRows={
+              times
+                ? [
+                    ['Roughing', formatDuration(times.roughingMin)],
+                    ['Surface finishing', formatDuration(times.finishingMin)],
+                    [`Hole drilling (${analysis.features.holeCount} holes)`, formatDuration(times.drillingMin)],
+                    ...((quote.breakdown.tappingCost ?? 0) > 0
+                      ? ([[`Tapping (${quote.breakdown.tappedHoles} holes)`, formatInr(quote.breakdown.tappingCost ?? 0)]] as const)
+                      : []),
+                    ['Tool changes and rapids', formatDuration(times.toolChangeMin + times.overheadMin)],
+                  ]
+                : undefined
+            }
+            note="Machining rates include spindle power, tool wear and the operator."
+          />
+          <CostCard
+            icon={Wrench}
+            label="Setup and fixturing"
+            cost={formatInr(quote.breakdown.setupCost + quote.breakdown.programmingCost)}
+            title={`${setups.count} vise flip${setups.count > 1 ? 's' : ''} (${setups.directions.join(', ')})`}
+            rows={[
+              ['Setups', `${setups.count} fixturing${setups.count > 1 ? 's' : ''}`],
+              ['Setup time', formatDuration(analysis.setupTimeMin)],
+              ['Setup hour rate', `₹${setupHourlyRate} / hr`],
+              ['Tools', `${analysis.toolCount} cutters`],
+              ['CAM programming', formatDuration(analysis.programmingTimeMin)],
+              ['Shared across', `${quantity} unit${quantity > 1 ? 's' : ''}`],
+            ]}
+            note="Fixed costs are shared across the batch, so larger orders lower the setup cost per part."
+          />
         </div>
 
-        {/* 3 Main Transparent Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 1. Raw Material Card */}
-          <div className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4 hover:border-lp-primary/30 transition-colors">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg">
-                  <Boxes size={14} className="text-lp-primary" /> Raw Material
-                </span>
-                <span className="font-lp-mono text-sm font-bold text-lp-fg">
-                  {formatInr(quote.breakdown.materialCost)}
-                  <span className="text-[10px] font-normal text-lp-muted-fg"> /unit</span>
-                </span>
-              </div>
-              <p className="text-xs font-bold text-lp-fg mb-4">
-                {material?.name ?? quote.parameters.materialId}
-              </p>
-
-              <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Stock Sizing</span>
-                  <span className="font-semibold text-lp-fg text-right">
-                    {formatCncStock(stock)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Raw Stock Mass</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    {stockMassKg > 0 ? `${stockMassKg.toFixed(2)} kg` : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Part Net Mass</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    {partMassKg > 0 ? `${partMassKg.toFixed(2)} kg` : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Removed Chips</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    {scrapMassKg > 0 ? `${scrapMassKg.toFixed(2)} kg` : '—'} ({((stock?.removalRatio ?? 0) * 100).toFixed(0)}%)
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg border-t border-lp-border/60 pt-2">
-                  <span>Material Rate</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    ₹{stockPrice} / kg
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-              Sized from standard plate/bar catalog with face-off allowances.
-            </div>
-          </div>
-
-          {/* 2. Machining Operations Card */}
-          <div className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4 hover:border-lp-primary/30 transition-colors">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg">
-                  <Cog size={14} className="text-lp-primary" /> Machining Ops
-                </span>
-                <span className="font-lp-mono text-sm font-bold text-lp-fg">
-                  {formatInr(quote.breakdown.machiningCost)}
-                  <span className="text-[10px] font-normal text-lp-muted-fg"> /unit</span>
-                </span>
-              </div>
-              <p className="text-xs font-bold text-lp-fg mb-4">
-                {CNC_PROCESS_LABELS[process]}
-              </p>
-
-              <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Cycle Time (Per Part)</span>
-                  <span className="font-lp-mono font-bold text-lp-fg">
-                    {formatDuration(quote.breakdown.cycleTimeMin)}
-                  </span>
-                </div>
-                {quantity > 1 && (
-                  <div className="flex justify-between text-lp-muted-fg">
-                    <span>Total Batch Machining</span>
-                    <span className="font-lp-mono font-semibold text-lp-fg">
-                      {formatDuration(totalBatchCycleMin)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Machine Hour Rate</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    ₹{machineHourlyRate.toLocaleString('en-IN')} / hr
-                  </span>
-                </div>
-                {times && (
-                  <div className="border-t border-lp-border/60 pt-2 space-y-1.5 text-[11px] text-lp-muted-fg">
-                    <div className="flex justify-between">
-                      <span>• Roughing MRR</span>
-                      <span className="font-lp-mono text-lp-fg">{formatDuration(times.roughingMin)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>• Surface Finishing</span>
-                      <span className="font-lp-mono text-lp-fg">{formatDuration(times.finishingMin)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>• Hole Drilling ({analysis.features.holeCount} holes)</span>
-                      <span className="font-lp-mono text-lp-fg">{formatDuration(times.drillingMin)}</span>
-                    </div>
-                    {(quote.breakdown.tappingCost ?? 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span>• Tapping ({quote.breakdown.tappedHoles} holes)</span>
-                        <span className="font-lp-mono text-lp-fg">{formatInr(quote.breakdown.tappingCost ?? 0)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>• Tool Swaps & Rapids</span>
-                      <span className="font-lp-mono text-lp-fg">
-                        {formatDuration(times.toolChangeMin + times.overheadMin)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-              Machining rates include spindle power, carbide tool wear & operator.
-            </div>
-          </div>
-
-          {/* 3. Setup & Fixturing Card */}
-          <div className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4 hover:border-lp-primary/30 transition-colors">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg">
-                  <Wrench size={14} className="text-lp-primary" /> Setup & Fixturing
-                </span>
-                <span className="font-lp-mono text-sm font-bold text-lp-fg">
-                  {formatInr(quote.breakdown.setupCost + quote.breakdown.programmingCost)}
-                  <span className="text-[10px] font-normal text-lp-muted-fg"> /unit</span>
-                </span>
-              </div>
-              <p className="text-xs font-bold text-lp-fg mb-4">
-                {setups.count} Vise Flip{setups.count > 1 ? 's' : ''} ({setups.directions.join(', ')})
-              </p>
-
-              <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Number of Setups</span>
-                  <span className="font-lp-mono font-bold text-lp-fg">
-                    {setups.count} fixturing{setups.count > 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Setup Time</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    {formatDuration(analysis.setupTimeMin)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Setup Hour Rate</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    ₹{setupHourlyRate} / hr
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Tooling Count</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    {analysis.toolCount} cutters
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg border-t border-lp-border/60 pt-2">
-                  <span>CAM Programming</span>
-                  <span className="font-lp-mono font-semibold text-lp-fg">
-                    {formatDuration(analysis.programmingTimeMin)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-lp-muted-fg">
-                  <span>Amortized Across</span>
-                  <span className="font-bold text-lp-primary">
-                    {quantity} unit{quantity > 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-              Fixed costs amortize across the batch — larger orders lower unit setup costs.
-            </div>
-          </div>
-        </div>
-
-        {/* Batch Economics Trust Banner */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-sm bg-lp-accent/70 border border-lp-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-sm bg-lp-primary text-white flex items-center justify-center shrink-0">
-              <Zap size={16} />
-            </div>
-            <p className="text-xs text-lp-fg leading-relaxed">
-              <strong className="text-lp-fg font-bold">Batch Economy:</strong> Total setup time (
-              {formatDuration(analysis.setupTimeMin)}) and CAM programming ({formatDuration(analysis.programmingTimeMin)}) are fixed one-time investments of{' '}
-              <strong>{formatInr(totalSetupCostBatch + totalProgCostBatch)}</strong>, shared across all{' '}
-              <strong>{quantity} parts</strong> ({formatInr(quote.breakdown.setupCost + quote.breakdown.programmingCost)}/unit).
-            </p>
-          </div>
-        </div>
-      </div>
+        <p className="body-6 mt-4 flex items-start gap-3 rounded-2xl bg-lp-primary/5 p-4">
+          <Lightning aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-lp-primary" weight="fill" />
+          <span>
+            <span className="body-4">Batch economy:</span> setup ({formatDuration(analysis.setupTimeMin)}) and CAM programming (
+            {formatDuration(analysis.programmingTimeMin)}) are one time costs of{' '}
+            <span className="body-4 lp-num">{formatInr(totalSetupCostBatch + totalProgCostBatch)}</span>, shared across all{' '}
+            {quantity} parts ({formatInr(quote.breakdown.setupCost + quote.breakdown.programmingCost)} per unit).
+          </span>
+        </p>
+      </TransparencyShell>
     );
   }
 
@@ -405,96 +347,52 @@ function ManufacturingTransparencySection({
     const sheetMaterial = getSheetMaterial(quote.parameters.materialId);
     const laser =
       sheetMaterial && ['mild_steel', 'stainless', 'aluminium'].includes(sheetMaterial.family)
-        ? 'Fiber Laser (3 kW)'
-        : 'CO₂ Laser';
-    const cards: ReadonlyArray<{
-      icon: React.ReactNode;
-      label: string;
-      title: string;
-      rows: ReadonlyArray<readonly [string, string]>;
-      note: string;
-    }> = [
-      {
-        icon: <Boxes size={14} className="text-lp-primary" />,
-        label: 'Sheet Material',
-        title: `${sheetMaterial?.name ?? 'Sheet'} (${quote.parameters.thicknessMm} mm)`,
-        rows: [
-          ['Blank', formatBlank(analysis)],
-          ['Sheet Used', `${Math.round(breakdown.sheetUtilisation * 100)}% of bought sheet`],
-          ['Material Cost', `${formatInr(breakdown.materialCost)} / unit`],
-        ],
-        note: 'Nesting efficiency improves as batch size increases.',
-      },
-      {
-        icon: <Zap size={14} className="text-lp-primary" />,
-        label: 'Laser Cutting Ops',
-        title: laser,
-        rows: [
-          ['Cut Perimeter', `${(analysis.cutLengthMm / 1000).toFixed(2)} m`],
-          ['Pierces', `${analysis.pierces}`],
-          ['Cut Time', `${formatDuration(breakdown.cutTimeMin)} / unit`],
-          ['Cutting Cost', `${formatInr(breakdown.cutCost)} / unit`],
-        ],
-        note: 'Measured from your file: outer profile plus every internal cut-out.',
-      },
-      {
-        icon: <Wrench size={14} className="text-lp-primary" />,
-        label: 'Setup & Forming',
-        title: breakdown.bendCount > 0 ? `${breakdown.bendCount} bend${breakdown.bendCount > 1 ? 's' : ''} on the press brake` : 'Flat part · no bending',
-        rows: [
-          ['Nesting & Setup', `${formatInr(breakdown.laserSetupCost)} / unit`],
-          ...(breakdown.bendCount > 0 ? ([['Bending', `${formatInr(breakdown.bendingCost)} / unit`]] as const) : []),
-          ['Surface Finish', `${formatInr(breakdown.finishCost)} / unit`],
-        ],
-        note: `Setup is a one-time job cost shared across ${quantity} unit${quantity > 1 ? 's' : ''}.`,
-      },
-    ];
+        ? 'Fiber laser (3 kW)'
+        : 'CO₂ laser';
 
     return (
-      <div className="bg-lp-card border border-lp-border rounded-sm p-8 md:p-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lp-border pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-lp-primary lp-label-mono mb-1.5">
-              <Zap size={16} />
-              <span>Manufacturing & Time Transparency</span>
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold text-lp-fg tracking-tight">
-              Laser Cutting Cost & Time Breakup
-            </h3>
-            <p className="text-xs text-lp-muted-fg mt-1 max-w-2xl">
-              Measured from your {analysis.profileOnly ? 'DXF profile' : '3D model'}: blank size, total cut perimeter, pierces{analysis.profileOnly ? '' : ' and bends'}, priced with our laser speed cards.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-2 rounded-sm text-xs font-bold shrink-0">
-            <CheckCircle size={15} />
-            <span>Fair & Transparent Pricing</span>
-          </div>
+      <TransparencyShell
+        icon={Lightning}
+        title="Laser cutting cost and time breakdown"
+        lead={`Measured from your ${analysis.profileOnly ? 'flat profile' : '3D model'}: blank size, total cut perimeter, pierces${analysis.profileOnly ? '' : ' and bends'}, priced with our laser speed cards.`}
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          <CostCard
+            icon={Cube}
+            label="Sheet material"
+            title={`${sheetMaterial?.name ?? 'Sheet'} (${quote.parameters.thicknessMm} mm)`}
+            rows={[
+              ['Blank', formatBlank(analysis)],
+              ['Sheet used', `${Math.round(breakdown.sheetUtilisation * 100)}% of bought sheet`],
+              ['Material cost', `${formatInr(breakdown.materialCost)} / unit`],
+            ]}
+            note="Nesting efficiency improves as the batch grows."
+          />
+          <CostCard
+            icon={Lightning}
+            label="Laser cutting"
+            title={laser}
+            rows={[
+              ['Cut perimeter', `${(analysis.cutLengthMm / 1000).toFixed(2)} m`],
+              ['Pierces', `${analysis.pierces}`],
+              ['Cut time', `${formatDuration(breakdown.cutTimeMin)} / unit`],
+              ['Cutting cost', `${formatInr(breakdown.cutCost)} / unit`],
+            ]}
+            note="Measured from your file: the outer profile plus every internal cut out."
+          />
+          <CostCard
+            icon={Wrench}
+            label="Setup and forming"
+            title={breakdown.bendCount > 0 ? `${breakdown.bendCount} bend${breakdown.bendCount > 1 ? 's' : ''} on the press brake` : 'Flat part, no bending'}
+            rows={[
+              ['Nesting and setup', `${formatInr(breakdown.laserSetupCost)} / unit`],
+              ...(breakdown.bendCount > 0 ? ([['Bending', `${formatInr(breakdown.bendingCost)} / unit`]] as const) : []),
+              ['Surface finish', `${formatInr(breakdown.finishCost)} / unit`],
+            ]}
+            note={`Setup is a one time job cost shared across ${quantity} unit${quantity > 1 ? 's' : ''}.`}
+          />
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {cards.map((card) => (
-            <div key={card.label} className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4">
-              <div>
-                <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg mb-2">
-                  {card.icon} {card.label}
-                </span>
-                <p className="text-sm font-bold text-lp-fg mb-4">{card.title}</p>
-                <div className="space-y-2 text-xs text-lp-muted-fg">
-                  {card.rows.map(([label, value]) => (
-                    <div key={label} className="flex justify-between gap-3">
-                      <span>{label}</span>
-                      <span className="font-lp-mono font-semibold text-lp-fg text-right">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-                {card.note}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      </TransparencyShell>
     );
   }
 
@@ -505,123 +403,102 @@ function ManufacturingTransparencySection({
   const thicknessMm = quote.parameters.thicknessMm;
 
   return (
-    <div className="bg-lp-card border border-lp-border rounded-sm p-8 md:p-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lp-border pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-lp-primary lp-label-mono mb-1.5">
-            <Zap size={16} />
-            <span>Manufacturing & Time Transparency</span>
-          </div>
-          <h3 className="text-xl md:text-2xl font-bold text-lp-fg tracking-tight">
-            Laser Cutting Cost & Time Breakup
-          </h3>
-          <p className="text-xs text-lp-muted-fg mt-1 max-w-2xl">
-            Derived directly from your vector contour geometry, total cut perimeter, pierces, and laser speed cards.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-2 rounded-sm text-xs font-bold shrink-0">
-          <CheckCircle size={15} />
-          <span>Fair & Transparent Pricing</span>
-        </div>
+    <TransparencyShell
+      icon={Lightning}
+      title="Laser cutting cost and time breakdown"
+      lead="Derived from your contour geometry, total cut perimeter, pierces and laser speed cards."
+    >
+      <div className="grid gap-4 lg:grid-cols-3">
+        <CostCard
+          icon={Cube}
+          label="Sheet material"
+          title={`${material?.name ?? 'Sheet metal'} (${thicknessMm} mm)`}
+          rows={[
+            ['Bounding box', `${geometry.boundingBox.widthMm.toFixed(1)} × ${geometry.boundingBox.heightMm.toFixed(1)} mm`],
+            ['Material cost', `${formatInr(quote.breakdown.materialCost)} / unit`],
+          ]}
+          note="Nesting efficiency improves as the batch grows."
+        />
+        <CostCard
+          icon={Lightning}
+          label="Laser cutting"
+          title="Fiber laser"
+          rows={[
+            ['Cut perimeter', `${cutLengthM} m`],
+            ['Pierces and internal holes', `${geometry.holeCount} pierces`],
+            ['Cutting cost', `${formatInr(quote.breakdown.cutCost)} / unit`],
+          ]}
+          note="The machine rate covers assist gas, optics and electricity."
+        />
+        <CostCard
+          icon={Wrench}
+          label="Job setup"
+          title="Batch loading"
+          rows={[
+            ['Setup and nesting', `${formatInr(quote.breakdown.setupCost)} / unit`],
+            ['Batch quantity', `${quantity} unit${quantity > 1 ? 's' : ''}`],
+            ['Surface finish', `${formatInr(quote.breakdown.finishCost)} / unit`],
+          ]}
+          note="The sheet setup fee is shared across the whole quantity."
+        />
       </div>
+    </TransparencyShell>
+  );
+}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Raw Sheet */}
-        <div className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4">
-          <div>
-            <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg mb-2">
-              <Boxes size={14} className="text-lp-primary" /> Sheet Material
-            </span>
-            <p className="text-sm font-bold text-lp-fg mb-4">
-              {material?.name ?? 'Sheet Metal'} ({thicknessMm} mm)
-            </p>
-            <div className="space-y-2 text-xs text-lp-muted-fg">
-              <div className="flex justify-between">
-                <span>Bounding Box</span>
-                <span className="font-lp-mono font-semibold text-lp-fg">
-                  {geometry.boundingBox.widthMm.toFixed(1)} × {geometry.boundingBox.heightMm.toFixed(1)} mm
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Material Cost</span>
-                <span className="font-lp-mono font-bold text-lp-fg">
-                  {formatInr(quote.breakdown.materialCost)} / unit
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-            Nesting efficiency improves as batch size increases.
-          </div>
-        </div>
+/** Notice box: error (blocking), warning, or info. Inline and specific, never a toast. */
+function Notice({
+  tone,
+  children,
+  action,
+}: {
+  tone: 'error' | 'warning' | 'info';
+  children: ReactNode;
+  action?: ReactNode;
+}) {
+  const Icon = tone === 'error' ? WarningCircle : tone === 'warning' ? Warning : Info;
+  return (
+    <div
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={cn(
+        'flex flex-col items-start justify-between gap-3 rounded-xl border p-4 sm:flex-row',
+        tone === 'error' ? 'border-lp-destructive/40 bg-lp-destructive/5' : tone === 'warning' ? 'border-lp-fg/15 bg-lp-muted' : 'border-lp-primary/20 bg-lp-primary/5'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <Icon
+          aria-hidden="true"
+          className={cn('mt-0.5 size-5 shrink-0', tone === 'error' ? 'text-lp-destructive' : tone === 'warning' ? 'text-lp-fg' : 'text-lp-primary')}
+          weight="bold"
+        />
+        <div className={cn('body-6', tone === 'error' && 'text-lp-destructive')}>{children}</div>
+      </div>
+      {action}
+    </div>
+  );
+}
 
-        {/* Laser Cut Ops */}
-        <div className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4">
-          <div>
-            <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg mb-2">
-              <Zap size={14} className="text-lp-primary" /> Laser Cutting Ops
-            </span>
-            <p className="text-sm font-bold text-lp-fg mb-4">Fiber Laser (High Precision)</p>
-            <div className="space-y-2 text-xs text-lp-muted-fg">
-              <div className="flex justify-between">
-                <span>Cut Perimeter</span>
-                <span className="font-lp-mono font-bold text-lp-fg">{cutLengthM} m</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Pierces & Internal Holes</span>
-                <span className="font-lp-mono font-semibold text-lp-fg">
-                  {geometry.holeCount} pierces
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Cutting Cost</span>
-                <span className="font-lp-mono font-bold text-lp-fg">
-                  {formatInr(quote.breakdown.cutCost)} / unit
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-            Machine rate covers assist gas, optic consumables, and electricity.
-          </div>
-        </div>
-
-        {/* Setup & Nesting */}
-        <div className="bg-lp-accent border border-lp-border rounded-sm p-6 flex flex-col justify-between space-y-4">
-          <div>
-            <span className="flex items-center gap-1.5 lp-label-mono text-lp-muted-fg mb-2">
-              <Wrench size={14} className="text-lp-primary" /> Job Setup & Handling
-            </span>
-            <p className="text-sm font-bold text-lp-fg mb-4">Batch Loading & Pallet Shuttle</p>
-            <div className="space-y-2 text-xs text-lp-muted-fg">
-              <div className="flex justify-between">
-                <span>Setup & Nesting Fee</span>
-                <span className="font-lp-mono font-semibold text-lp-fg">
-                  {formatInr(quote.breakdown.setupCost)} / unit
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Batch Quantity</span>
-                <span className="font-bold text-lp-primary">
-                  {quantity} unit{quantity > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Surface Finish</span>
-                <span className="font-semibold text-lp-fg">
-                  {formatInr(quote.breakdown.finishCost)} / unit
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="text-[10px] text-lp-muted-fg bg-lp-bg/70 p-2.5 rounded-sm border border-lp-border/50">
-            Sheet setup fee is amortized over total quantity.
-          </div>
-        </div>
+/** Progress shimmer for analysis in flight (a skeleton, not a spinner). */
+function Analysing({ children }: { children: ReactNode }) {
+  return (
+    <div role="status" className="rounded-xl border border-lp-primary/20 bg-lp-primary/5 p-4">
+      <p className="body-5 text-lp-primary">{children}</p>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-lp-primary/10">
+        <div className="lp-progress h-full w-1/3 rounded-full bg-lp-primary" />
       </div>
     </div>
   );
 }
+
+function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className="title-4 block">
+      {children}
+    </label>
+  );
+}
+
+const selectClass = cn(fieldClass(), 'lp-select appearance-none pr-10');
 
 export default function InstantQuotePage() {
   // useSearchParams needs a Suspense boundary for prerendering.
@@ -769,1075 +646,843 @@ function InstantQuoteContent() {
 
   const stepIndex = step === 'upload' ? 0 : step === 'configure' ? 1 : 2;
 
+  const steps = [
+    { key: 'upload', label: 'Upload' },
+    { key: 'configure', label: 'Configure' },
+    { key: 'review', label: 'Review' },
+  ] as const;
+  const quoteDisabled = !activeQuote || config.hasBlockingIssues || isCalculating || saved.status === 'saving';
+
   return (
     <V2Shell noFooter>
-      <div className="min-h-screen relative -mt-20 pt-20">
-      {/* Background dot grid */}
-      <div
-        className="absolute inset-0 bg-lp-bg/50"
-        style={{
-          backgroundImage: 'radial-gradient(oklch(0.55 0.05 250 / 0.06) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-
-      <div className="max-w-6xl mx-auto relative z-10 pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-        {/* ── Header + Stepper ── */}
-        <div className="mb-12">
-          <div className="mb-8">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 lp-label-mono text-lp-primary hover:text-lp-primary/80 transition-all group"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              Back to Project Hub
-            </Link>
-          </div>
-          <h1 className="text-3xl md:text-5xl uppercase tracking-tight font-bold text-lp-fg mb-4">
-            Instant Quote
-          </h1>
-          <p className="text-lp-muted-fg text-lg mb-8 font-medium">
-            Upload your file, configure options, get a price in seconds.
-          </p>
-
-          {/* Step indicators */}
-          <div className="flex items-center justify-between relative max-w-2xl mx-auto">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-lp-border z-0 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-lp-primary transition-all duration-700 ease-in-out"
-                style={{ width: stepIndex === 0 ? '0%' : stepIndex === 1 ? '50%' : '100%' }}
-              />
-            </div>
-            {[
-              { key: 'upload', label: 'Upload' },
-              { key: 'configure', label: 'Configure' },
-              { key: 'review', label: 'Review' },
-            ].map((s, i) => {
-              const isActive = i === stepIndex;
-              const isPast = i < stepIndex;
-              return (
-                <div key={s.key} className="relative z-10 flex flex-col items-center">
-                  <div
-                    className={`w-12 h-12 rounded-sm flex items-center justify-center font-bold text-sm transition-all duration-500 border-2 ${isActive
-                        ? 'bg-lp-primary border-lp-primary text-white shadow-sm scale-110'
-                        : isPast
-                          ? 'bg-lp-primary border-lp-primary text-white'
-                          : 'bg-lp-card border-lp-border text-lp-muted-fg'
-                      }`}
-                  >
-                    {isPast ? <CheckCircle size={20} /> : <span>{i + 1}</span>}
-                  </div>
-                  <span
-                    className={`mt-3 lp-label-mono ${isActive || isPast ? 'text-lp-primary' : 'text-lp-muted-fg'}`}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ═══ SIGN-IN REQUIRED ═══ */}
-        {needsSignIn && (
-          <div className="max-w-xl mx-auto bg-lp-card border border-lp-border rounded-sm p-10 shadow-sm text-center">
-            <div className="w-16 h-16 bg-lp-accent border border-lp-border rounded-sm flex items-center justify-center mx-auto mb-6">
-              <LogIn className="w-8 h-8 text-lp-primary" />
-            </div>
-            <h3 className="text-xl uppercase tracking-tight font-bold text-lp-fg mb-2">
-              Sign in for instant pricing
-            </h3>
-            <p className="text-sm text-lp-muted-fg mb-8">
-              CNC machining and laser cutting quotes are available to registered MechHub users.
-              {shareRef ? ` Sign in to view quote ${shareRef}.` : ''}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <div className="px-4 pb-16 pt-8 md:pb-24 md:pt-16">
+        <div className="mx-auto max-w-[1200px]">
+          {/* ── Header + stepper ── */}
+          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+            <div>
               <Link
-                href={loginHref}
-                className="px-8 py-4 rounded-sm bg-lp-primary hover:bg-lp-ink/80 text-white lp-label-mono transition-all"
+                href="/dashboard"
+                className="caption-1 -ml-2 inline-flex items-center gap-2 rounded-full px-2 py-1 text-lp-muted-fg transition-colors duration-300 ease-lp hover:bg-lp-muted hover:text-lp-fg"
               >
-                Sign In
+                <CaretLeft aria-hidden="true" className="size-4" weight="bold" />
+                Back to dashboard
               </Link>
-              <Link
-                href={registerHref}
-                className="px-8 py-4 rounded-sm border border-lp-border bg-lp-card text-lp-primary lp-label-mono hover:border-lp-primary/50 transition-all"
-              >
-                Create Account
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ STEP 1: UPLOAD ═══ */}
-        {!needsSignIn && step === 'upload' && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-4xl mx-auto">
-            <div
-              className={`border-2 border-dashed rounded-sm p-16 text-center bg-lp-card transition-all cursor-pointer group shadow-sm relative overflow-hidden ${fileUpload.isDragging
-                  ? 'border-lp-primary bg-lp-accent/50 scale-[1.02]'
-                  : fileUpload.files.length > 0
-                    ? 'border-lp-primary/30 hover:border-lp-primary/50'
-                    : 'border-lp-border hover:border-lp-primary/50 hover:bg-lp-accent/80'
-                }`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                fileUpload.setDragging(true);
-              }}
-              onDragLeave={() => fileUpload.setDragging(false)}
-              onDrop={fileUpload.handleFileDrop}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept={fileUpload.acceptedFormats}
-                multiple
-                onChange={fileUpload.handleFileSelect}
-              />
-              <div className="w-24 h-24 bg-lp-accent border border-lp-border rounded-sm flex items-center justify-center mx-auto mb-8 group-hover:scale-105 group-hover:bg-lp-ink transition-all shadow-lg relative z-10">
-                <UploadCloud className="w-12 h-12 text-lp-primary group-hover:text-white transition-colors" />
+              <div className="mt-4">
+                <Tag>Instant quote</Tag>
               </div>
-              <h3 className="text-2xl uppercase tracking-tight font-bold mb-3 text-lp-fg relative z-10">
-                {fileUpload.files.length > 0 ? 'Add More Files' : 'Upload CAD Files'}
-              </h3>
-              <p className="text-lp-muted-fg font-bold uppercase tracking-widest mb-8 text-[11px] relative z-10">
-                Drag and drop or click to upload — DXF, STEP, STP
-              </p>
-              <div className="flex flex-wrap justify-center gap-3 text-[10px] text-lp-primary lp-label-mono relative z-10">
-                {['.DXF', '.STEP', '.STP'].map((fmt) => (
-                  <span
-                    key={fmt}
-                    className="bg-lp-accent px-4 py-2 rounded-sm border border-lp-border"
-                  >
-                    {fmt}
-                  </span>
-                ))}
-              </div>
+              <h1 className="heading-2 mt-4">
+                Get a price in <Accent>seconds</Accent>
+              </h1>
+              <p className="body-3 mt-2 text-lp-muted-fg">Upload a STEP file, pick your options and see the full price before you order.</p>
             </div>
 
-            {/* File list */}
-            {fileUpload.files.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-lp-primary" />
-                    <span className="text-sm font-bold text-lp-fg">
-                      {fileUpload.files.length} {fileUpload.files.length === 1 ? 'file' : 'files'}{' '}
-                      uploaded
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {fileUpload.files.map((f) => (
-                    <div
-                      key={f.id}
-                      className={`flex items-center gap-4 px-5 py-4 rounded-sm bg-lp-card border transition-all cursor-pointer group shadow-sm ${f.id === fileUpload.activeFileId
-                          ? 'border-lp-primary ring-1 ring-lp-primary/20 shadow-md'
-                          : 'border-lp-border hover:border-lp-primary/30'
-                        }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileUpload.setActiveFile(f.id);
-                      }}
-                    >
-                      <div className="w-10 h-10 rounded-sm bg-lp-accent border border-lp-border flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-lp-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-lp-fg text-sm truncate">{f.fileName}</p>
-                        <p className="text-[10px] text-lp-muted-fg font-bold uppercase tracking-widest">
-                          {(f.fileSizeBytes / 1024).toFixed(0)} KB ·{' '}
-                          {f.fileName.toLowerCase().endsWith('.dxf') ? '2D profile' : '3D model'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {f.status === 'ready' && (
-                          <CheckCircle className="w-5 h-5 text-emerald-500" />
-                        )}
-                        {f.status === 'uploading' && (
-                          <Loader2 className="w-5 h-5 text-lp-primary animate-spin" />
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fileUpload.removeFile(f.id);
-                          }}
-                          className="p-2 rounded-sm text-lp-muted-fg hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-center gap-8 text-[11px] lp-label-mono text-lp-muted-fg">
-              <span className="flex items-center gap-2.5">
-                <Shield size={16} className="text-emerald-500" /> NDA Protected
-              </span>
-              <span className="flex items-center gap-2.5">
-                <Zap size={16} className="text-lp-primary" /> Instant Price
-              </span>
-            </div>
-
-            <button
-              onClick={handleContinueToConfigure}
-              disabled={fileUpload.files.length === 0}
-              className="w-full bg-lp-primary hover:bg-lp-ink/80 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm text-white lp-label-mono text-[11px] py-5 px-10 rounded-sm transition-all flex items-center justify-center gap-2 transform active:scale-95"
-            >
-              Configure Quote <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* ═══ STEP 2: CONFIGURE ═══ */}
-        {!needsSignIn && step === 'configure' && (
-          <div className="animate-in fade-in slide-in-from-right-8 duration-700">
-            {/* Active file indicator */}
-            {activeFile && (
-              <div className="flex items-center justify-between mb-8 bg-lp-card border border-lp-border p-5 rounded-sm shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-lp-accent rounded-sm border border-lp-border">
-                    <FileText size={20} className="text-lp-primary" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-lp-fg block">{activeFile.fileName}</span>
-                    <span className="text-[10px] text-lp-muted-fg font-bold uppercase tracking-widest">
-                      {isCnc
-                        ? cnc.analysis
-                          ? `${cnc.analysis.part.boundingBox.x}×${cnc.analysis.part.boundingBox.y}×${cnc.analysis.part.boundingBox.z}mm · ${cnc.analysis.features.holeCount} holes`
-                          : cnc.analysisStatus === 'analyzing'
-                            ? 'Analyzing...'
-                            : '—'
-                        : sheet.analysis
-                          ? `${formatBlank(sheet.analysis)} · ${sheet.analysis.holes.reduce((n, h) => n + h.count, 0)} holes`
-                          : sheet.analysisStatus === 'analyzing'
-                            ? 'Analyzing...'
-                            : '—'}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setStep('upload')}
-                  className="lp-label-mono text-lp-primary hover:text-lp-primary/80 flex items-center gap-1.5 transition-colors bg-lp-accent px-4 py-2 rounded-sm border border-lp-border"
-                >
-                  <X size={14} /> Change File
-                </button>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left: Configuration Selectors */}
-              <div className="lg:col-span-2 bg-lp-card border border-lp-border rounded-sm p-8 md:p-10 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-lp-primary" />
-
-                {/* Process */}
-                <div className="space-y-2 mt-4">
-                  <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest ml-1">
-                    Process
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {PROCESS_OPTIONS.map(({ mode, label, hint, Icon }) => (
-                      <button
-                        key={mode}
-                        onClick={() => setProcessMode(mode)}
-                        aria-pressed={processMode === mode}
-                        className={`px-4 py-3 rounded-sm text-left transition-all border flex items-center gap-3 ${processMode === mode
-                            ? 'bg-lp-primary text-white border-lp-primary shadow-lg'
-                            : 'bg-lp-card text-lp-muted-fg border-lp-border hover:border-lp-primary/50 hover:text-lp-primary/80'
-                          }`}
-                      >
-                        <Icon size={18} className="shrink-0" />
-                        <span>
-                          <span className="block lp-label-mono">
-                            {label}
-                          </span>
-                          <span
-                            className={`block text-[10px] font-medium mt-0.5 ${processMode === mode ? 'text-lp-muted-fg' : 'text-lp-muted-fg'
-                              }`}
-                          >
-                            {hint}
-                          </span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CNC part analysis */}
-                {isCnc && (
-                  <div className="mt-6">
-                    {cnc.analysisStatus === 'analyzing' && (
-                      <div className="flex items-center gap-3 p-4 rounded-sm bg-lp-accent border border-lp-border">
-                        <Loader2 className="w-5 h-5 text-lp-primary animate-spin shrink-0" />
-                        <p className="text-xs font-bold text-lp-primary">
-                          Analysing part geometry — stock, setups and machining time…
-                        </p>
-                      </div>
-                    )}
-                    {cnc.analysisStatus === 'unsupported_file' && (
-                      <div className="flex items-start gap-3 p-4 rounded-sm bg-amber-50 border border-amber-200">
-                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                        <p className="text-xs font-bold text-amber-700">
-                          CNC quotes need a STEP file (.step or .stp). Upload the 3D model of this
-                          part to price it for machining.
-                        </p>
-                      </div>
-                    )}
-                    {cnc.analysisStatus === 'error' && (
-                      <div className="flex items-start justify-between gap-3 p-4 rounded-sm bg-red-50 border border-red-200">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-bold text-red-700">{cnc.error}</p>
-                        </div>
-                        <button
-                          onClick={cnc.retryAnalysis}
-                          className="shrink-0 lp-label-mono text-red-700 hover:text-red-900 flex items-center gap-1.5 bg-lp-card px-3 py-2 rounded-sm border border-red-200"
-                        >
-                          <RefreshCw size={12} /> Retry
-                        </button>
-                      </div>
-                    )}
-                    {cnc.analysis && (
-                      <div className="space-y-3">
-                        {cnc.processMismatch && (
-                          <div className="flex items-start gap-3 p-4 rounded-sm bg-lp-accent border border-lp-border">
-                            <Info className="w-5 h-5 text-lp-primary shrink-0 mt-0.5" />
-                            <p className="text-xs font-bold text-lp-primary">
-                              This part is best made by{' '}
-                              {CNC_PROCESS_LABELS[cnc.analysis.process.recommended]}, so it is
-                              priced for that process.
-                            </p>
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          {[
-                            ['Recommended', CNC_PROCESS_LABELS[cnc.analysis.process.recommended]],
-                            ['Stock', formatCncStock(cnc.analysis.stock)],
-                            [
-                              'Setups',
-                              `${cnc.analysis.setups.count}${cnc.analysis.setups.directions.length > 0
-                                ? ` (${cnc.analysis.setups.directions.join(', ')})`
-                                : ''
-                              }`,
-                            ],
-                            [
-                              'Cycle Time',
-                              cnc.quoteResult
-                                ? `${cnc.quoteResult.breakdown.cycleTimeMin.toFixed(1)} min/part`
-                                : '—',
-                            ],
-                          ].map(([lbl, val]) => (
-                            <div
-                              key={lbl}
-                              className="p-3 rounded-sm bg-lp-accent border border-lp-border"
-                            >
-                              <p className="lp-label-mono text-lp-muted-fg">
-                                {lbl}
-                              </p>
-                              <p className="text-xs font-bold text-lp-fg mt-1">{val}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Laser part analysis — the converter measures the real file */}
-                {!isCnc && (
-                  <div className="mt-6">
-                    {sheet.analysisStatus === 'analyzing' && (
-                      <div className="flex items-center gap-3 p-4 rounded-sm bg-lp-accent border border-lp-border">
-                        <Loader2 className="w-5 h-5 text-lp-primary animate-spin shrink-0" />
-                        <p className="text-xs font-bold text-lp-primary">
-                          Measuring your part — flat blank, cut length, pierces and bends…
-                        </p>
-                      </div>
-                    )}
-                    {sheet.analysisStatus === 'unsupported_file' && (
-                      <div className="flex items-start gap-3 p-4 rounded-sm bg-amber-50 border border-amber-200">
-                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                        <p className="text-xs font-bold text-amber-700">
-                          Laser quotes need a STEP (.step, .stp) or DXF file. Upload the part&apos;s
-                          3D model or its flat profile to price it.
-                        </p>
-                      </div>
-                    )}
-                    {sheet.analysisStatus === 'error' && sheet.errorCode === ErrorCode.NOT_SHEET_METAL && (
-                      <div className="flex items-start justify-between gap-3 p-4 rounded-sm bg-amber-50 border border-amber-200">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-bold text-amber-700">
-                            {sheet.error} Laser cutting needs a part cut from one flat sheet of
-                            constant thickness. Solid parts are priced by CNC machining.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => setProcessMode('cnc_milling')}
-                          className="shrink-0 lp-label-mono text-amber-800 hover:text-amber-950 flex items-center gap-1.5 bg-lp-card px-3 py-2 rounded-sm border border-amber-200"
-                        >
-                          <Cog size={12} /> Price as CNC
-                        </button>
-                      </div>
-                    )}
-                    {sheet.analysisStatus === 'error' && sheet.errorCode !== ErrorCode.NOT_SHEET_METAL && (
-                      <div className="flex items-start justify-between gap-3 p-4 rounded-sm bg-red-50 border border-red-200">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                          <p className="text-xs font-bold text-red-700">{sheet.error}</p>
-                        </div>
-                        <button
-                          onClick={sheet.retryAnalysis}
-                          className="shrink-0 lp-label-mono text-red-700 hover:text-red-900 flex items-center gap-1.5 bg-lp-card px-3 py-2 rounded-sm border border-red-200"
-                        >
-                          <RefreshCw size={12} /> Retry
-                        </button>
-                      </div>
-                    )}
-                    {sheet.analysis && (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {[
-                          ['Blank', formatBlank(sheet.analysis)],
-                          ['Cut Length', `${(sheet.analysis.cutLengthMm / 1000).toFixed(2)} m`],
-                          ['Pierces', `${sheet.analysis.pierces}`],
-                          sheet.analysis.profileOnly
-                            ? ['Thickness', 'Pick below (DXF)']
-                            : ['Model', `${sheet.analysis.thicknessMm} mm · ${sheet.analysis.bends.length} bend${sheet.analysis.bends.length === 1 ? '' : 's'}`],
-                        ].map(([lbl, val]) => (
-                          <div key={lbl} className="p-3 rounded-sm bg-lp-accent border border-lp-border">
-                            <p className="lp-label-mono text-lp-muted-fg">{lbl}</p>
-                            <p className="text-xs font-bold text-lp-fg mt-1">{val}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                  {/* Material */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest ml-1">
-                      Material
-                    </label>
-                    <select
-                      value={config.state.materialId}
-                      onChange={(e) => config.setMaterialId(e.target.value)}
-                      className="w-full bg-lp-accent border border-lp-border rounded-sm px-5 py-4 text-lp-fg focus:outline-none focus:border-lp-primary focus:ring-4 focus:ring-lp-primary/5 hover:border-lp-border appearance-none custom-select transition-all font-medium"
-                    >
-                      {config.materials.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name} ({m.alloy})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Thickness — sheet parts only */}
-                  {!isCnc && (
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest ml-1">
-                        Thickness
-                      </label>
-                      <select
-                        value={sheet.state.thicknessMm}
-                        onChange={(e) => sheet.setThicknessMm(Number(e.target.value))}
-                        className="w-full bg-lp-accent border border-lp-border rounded-sm px-5 py-4 text-lp-fg focus:outline-none focus:border-lp-primary focus:ring-4 focus:ring-lp-primary/5 hover:border-lp-border appearance-none custom-select transition-all font-medium"
-                      >
-                        {sheet.availableThicknesses.map((t) => (
-                          <option key={t} value={t}>
-                            {t}mm
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Finish */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest ml-1">
-                      Surface Finish
-                    </label>
-                    <select
-                      value={config.state.finishType}
-                      onChange={(e) => config.setFinishType(e.target.value as never)}
-                      className="w-full bg-lp-accent border border-lp-border rounded-sm px-5 py-4 text-lp-fg focus:outline-none focus:border-lp-primary focus:ring-4 focus:ring-lp-primary/5 hover:border-lp-border appearance-none custom-select transition-all font-medium"
-                    >
-                      {config.availableFinishes.map((f) => (
-                        <option key={f.type} value={f.type}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Quantity */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest ml-1">
-                      Quantity
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={1}
-                        max={10000}
-                        value={config.state.quantity}
-                        onChange={(e) => config.setQuantity(Number(e.target.value))}
-                        className="w-full bg-lp-accent border border-lp-border rounded-sm px-5 py-4 text-lp-fg focus:outline-none focus:border-lp-primary focus:ring-4 focus:ring-lp-primary/5 hover:border-lp-border transition-all font-bold"
-                      />
-                      {config.savingsPercent > 0 && (
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 lp-label-mono bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-sm flex items-center gap-1">
-                          <Zap size={10} /> {config.savingsPercent}% off
-                        </span>
+            <ol className="flex items-center gap-2" aria-label="Quote progress">
+              {steps.map((s, i) => {
+                const done = i < stepIndex;
+                const current = i === stepIndex;
+                return (
+                  <li key={s.key} className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
+                    <span
+                      className={cn(
+                        'lp-mono flex size-8 items-center justify-center rounded-full border transition-colors duration-500 ease-lp',
+                        current
+                          ? 'border-lp-primary bg-lp-primary text-lp-primary-fg'
+                          : done
+                            ? 'border-lp-primary bg-lp-primary/10 text-lp-primary'
+                            : 'border-lp-border text-lp-muted-fg'
                       )}
-                    </div>
-                  </div>
-
-                  {/* Turnaround */}
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest ml-1">
-                      Turnaround
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {config.turnaroundOptions.map((opt) => (
-                        <button
-                          key={opt.type}
-                          onClick={() => config.setTurnaround(opt.type)}
-                          className={`px-4 py-3 rounded-sm lp-label-mono transition-all border text-center ${config.state.turnaround === opt.type
-                              ? 'bg-lp-primary text-white border-lp-primary shadow-lg'
-                              : 'bg-lp-card text-lp-muted-fg border-lp-border hover:border-lp-primary/50 hover:text-lp-primary/80'
-                            }`}
-                        >
-                          <span className="block">
-                            {opt.days === 0 ? 'Same Day' : `${opt.days}d`}
-                          </span>
-                          <span
-                            className={`block mt-1 ${config.state.turnaround === opt.type
-                                ? 'text-lp-muted-fg'
-                                : 'text-lp-muted-fg'
-                              }`}
-                          >
-                            {opt.multiplier === 1
-                              ? 'Base'
-                              : opt.multiplier < 1
-                                ? `−${Math.round((1 - opt.multiplier) * 100)}%`
-                                : `+${Math.round((opt.multiplier - 1) * 100)}%`}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Threads — priced from the analysed holes */}
-                  {isCnc && cnc.analysis && (
-                    <div className="md:col-span-2">
-                      <CncTappingPicker
-                        holes={cnc.tappableHoles}
-                        picks={cnc.tapPicks}
-                        onPick={cnc.setTapPick}
-                        tappingCost={cnc.quoteResult?.breakdown.tappingCost}
-                        tappedHoles={cnc.quoteResult?.breakdown.tappedHoles}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* DFM Feedback */}
-                {config.dfmIssues.length > 0 && (
-                  <div className="mt-8 space-y-3">
-                    <h4 className="lp-label-mono text-lp-muted-fg flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" /> DFM Feedback
-                    </h4>
-                    {config.dfmIssues.map((issue: DFMIssue, idx: number) => (
-                      <div
-                        key={idx}
-                        className={`p-4 rounded-sm border ${issue.blocking
-                            ? 'bg-red-50 border-red-200'
-                            : 'bg-amber-50 border-amber-200'
-                          }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          {issue.blocking ? (
-                            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                          ) : (
-                            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                          )}
-                          <div>
-                            <p
-                              className={`text-xs font-bold ${issue.blocking ? 'text-red-700' : 'text-amber-700'}`}
-                            >
-                              {issue.message}
-                            </p>
-                            <p className="text-[10px] text-lp-muted-fg mt-1 font-medium">
-                              💡 {issue.fixSuggestion}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Save failure — stay on Configure so the customer can retry */}
-                {saved.status === 'error' && !isShared && saved.error && (
-                  <div className="mt-8 flex items-start gap-3 p-4 rounded-sm bg-red-50 border border-red-200">
-                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                    <p className="text-xs font-bold text-red-700">
-                      Couldn&apos;t save your quote: {saved.error}
-                    </p>
-                  </div>
-                )}
-
-                {/* CTA buttons */}
-                <div className="mt-10 pt-8 border-t border-lp-border flex justify-between items-center">
-                  <button
-                    onClick={() => setStep('upload')}
-                    className="px-8 py-4 rounded-sm border border-lp-border bg-lp-card text-lp-muted-fg hover:text-lp-fg hover:border-lp-border transition-all lp-label-mono"
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    onClick={handleGetQuote}
-                    disabled={
-                      !activeQuote ||
-                      config.hasBlockingIssues ||
-                      isCalculating ||
-                      saved.status === 'saving'
-                    }
-                    className="bg-lp-primary hover:bg-lp-ink/80 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm text-white lp-label-mono text-[11px] py-4 px-10 rounded-sm transition-all flex items-center gap-2 transform active:scale-95"
-                  >
-                    {isCalculating ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" /> Calculating...
-                      </>
-                    ) : saved.status === 'saving' ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" /> Saving Quote...
-                      </>
-                    ) : (
-                      <>
-                        Review Quote <ChevronRight size={16} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Right: Live Price Sidebar */}
-              <div className="space-y-6">
-                {/* Live Price Display */}
-                <div className="bg-lp-card border border-lp-border rounded-sm p-8 shadow-sm sticky top-28">
-                  <h3 className="lp-label-mono text-lp-primary mb-6">
-                    Live Price
-                  </h3>
-
-                  {isCalculating ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 text-lp-primary animate-spin" />
-                    </div>
-                  ) : activeQuote ? (
-                    <div className="space-y-6">
-                      <div>
-                        <p className="text-4xl font-bold text-lp-fg tracking-tighter">
-                          ₹{activeQuote.pricePerPart.toLocaleString('en-IN')}
-                        </p>
-                        <p className="text-[10px] text-lp-muted-fg uppercase tracking-widest font-bold mt-1">
-                          {isCnc ? 'per part · estimate' : 'per part'}
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-lp-accent rounded-sm border border-lp-border">
-                        <div className="flex justify-between items-center">
-                          <span className="lp-label-mono text-lp-muted-fg">
-                            Total ({config.state.quantity} pcs)
-                          </span>
-                          <span className="text-xl font-bold text-lp-fg">
-                            ₹{activeQuote.totalPrice.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Breakdown */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="lp-label-mono text-lp-muted-fg">
-                            Cost Breakdown
-                          </h4>
-                          {isCncQuote(activeQuote) && (
-                            <button
-                              type="button"
-                              onClick={() => setShowSidebarTimes((prev) => !prev)}
-                              className="text-[10px] lp-label-mono text-lp-primary hover:underline flex items-center gap-1"
-                            >
-                              {showSidebarTimes ? 'Hide Times' : 'Show Times'}
-                              {showSidebarTimes ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                            </button>
-                          )}
-                        </div>
-                        {breakdownRows.map(([label, cost]) => (
-                          <div key={label} className="flex justify-between text-xs">
-                            <span className="text-lp-muted-fg lp-label-mono">
-                              {label}
-                            </span>
-                            <span className="text-lp-fg font-bold font-lp-mono">
-                              {formatInr(cost)}
-                            </span>
-                          </div>
-                        ))}
-                        {isCncQuote(activeQuote) && showSidebarTimes && (
-                          <div className="mt-2 p-3 rounded-sm bg-lp-accent/60 border border-lp-border/80 space-y-2 text-[11px]">
-                            <div className="flex justify-between text-lp-muted-fg">
-                              <span className="flex items-center gap-1 font-medium">
-                                <Cog size={12} className="text-lp-primary" /> Machine Time
-                              </span>
-                              <span className="font-lp-mono font-bold text-lp-fg">
-                                {formatDuration(activeQuote.breakdown.cycleTimeMin)} / unit
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-lp-muted-fg">
-                              <span className="flex items-center gap-1 font-medium">
-                                <Wrench size={12} className="text-lp-primary" /> Setups ({activeQuote.analysis.setups.count})
-                              </span>
-                              <span className="font-lp-mono text-lp-fg">
-                                {formatDuration(activeQuote.analysis.setupTimeMin)} setup
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-lp-muted-fg">
-                              <span className="flex items-center gap-1 font-medium">
-                                <Boxes size={12} className="text-lp-primary" /> Stock
-                              </span>
-                              <span
-                                className="font-lp-mono text-lp-fg text-right text-[10px] max-w-[150px] truncate"
-                                title={formatCncStock(activeQuote.analysis.stock)}
-                              >
-                                {formatCncStock(activeQuote.analysis.stock)}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        <div className="h-px bg-lp-border my-2" />
-                        <div className="flex justify-between text-xs">
-                          <span className="text-lp-primary lp-label-mono">
-                            Qty Discount
-                          </span>
-                          <span className="text-emerald-600 font-bold">
-                            −{config.savingsPercent}%
-                          </span>
-                        </div>
-                        {activeQuote.breakdown.rushMultiplier !== 1 && (
-                          <div className="flex justify-between text-xs">
-                            <span className="text-lp-primary lp-label-mono">
-                              Rush Fee
-                            </span>
-                            <span className="text-amber-600 font-bold">
-                              +{Math.round((activeQuote.breakdown.rushMultiplier - 1) * 100)}%
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Lead time */}
-                      <div className="flex items-center gap-3 p-3 rounded-sm bg-lp-accent border border-lp-border">
-                        <Clock className="w-4 h-4 text-lp-primary" />
-                        <span className="lp-label-mono text-lp-primary">
-                          Est.{' '}
-                          {activeQuote.leadTimeDays === 0
-                            ? 'Same Day'
-                            : `${activeQuote.leadTimeDays} Day${activeQuote.leadTimeDays > 1 ? 's' : ''}`}
-                        </span>
-                      </div>
-
-                      {isCnc && (
-                        <p className="text-[10px] text-lp-muted-fg font-medium leading-relaxed">
-                          Instant CNC prices are estimates from your part&apos;s geometry. Our
-                          engineers confirm the final price before machining starts.
-                        </p>
-                      )}
-                    </div>
-                  ) : config.error ? (
-                    <div className="p-4 rounded-sm bg-red-50 border border-red-200">
-                      <p className="text-xs text-red-600 font-bold">{config.error}</p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-lp-muted-fg py-12 text-center">
-                      Upload a file to see live pricing
-                    </p>
-                  )}
-                </div>
-
-                {/* Tier Pricing Table */}
-                {config.tierPricing.length > 0 && (
-                  <div className="bg-lp-card border border-lp-border rounded-sm p-6 shadow-sm">
-                    <h4 className="lp-label-mono text-lp-muted-fg mb-4">
-                      Tier Pricing
-                    </h4>
-                    <div className="space-y-2">
-                      {config.tierPricing.slice(0, 6).map((tier: QuantityTier) => (
-                        <div
-                          key={tier.quantity}
-                          className={`flex justify-between items-center py-2 px-3 rounded-sm text-xs ${tier.quantity === config.state.quantity
-                              ? 'bg-lp-primary text-white'
-                              : 'hover:bg-lp-accent/80'
-                            }`}
-                        >
-                          <span
-                            className={`font-bold ${tier.quantity === config.state.quantity ? 'text-lp-muted-fg' : 'text-lp-muted-fg'} uppercase tracking-widest text-[10px]`}
-                          >
-                            {tier.quantity} pc{tier.quantity > 1 ? 's' : ''}
-                          </span>
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`font-bold font-lp-mono ${tier.quantity === config.state.quantity ? 'text-white' : 'text-lp-fg'}`}
-                            >
-                              ₹{tier.pricePerPart.toLocaleString('en-IN')}
-                            </span>
-                            {tier.savingsPercent > 0 && (
-                              <span
-                                className={`text-[9px] font-bold ${tier.quantity === config.state.quantity ? 'text-lp-muted-fg' : 'text-emerald-500'}`}
-                              >
-                                −{tier.savingsPercent}%
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+                    >
+                      {done ? <Check aria-hidden="true" className="size-4" weight="bold" /> : i + 1}
+                    </span>
+                    <span className={cn('caption-1', current ? 'text-lp-fg' : 'text-lp-muted-fg')}>{s.label}</span>
+                    {i < steps.length - 1 && <span aria-hidden="true" className="h-px w-6 bg-lp-border md:w-12" />}
+                  </li>
+                );
+              })}
+            </ol>
           </div>
-        )}
 
-        {/* ═══ STEP 3: REVIEW — shared link loading / not found ═══ */}
-        {!needsSignIn && step === 'review' && !reviewQuote && isSharedLoadPending(shareRef, saved.status) && (
-          <div className="max-w-xl mx-auto bg-lp-card border border-lp-border rounded-sm p-10 shadow-sm text-center">
-            {saved.status === 'loading' ? (
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="w-8 h-8 text-lp-primary animate-spin" />
-                <p className="text-xs font-bold uppercase tracking-widest text-lp-primary">
-                  Loading quote {shareRef}…
+          <div className="mt-12">
+            {/* ═══ SIGN-IN REQUIRED ═══ */}
+            {needsSignIn && (
+              <div className="lp-hero-in mx-auto max-w-[520px] rounded-3xl border border-lp-border bg-lp-card p-6 text-center md:p-12">
+                <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-lp-primary/10 text-lp-primary">
+                  <SignIn aria-hidden="true" className="size-8" weight="duotone" />
+                </span>
+                <h2 className="heading-5 mt-6">Sign in for instant pricing</h2>
+                <p className="body-6 mt-2 text-lp-muted-fg">
+                  CNC machining and laser cutting quotes are available to registered MechHub users.
+                  {shareRef ? ` Sign in to view quote ${shareRef}.` : ''}
                 </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-                <AlertCircle className="w-8 h-8 text-red-500" />
-                <p className="text-sm font-bold text-lp-fg">{saved.error}</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={saved.retryShared}
-                    className="px-6 py-3 rounded-sm border border-lp-border bg-lp-card text-lp-primary lp-label-mono flex items-center gap-2"
-                  >
-                    <RefreshCw size={12} /> Retry
-                  </button>
-                  <button
-                    onClick={handleStartNewQuote}
-                    className="px-6 py-3 rounded-sm bg-lp-primary text-white lp-label-mono"
-                  >
-                    Start a New Quote
-                  </button>
+                <div className="mt-8 flex flex-col justify-center gap-2 sm:flex-row">
+                  <Link href={loginHref} className={buttonClass('primary')}>
+                    Sign in
+                  </Link>
+                  <Link href={registerHref} className={buttonClass('secondary')}>
+                    Create an account
+                  </Link>
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* ═══ STEP 3: REVIEW ═══ */}
-        {!needsSignIn && step === 'review' && reviewQuote && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-5xl mx-auto">
-            {/* Main quote panel */}
-            <div className="bg-lp-card border border-lp-border shadow-sm rounded-sm overflow-hidden relative">
-              {/* Header */}
-              <div className="px-10 py-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-lp-border bg-lp-accent/30">
-                <div>
-                  <h2 className="text-2xl uppercase tracking-tight font-bold text-lp-fg">
-                    Your Quote
-                  </h2>
-                  <p className="text-[10px] text-lp-muted-fg mt-1 uppercase tracking-[0.2em] font-bold">
-                    {isCncQuote(reviewQuote) ? 'Estimate · ' : ''}
-                    {isExpired
-                      ? `Expired at ${formatTime(reviewQuote.expiresAt)}`
-                      : `Valid until ${formatTime(reviewQuote.expiresAt)}`}{' '}
-                    · {reviewFileName}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 bg-lp-card border border-lp-border rounded-sm px-5 py-3 shadow-sm">
-                  <span className="text-[10px] text-lp-primary font-bold uppercase tracking-widest">
-                    Quote Ref
-                  </span>
-                  <span className="text-sm font-bold text-lp-fg uppercase tracking-tight">
-                    {reviewQuote.quoteRef}
-                  </span>
-                </div>
-              </div>
-
-              {/* Price display */}
-              <div className="flex flex-col md:flex-row">
-                <div className="flex-1 p-10 flex flex-col justify-center bg-lp-card">
-                  <div className="mb-2">
-                    <span className="text-5xl md:text-7xl font-bold tracking-tighter text-lp-fg block">
-                      ₹{reviewQuote.totalPrice.toLocaleString('en-IN')}
+            {/* ═══ STEP 1: UPLOAD ═══ */}
+            {!needsSignIn && step === 'upload' && (
+              <div className="lp-hero-in grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+                <div className="space-y-4">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload STEP files"
+                    className={cn(
+                      'lp-blueprint group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl p-8 text-center text-lp-primary-fg transition-transform duration-500 ease-lp md:p-16',
+                      fileUpload.isDragging && 'scale-[1.01]'
+                    )}
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      fileUpload.setDragging(true);
+                    }}
+                    onDragLeave={() => fileUpload.setDragging(false)}
+                    onDrop={fileUpload.handleFileDrop}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'pointer-events-none absolute inset-4 rounded-2xl border border-dashed transition-colors duration-300 ease-lp',
+                        fileUpload.isDragging ? 'border-lp-primary-fg' : 'border-lp-primary-fg/30 group-hover:border-lp-primary-fg/60'
+                      )}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept={fileUpload.acceptedFormats}
+                      multiple
+                      onChange={fileUpload.handleFileSelect}
+                    />
+                    <span className="flex size-16 items-center justify-center rounded-2xl bg-lp-bg text-lp-primary transition-transform duration-500 ease-lp group-hover:-translate-y-1">
+                      <UploadSimple aria-hidden="true" className="size-8" weight="bold" />
                     </span>
+                    <h2 className="heading-5 mt-6">
+                      {fileUpload.isDragging ? 'Drop to upload' : fileUpload.files.length > 0 ? 'Add more files' : 'Drop your STEP file here'}
+                    </h2>
+                    <p className="body-6 mt-2 text-lp-primary-fg/80">or click to browse your computer</p>
+                    <span className="lp-mono mt-6 rounded-full border border-lp-primary-fg/30 px-3 py-1">.STEP / .STP</span>
                   </div>
-                  <p className="text-[10px] text-lp-muted-fg flex items-center gap-2 uppercase tracking-widest font-bold mt-4">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" /> Total for{' '}
-                    {reviewQuote.parameters.quantity} parts · ₹
-                    {reviewQuote.pricePerPart.toLocaleString('en-IN')}/part
-                  </p>
+
+                  {/* File list */}
+                  {fileUpload.files.length > 0 && (
+                    <div>
+                      <p className="lp-mono flex items-center gap-2 text-lp-muted-fg">
+                        <Stack aria-hidden="true" className="size-4 text-lp-primary" weight="bold" />
+                        {fileUpload.files.length} {fileUpload.files.length === 1 ? 'file' : 'files'} uploaded
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {fileUpload.files.map((f) => {
+                          const active = f.id === fileUpload.activeFileId;
+                          return (
+                            <li key={f.id}>
+                              <div
+                                className={cn(
+                                  'group flex items-center gap-4 rounded-2xl border bg-lp-bg px-4 py-3 transition-colors duration-300 ease-lp',
+                                  active ? 'border-lp-primary' : 'border-lp-border hover:border-lp-primary/40'
+                                )}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => fileUpload.setActiveFile(f.id)}
+                                  aria-pressed={active}
+                                  className="flex min-w-0 flex-1 items-center gap-4 rounded-xl text-left"
+                                >
+                                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lp-primary/10 text-lp-primary">
+                                    <FileCode aria-hidden="true" className="size-5" weight="duotone" />
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className="title-4 block truncate">{f.fileName}</span>
+                                    <span className="caption-5 lp-num text-lp-muted-fg">
+                                      {(f.fileSizeBytes / 1024).toFixed(0)} KB ·{' '}
+                                      {f.fileName.toLowerCase().endsWith('.dxf') ? '2D profile' : '3D model'}
+                                    </span>
+                                  </span>
+                                </button>
+                                {f.status === 'ready' && <CheckCircle aria-label="Ready" className="size-5 shrink-0 text-lp-primary" weight="fill" />}
+                                {f.status === 'uploading' && (
+                                  <span className="lp-mono flex shrink-0 items-center gap-2 text-lp-primary" role="status">
+                                    <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-lp-primary" />
+                                    Uploading
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => fileUpload.removeFile(f.id)}
+                                  aria-label={`Remove ${f.fileName}`}
+                                  className="lp-press flex size-8 shrink-0 items-center justify-center rounded-full text-lp-muted-fg hover:bg-lp-destructive/10 hover:text-lp-destructive"
+                                >
+                                  <Trash aria-hidden="true" className="size-4" />
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleContinueToConfigure}
+                    disabled={fileUpload.files.length === 0}
+                    className={cn(buttonClass('primary', 'md', true), 'w-full justify-between disabled:cursor-not-allowed disabled:opacity-50')}
+                  >
+                    Configure your part
+                    <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                      <ArrowRight className="size-4" weight="bold" />
+                    </span>
+                  </button>
                 </div>
 
-                {/* Spec snapshot */}
-                <div className="w-full md:w-96 p-10 bg-lp-accent/50 flex flex-col justify-center">
-                  <h4 className="lp-label-mono text-lp-primary mb-6">
-                    Specification
-                  </h4>
-                  <ul className="space-y-4">
-                    {quoteSpecRows(reviewQuote).map(([lbl, val]) => (
-                      <li key={lbl} className="flex justify-between items-center">
-                        <span className="text-[10px] lp-label-mono text-lp-muted-fg">
-                          {lbl}
+                <aside aria-label="How instant quoting works" className="rounded-3xl border border-lp-border bg-lp-card p-6 md:p-8">
+                  <h2 className="heading-6">What happens next</h2>
+                  <ol className="mt-6 space-y-4">
+                    {[
+                      { icon: Cube, title: 'We measure your part', body: 'Size, cut length, holes, bends and setups are read straight from the model.' },
+                      { icon: Gear, title: 'You choose the options', body: 'Process, material, finish, quantity and turnaround. The price updates live.' },
+                      { icon: CheckCircle, title: 'You lock the price', body: 'Save the quote, share it with your team, or check out.' },
+                    ].map(({ icon: Icon, title, body }, i) => (
+                      <li key={title} className="flex gap-4">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lp-bg text-lp-primary">
+                          <Icon aria-hidden="true" className="size-5" weight="duotone" />
                         </span>
-                        <span className="text-xs font-bold text-lp-fg text-right">{val}</span>
+                        <span>
+                          <span className="lp-mono text-lp-muted-fg">Step 0{i + 1}</span>
+                          <span className="title-4 mt-1 block">{title}</span>
+                          <span className="caption-2 text-lp-muted-fg">{body}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  <ul className="mt-8 space-y-2 border-t border-lp-border pt-6">
+                    {[
+                      { icon: LockKey, label: 'Every file is covered by our NDA' },
+                      { icon: Lightning, label: 'Laser cutting, CNC milling and turning' },
+                    ].map(({ icon: Icon, label }) => (
+                      <li key={label} className="caption-1 flex items-center gap-2 text-lp-muted-fg">
+                        <Icon aria-hidden="true" className="size-4 text-lp-primary" weight="bold" />
+                        {label}
                       </li>
                     ))}
                   </ul>
+                </aside>
+              </div>
+            )}
+
+            {/* ═══ STEP 2: CONFIGURE ═══ */}
+            {!needsSignIn && step === 'configure' && (
+              <div className="lp-hero-in">
+                {/* Active file */}
+                {activeFile && (
+                  <div className="mb-8 flex flex-col justify-between gap-4 rounded-2xl border border-lp-border bg-lp-bg p-4 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lp-primary/10 text-lp-primary">
+                        <FileCode aria-hidden="true" className="size-5" weight="duotone" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="title-4 truncate">{activeFile.fileName}</p>
+                        <p className="caption-5 lp-num text-lp-muted-fg">
+                          {isCnc
+                            ? cnc.analysis
+                              ? `${cnc.analysis.part.boundingBox.x} × ${cnc.analysis.part.boundingBox.y} × ${cnc.analysis.part.boundingBox.z} mm · ${cnc.analysis.features.holeCount} holes`
+                              : cnc.analysisStatus === 'analyzing'
+                                ? 'Analysing…'
+                                : '—'
+                            : sheet.analysis
+                              ? `${formatBlank(sheet.analysis)} · ${sheet.analysis.holes.reduce((n, h) => n + h.count, 0)} holes`
+                              : sheet.analysisStatus === 'analyzing'
+                                ? 'Analysing…'
+                                : '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setStep('upload')} className={buttonClass('secondary', 'sm')}>
+                      Change file
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
+                  {/* Left: configuration */}
+                  <div className="space-y-8 rounded-3xl border border-lp-border bg-lp-bg p-6 md:p-8">
+                    {/* Process */}
+                    <fieldset>
+                      <legend className="title-4">Process</legend>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                        {PROCESS_OPTIONS.map(({ mode, label, hint, Icon }) => {
+                          const on = processMode === mode;
+                          return (
+                            <button
+                              key={mode}
+                              type="button"
+                              onClick={() => setProcessMode(mode)}
+                              aria-pressed={on}
+                              className={cn(
+                                'lp-press flex items-center gap-3 rounded-2xl border p-4 text-left',
+                                on ? 'border-lp-primary bg-lp-primary text-lp-primary-fg' : 'border-lp-border hover:border-lp-primary/40 hover:bg-lp-card'
+                              )}
+                            >
+                              <Icon aria-hidden="true" className="size-5 shrink-0" weight={on ? 'fill' : 'regular'} />
+                              <span>
+                                <span className="title-4 block">{label}</span>
+                                <span className={cn('caption-5', on ? 'text-lp-primary-fg/80' : 'text-lp-muted-fg')}>{hint}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+
+                    {/* CNC part analysis */}
+                    {isCnc && (
+                      <div className="space-y-2">
+                        {cnc.analysisStatus === 'analyzing' && <Analysing>Analysing part geometry: stock, setups and machining time…</Analysing>}
+                        {cnc.analysisStatus === 'unsupported_file' && (
+                          <Notice tone="warning">CNC quotes need a STEP file (.step or .stp). Upload the 3D model of this part to price it for machining.</Notice>
+                        )}
+                        {cnc.analysisStatus === 'error' && (
+                          <Notice
+                            tone="error"
+                            action={
+                              <button type="button" onClick={cnc.retryAnalysis} className={cn(buttonClass('secondary', 'sm'), 'shrink-0')}>
+                                <ArrowsClockwise aria-hidden="true" className="size-4" /> Retry
+                              </button>
+                            }
+                          >
+                            {cnc.error}
+                          </Notice>
+                        )}
+                        {cnc.analysis && (
+                          <>
+                            {cnc.processMismatch && (
+                              <Notice tone="info">
+                                This part is best made by {CNC_PROCESS_LABELS[cnc.analysis.process.recommended]}, so it is priced for that process.
+                              </Notice>
+                            )}
+                            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                              {[
+                                ['Recommended', CNC_PROCESS_LABELS[cnc.analysis.process.recommended]],
+                                ['Stock', formatCncStock(cnc.analysis.stock)],
+                                [
+                                  'Setups',
+                                  `${cnc.analysis.setups.count}${cnc.analysis.setups.directions.length > 0 ? ` (${cnc.analysis.setups.directions.join(', ')})` : ''}`,
+                                ],
+                                ['Cycle time', cnc.quoteResult ? `${cnc.quoteResult.breakdown.cycleTimeMin.toFixed(1)} min/part` : '—'],
+                              ].map(([lbl, val]) => (
+                                <div key={lbl} className="rounded-xl bg-lp-card p-3">
+                                  <dt className="lp-mono text-lp-muted-fg">{lbl}</dt>
+                                  <dd className="caption-1 lp-num mt-1">{val}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Laser part analysis — the converter measures the real file */}
+                    {!isCnc && (
+                      <div className="space-y-2">
+                        {sheet.analysisStatus === 'analyzing' && <Analysing>Measuring your part: flat blank, cut length, pierces and bends…</Analysing>}
+                        {sheet.analysisStatus === 'unsupported_file' && (
+                          <Notice tone="warning">Laser quotes need a STEP file (.step or .stp). Upload the part&apos;s 3D model to price it.</Notice>
+                        )}
+                        {sheet.analysisStatus === 'error' && sheet.errorCode === ErrorCode.NOT_SHEET_METAL && (
+                          <Notice
+                            tone="warning"
+                            action={
+                              <button type="button" onClick={() => setProcessMode('cnc_milling')} className={cn(buttonClass('secondary', 'sm'), 'shrink-0')}>
+                                <Gear aria-hidden="true" className="size-4" /> Price as CNC
+                              </button>
+                            }
+                          >
+                            {sheet.error} Laser cutting needs a part cut from one flat sheet of constant thickness. Solid parts are priced by CNC machining.
+                          </Notice>
+                        )}
+                        {sheet.analysisStatus === 'error' && sheet.errorCode !== ErrorCode.NOT_SHEET_METAL && (
+                          <Notice
+                            tone="error"
+                            action={
+                              <button type="button" onClick={sheet.retryAnalysis} className={cn(buttonClass('secondary', 'sm'), 'shrink-0')}>
+                                <ArrowsClockwise aria-hidden="true" className="size-4" /> Retry
+                              </button>
+                            }
+                          >
+                            {sheet.error}
+                          </Notice>
+                        )}
+                        {sheet.analysis && (
+                          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {[
+                              ['Blank', formatBlank(sheet.analysis)],
+                              ['Cut length', `${(sheet.analysis.cutLengthMm / 1000).toFixed(2)} m`],
+                              ['Pierces', `${sheet.analysis.pierces}`],
+                              sheet.analysis.profileOnly
+                                ? ['Thickness', 'Pick below']
+                                : ['Model', `${sheet.analysis.thicknessMm} mm · ${sheet.analysis.bends.length} bend${sheet.analysis.bends.length === 1 ? '' : 's'}`],
+                            ].map(([lbl, val]) => (
+                              <div key={lbl} className="rounded-xl bg-lp-card p-3">
+                                <dt className="lp-mono text-lp-muted-fg">{lbl}</dt>
+                                <dd className="caption-1 lp-num mt-1">{val}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {/* Material */}
+                      <div className="space-y-2">
+                        <FieldLabel htmlFor="iq-material">Material</FieldLabel>
+                        <select id="iq-material" value={config.state.materialId} onChange={(e) => config.setMaterialId(e.target.value)} className={selectClass}>
+                          {config.materials.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} ({m.alloy})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Thickness — sheet parts only */}
+                      {!isCnc && (
+                        <div className="space-y-2">
+                          <FieldLabel htmlFor="iq-thickness">Thickness</FieldLabel>
+                          <select id="iq-thickness" value={sheet.state.thicknessMm} onChange={(e) => sheet.setThicknessMm(Number(e.target.value))} className={selectClass}>
+                            {sheet.availableThicknesses.map((t) => (
+                              <option key={t} value={t}>
+                                {t} mm
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Finish */}
+                      <div className="space-y-2">
+                        <FieldLabel htmlFor="iq-finish">Surface finish</FieldLabel>
+                        <select id="iq-finish" value={config.state.finishType} onChange={(e) => config.setFinishType(e.target.value as never)} className={selectClass}>
+                          {config.availableFinishes.map((f) => (
+                            <option key={f.type} value={f.type}>
+                              {f.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Quantity */}
+                      <div className="space-y-2">
+                        <FieldLabel htmlFor="iq-qty">Quantity</FieldLabel>
+                        <div className="relative">
+                          <input
+                            id="iq-qty"
+                            type="number"
+                            min={1}
+                            max={10000}
+                            inputMode="numeric"
+                            value={config.state.quantity}
+                            onChange={(e) => config.setQuantity(Number(e.target.value))}
+                            className={cn(fieldClass(), 'lp-num')}
+                          />
+                          {config.savingsPercent > 0 && (
+                            <span className="lp-mono absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-lp-primary/10 px-2 py-0.5 text-lp-primary">
+                              {config.savingsPercent}% off
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Turnaround */}
+                      <fieldset className="md:col-span-2">
+                        <legend className="title-4">Turnaround</legend>
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                          {config.turnaroundOptions.map((opt) => {
+                            const on = config.state.turnaround === opt.type;
+                            return (
+                              <button
+                                key={opt.type}
+                                type="button"
+                                onClick={() => config.setTurnaround(opt.type)}
+                                aria-pressed={on}
+                                className={cn(
+                                  'lp-press rounded-xl border px-3 py-2 text-center',
+                                  on ? 'border-lp-primary bg-lp-primary text-lp-primary-fg' : 'border-lp-border hover:border-lp-primary/40 hover:bg-lp-card'
+                                )}
+                              >
+                                <span className="title-4 block">{opt.days === 0 ? 'Same day' : `${opt.days} days`}</span>
+                                <span className={cn('lp-mono block', on ? 'text-lp-primary-fg/80' : 'text-lp-muted-fg')}>
+                                  {opt.multiplier === 1
+                                    ? 'Base'
+                                    : opt.multiplier < 1
+                                      ? `−${Math.round((1 - opt.multiplier) * 100)}%`
+                                      : `+${Math.round((opt.multiplier - 1) * 100)}%`}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
+
+                      {/* Threads — priced from the analysed holes */}
+                      {isCnc && cnc.analysis && (
+                        <div className="md:col-span-2">
+                          <CncTappingPicker
+                            holes={cnc.tappableHoles}
+                            picks={cnc.tapPicks}
+                            onPick={cnc.setTapPick}
+                            tappingCost={cnc.quoteResult?.breakdown.tappingCost}
+                            tappedHoles={cnc.quoteResult?.breakdown.tappedHoles}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* DFM feedback */}
+                    {config.dfmIssues.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="title-4 flex items-center gap-2">
+                          <Warning aria-hidden="true" className="size-4" weight="bold" /> Design checks
+                        </h3>
+                        {config.dfmIssues.map((issue: DFMIssue, idx: number) => (
+                          <Notice key={idx} tone={issue.blocking ? 'error' : 'warning'}>
+                            <span className="body-5 block">{issue.message}</span>
+                            <span className="caption-2 mt-1 block text-lp-muted-fg">Fix: {issue.fixSuggestion}</span>
+                          </Notice>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Save failure — stay on Configure so the customer can retry */}
+                    {saved.status === 'error' && !isShared && saved.error && (
+                      <Notice tone="error">Your quote was not saved: {saved.error} Try again in a moment.</Notice>
+                    )}
+
+                    <div className="flex flex-col-reverse justify-between gap-2 border-t border-lp-border pt-6 sm:flex-row sm:items-center">
+                      <button type="button" onClick={() => setStep('upload')} className={buttonClass('secondary')}>
+                        <CaretLeft aria-hidden="true" className="size-4" weight="bold" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleGetQuote}
+                        disabled={quoteDisabled}
+                        aria-busy={isCalculating || saved.status === 'saving'}
+                        className={cn(buttonClass('primary', 'md', true), 'justify-between disabled:cursor-not-allowed disabled:opacity-50')}
+                      >
+                        {isCalculating ? 'Calculating price' : saved.status === 'saving' ? 'Saving your quote' : 'Review quote'}
+                        <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                          <ArrowRight className="size-4" weight="bold" />
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right: live price */}
+                  <div className="space-y-4 lg:sticky lg:top-24">
+                    <section aria-labelledby="live-price" aria-live="polite" className="overflow-hidden rounded-3xl bg-lp-ink p-6 text-lp-ink-fg md:p-8">
+                      <h2 id="live-price" className="lp-mono flex items-center gap-2 text-lp-ink-fg/60">
+                        <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-lp-primary" />
+                        Live price
+                      </h2>
+
+                      {isCalculating ? (
+                        <div className="mt-6 space-y-4" aria-hidden="true">
+                          <div className="h-10 w-40 animate-pulse rounded-lg bg-lp-ink-fg/10" />
+                          <div className="h-12 animate-pulse rounded-xl bg-lp-ink-fg/10" />
+                          <div className="space-y-2">
+                            {[0, 1, 2, 3].map((i) => (
+                              <div key={i} className="h-4 animate-pulse rounded bg-lp-ink-fg/10" />
+                            ))}
+                          </div>
+                        </div>
+                      ) : activeQuote ? (
+                        <div className="mt-6 space-y-6">
+                          <div>
+                            <p className="heading-2 lp-num">₹{activeQuote.pricePerPart.toLocaleString('en-IN')}</p>
+                            <p className="caption-2 mt-1 text-lp-ink-fg/60">{isCnc ? 'per part, estimate' : 'per part'}</p>
+                          </div>
+
+                          <div className="flex items-center justify-between rounded-xl bg-lp-ink-fg/5 px-4 py-3">
+                            <span className="caption-1 text-lp-ink-fg/70">Total for {config.state.quantity} pcs</span>
+                            <span className="title-2 lp-num">₹{activeQuote.totalPrice.toLocaleString('en-IN')}</span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <h3 className="lp-mono text-lp-ink-fg/60">Cost breakdown</h3>
+                              {isCncQuote(activeQuote) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowSidebarTimes((prev) => !prev)}
+                                  aria-expanded={showSidebarTimes}
+                                  className="caption-4 flex items-center gap-1 rounded text-lp-ink-fg/80 hover:text-lp-ink-fg"
+                                >
+                                  {showSidebarTimes ? 'Hide times' : 'Show times'}
+                                  {showSidebarTimes ? <CaretUp aria-hidden="true" className="size-3" /> : <CaretDown aria-hidden="true" className="size-3" />}
+                                </button>
+                              )}
+                            </div>
+                            <dl className="mt-3 space-y-2">
+                              {breakdownRows.map(([label, cost]) => (
+                                <div key={label} className="flex justify-between">
+                                  <dt className="caption-2 text-lp-ink-fg/70">{label}</dt>
+                                  <dd className="caption-1 lp-num">{formatInr(cost)}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                            {isCncQuote(activeQuote) && showSidebarTimes && (
+                              <dl className="mt-3 space-y-2 rounded-xl bg-lp-ink-fg/5 p-3">
+                                {[
+                                  ['Machine time', `${formatDuration(activeQuote.breakdown.cycleTimeMin)} / unit`],
+                                  [`Setups (${activeQuote.analysis.setups.count})`, `${formatDuration(activeQuote.analysis.setupTimeMin)} setup`],
+                                  ['Stock', formatCncStock(activeQuote.analysis.stock)],
+                                ].map(([k, v]) => (
+                                  <div key={k} className="flex justify-between gap-4">
+                                    <dt className="caption-5 text-lp-ink-fg/70">{k}</dt>
+                                    <dd className="caption-4 lp-num truncate text-right">{v}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            )}
+                            <dl className="mt-3 space-y-2 border-t border-lp-ink-fg/10 pt-3">
+                              <div className="flex justify-between">
+                                <dt className="caption-2 text-lp-ink-fg/70">Quantity discount</dt>
+                                <dd className="caption-1 lp-num text-lp-primary">−{config.savingsPercent}%</dd>
+                              </div>
+                              {activeQuote.breakdown.rushMultiplier !== 1 && (
+                                <div className="flex justify-between">
+                                  <dt className="caption-2 text-lp-ink-fg/70">Rush fee</dt>
+                                  <dd className="caption-1 lp-num">+{Math.round((activeQuote.breakdown.rushMultiplier - 1) * 100)}%</dd>
+                                </div>
+                              )}
+                            </dl>
+                          </div>
+
+                          <p className="caption-1 flex items-center gap-2 rounded-xl bg-lp-primary px-3 py-2">
+                            <Clock aria-hidden="true" className="size-4" weight="bold" />
+                            Ships in{' '}
+                            {activeQuote.leadTimeDays === 0 ? 'same day' : `${activeQuote.leadTimeDays} day${activeQuote.leadTimeDays > 1 ? 's' : ''}`}
+                          </p>
+
+                          {isCnc && (
+                            <p className="caption-5 text-lp-ink-fg/60">
+                              Instant CNC prices are estimates from your part&apos;s geometry. Our engineers confirm the final price before machining starts.
+                            </p>
+                          )}
+                        </div>
+                      ) : config.error ? (
+                        <p role="alert" className="body-6 mt-6 rounded-xl border border-lp-destructive/50 p-3 text-lp-ink-fg">
+                          {config.error}
+                        </p>
+                      ) : (
+                        <p className="body-6 mt-6 text-lp-ink-fg/60">Your price appears here as soon as the part is measured.</p>
+                      )}
+                    </section>
+
+                    {/* Tier pricing */}
+                    {config.tierPricing.length > 0 && (
+                      <section aria-labelledby="tier-pricing" className="rounded-3xl border border-lp-border bg-lp-bg p-6">
+                        <h2 id="tier-pricing" className="lp-mono text-lp-muted-fg">
+                          Price per part by quantity
+                        </h2>
+                        <ul className="mt-4 space-y-1">
+                          {config.tierPricing.slice(0, 6).map((tier: QuantityTier) => {
+                            const on = tier.quantity === config.state.quantity;
+                            return (
+                              <li key={tier.quantity}>
+                                <button
+                                  type="button"
+                                  onClick={() => config.setQuantity(tier.quantity)}
+                                  aria-pressed={on}
+                                  className={cn(
+                                    'flex w-full items-center justify-between rounded-xl px-3 py-2 transition-colors duration-300 ease-lp',
+                                    on ? 'bg-lp-primary text-lp-primary-fg' : 'hover:bg-lp-card'
+                                  )}
+                                >
+                                  <span className="caption-1 lp-num">
+                                    {tier.quantity} pc{tier.quantity > 1 ? 's' : ''}
+                                  </span>
+                                  <span className="flex items-center gap-2">
+                                    <span className="caption-1 lp-num">₹{tier.pricePerPart.toLocaleString('en-IN')}</span>
+                                    {tier.savingsPercent > 0 && (
+                                      <span className={cn('lp-mono', on ? 'text-lp-primary-fg/80' : 'text-lp-primary')}>−{tier.savingsPercent}%</span>
+                                    )}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </section>
+                    )}
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Bottom metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-lp-border border-t border-lp-border bg-lp-card">
-                <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-lp-accent/80 transition-colors">
-                  <p className="lp-label-mono text-lp-muted-fg mb-3">
-                    Per Part
-                  </p>
-                  <p className="text-3xl font-bold text-lp-fg">
-                    ₹{reviewQuote.pricePerPart.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <div className="p-8 flex flex-col items-center sm:items-start group hover:bg-lp-accent/80 transition-colors">
-                  <p className="lp-label-mono text-lp-muted-fg mb-3">
-                    Quantity
-                  </p>
-                  <p className="text-3xl font-bold text-lp-fg">
-                    {reviewQuote.parameters.quantity}{' '}
-                    <span className="text-xs font-bold uppercase tracking-widest text-lp-muted-fg ml-1">
-                      Units
-                    </span>
-                  </p>
-                </div>
-                <div className="p-8 flex flex-col items-center sm:items-start relative overflow-hidden group hover:bg-lp-ink transition-all duration-500">
-                  <div className="absolute inset-0 bg-lp-primary/5 group-hover:bg-lp-ink transition-colors" />
-                  <p className="lp-label-mono text-lp-primary mb-3 relative z-10 group-hover:text-lp-muted-fg">
-                    Lead Time
-                  </p>
-                  <p className="text-3xl font-bold text-lp-fg relative z-10 group-hover:text-white transition-colors">
-                    {reviewQuote.leadTimeDays === 0 ? 'Same Day' : reviewQuote.leadTimeDays}{' '}
-                    <span className="text-xs font-bold uppercase tracking-widest text-lp-muted-fg ml-1 group-hover:text-lp-muted-fg">
-                      {reviewQuote.leadTimeDays > 0 ? 'Days' : ''}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Manufacturing & Cost Transparency Deep Dive */}
-            <ManufacturingTransparencySection
-              quote={reviewQuote}
-              quantity={reviewQuote.parameters.quantity}
-            />
-
-            {(isExpired || reviewQuote.hasBlockingIssues) && (
-              <div className="flex items-start justify-between gap-4 p-5 rounded-sm bg-amber-50 border border-amber-200">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs font-bold text-amber-700">
-                    {reviewQuote.hasBlockingIssues
-                      ? 'This part has blocking manufacturability issues and cannot be ordered as quoted.'
-                      : isShared
-                        ? 'This quote has expired. Upload the part again to get a current price.'
-                        : 'This quote has expired. Refresh it to lock a current price.'}
-                  </p>
-                </div>
-                {isExpired && !isShared && (
-                  <button
-                    onClick={handleGetQuote}
-                    disabled={saved.status === 'saving' || !activeQuote}
-                    className="shrink-0 lp-label-mono text-amber-700 flex items-center gap-1.5 bg-lp-card px-3 py-2 rounded-sm border border-amber-200 disabled:opacity-40"
-                  >
-                    <RefreshCw size={12} /> Refresh Price
-                  </button>
+            {/* ═══ STEP 3: REVIEW — shared link loading / not found ═══ */}
+            {!needsSignIn && step === 'review' && !reviewQuote && isSharedLoadPending(shareRef, saved.status) && (
+              <div className="mx-auto max-w-[520px] rounded-3xl border border-lp-border bg-lp-card p-6 text-center md:p-12">
+                {saved.status === 'loading' ? (
+                  <div role="status" className="space-y-4">
+                    <div className="mx-auto h-8 w-48 animate-pulse rounded-lg bg-lp-muted" />
+                    <div className="h-24 animate-pulse rounded-2xl bg-lp-muted" />
+                    <p className="caption-1 text-lp-muted-fg">Loading quote {shareRef}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <WarningCircle aria-hidden="true" className="mx-auto size-8 text-lp-destructive" weight="duotone" />
+                    <p role="alert" className="body-5">
+                      {saved.error}
+                    </p>
+                    <div className="flex flex-col justify-center gap-2 sm:flex-row">
+                      <button type="button" onClick={saved.retryShared} className={buttonClass('secondary')}>
+                        <ArrowsClockwise aria-hidden="true" className="size-4" /> Try again
+                      </button>
+                      <button type="button" onClick={handleStartNewQuote} className={buttonClass('primary')}>
+                        Start a new quote
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Actions */}
-            <div className="bg-lp-ink border border-lp-ink p-10 rounded-sm flex flex-col xl:flex-row items-center justify-between gap-8 shadow-sm relative overflow-hidden group">
-              <div
-                className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{
-                  backgroundImage: 'radial-gradient(white 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                }}
-              />
-              <div className="relative z-10">
-                <p className="text-[10px] text-lp-muted-fg uppercase tracking-[0.3em] font-bold mb-2">
-                  Ready to order?
-                </p>
-                <p className="text-sm text-white max-w-sm uppercase tracking-widest leading-relaxed font-bold">
-                  Proceed to checkout to lock this price and start manufacturing.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-4 justify-end w-full xl:w-auto relative z-10">
-                <button
-                  onClick={handleCopyLink}
-                  className="px-8 py-4 rounded-sm border border-white/20 bg-white/10 text-white lp-label-mono hover:bg-white/20 transition-all flex items-center gap-2"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? 'Copied!' : 'Share Quote'}
-                </button>
-                <button
-                  onClick={isShared ? handleStartNewQuote : () => setStep('configure')}
-                  className="px-8 py-4 rounded-sm border border-white/20 bg-white/10 text-white lp-label-mono hover:bg-white/20 transition-all"
-                >
-                  {isShared ? 'New Quote' : 'Edit Config'}
-                </button>
-                <button
-                  onClick={handleAddToCart}
-                  disabled={!canOrder}
-                  className="px-8 py-4 rounded-sm border border-white/20 bg-white/10 text-white lp-label-mono hover:bg-white/20 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <UploadCloud size={14} /> Add to Cart ({cart.itemCount})
-                </button>
-                <button
-                  onClick={handleProceedToCheckout}
-                  disabled={!canOrder}
-                  className="px-10 py-4 rounded-sm bg-white text-lp-primary lp-label-mono shadow-sm hover:shadow-sm transition-all hover:scale-[1.05] active:scale-95 flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  Proceed to Checkout <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+            {/* ═══ STEP 3: REVIEW ═══ */}
+            {!needsSignIn && step === 'review' && reviewQuote && (
+              <div className="lp-hero-in space-y-4">
+                <section aria-labelledby="your-quote" className="overflow-hidden rounded-3xl border border-lp-border bg-lp-bg">
+                  <div className="flex flex-col justify-between gap-4 border-b border-lp-border p-6 md:flex-row md:items-center md:p-8">
+                    <div>
+                      <h2 id="your-quote" className="heading-5">
+                        Your quote
+                      </h2>
+                      <p className="caption-2 mt-1 text-lp-muted-fg">
+                        {isCncQuote(reviewQuote) ? 'Estimate · ' : ''}
+                        {isExpired ? `Expired at ${formatTime(reviewQuote.expiresAt)}` : `Valid until ${formatTime(reviewQuote.expiresAt)}`} ·{' '}
+                        {reviewFileName}
+                      </p>
+                    </div>
+                    <span className="lp-mono flex items-center gap-2 self-start rounded-full border border-lp-border px-3 py-2 md:self-auto">
+                      <span className="text-lp-muted-fg">Ref</span>
+                      <span className="text-lp-fg">{reviewQuote.quoteRef}</span>
+                    </span>
+                  </div>
 
-      {/* Custom select arrow styles */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          .custom-select {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 1rem center;
-            background-repeat: no-repeat;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
-          }
-        `,
-        }}
-      />
+                  <div className="grid md:grid-cols-[1fr_360px]">
+                    <div className="flex flex-col justify-center p-6 md:p-8">
+                      <p className="lp-mono text-lp-muted-fg">Total</p>
+                      <p className="heading-1 lp-num mt-2">₹{reviewQuote.totalPrice.toLocaleString('en-IN')}</p>
+                      <p className="caption-1 mt-4 flex items-center gap-2 text-lp-muted-fg">
+                        <CheckCircle aria-hidden="true" className="size-4 text-lp-primary" weight="fill" />
+                        {reviewQuote.parameters.quantity} parts at ₹{reviewQuote.pricePerPart.toLocaleString('en-IN')} each, excl. GST
+                      </p>
+                      <dl className="mt-8 grid grid-cols-3 gap-2">
+                        {[
+                          ['Per part', `₹${reviewQuote.pricePerPart.toLocaleString('en-IN')}`],
+                          ['Quantity', `${reviewQuote.parameters.quantity}`],
+                          ['Lead time', reviewQuote.leadTimeDays === 0 ? 'Same day' : `${reviewQuote.leadTimeDays} days`],
+                        ].map(([k, v]) => (
+                          <div key={k} className="rounded-xl bg-lp-card p-3">
+                            <dt className="lp-mono text-lp-muted-fg">{k}</dt>
+                            <dd className="title-3 lp-num mt-1">{v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+
+                    <div className="border-t border-lp-border bg-lp-card p-6 md:border-l md:border-t-0 md:p-8">
+                      <h3 className="lp-mono text-lp-primary">Specification</h3>
+                      <dl className="mt-4 space-y-3">
+                        {quoteSpecRows(reviewQuote).map(([lbl, val]) => (
+                          <div key={lbl} className="flex items-start justify-between gap-4">
+                            <dt className="caption-2 text-lp-muted-fg">{lbl}</dt>
+                            <dd className="caption-1 lp-num text-right">{val}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  </div>
+                </section>
+
+                <ManufacturingTransparencySection quote={reviewQuote} quantity={reviewQuote.parameters.quantity} />
+
+                {(isExpired || reviewQuote.hasBlockingIssues) && (
+                  <Notice
+                    tone={reviewQuote.hasBlockingIssues ? 'error' : 'warning'}
+                    action={
+                      isExpired && !isShared ? (
+                        <button
+                          type="button"
+                          onClick={handleGetQuote}
+                          disabled={saved.status === 'saving' || !activeQuote}
+                          className={cn(buttonClass('secondary', 'sm'), 'shrink-0 disabled:opacity-50')}
+                        >
+                          <ArrowsClockwise aria-hidden="true" className="size-4" /> Refresh price
+                        </button>
+                      ) : undefined
+                    }
+                  >
+                    {reviewQuote.hasBlockingIssues
+                      ? 'This part has design problems that block manufacturing, so it cannot be ordered as quoted.'
+                      : isShared
+                        ? 'This quote has expired. Upload the part again to get a current price.'
+                        : 'This quote has expired. Refresh it to lock a current price.'}
+                  </Notice>
+                )}
+
+                {/* Actions */}
+                <section aria-label="Order this part" className="lp-blueprint lp-marks flex flex-col justify-between gap-6 rounded-3xl p-6 text-lp-primary-fg md:p-8 xl:flex-row xl:items-center">
+                  <div>
+                    <p className="lp-mono opacity-80">Ready to order?</p>
+                    <p className="heading-5 mt-2 max-w-[420px]">Check out to lock this price and start manufacturing.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={handleCopyLink} className={buttonClass('inverted-secondary')}>
+                      {copied ? <Check aria-hidden="true" className="size-4" weight="bold" /> : <ShareNetwork aria-hidden="true" className="size-4" />}
+                      {copied ? 'Link copied' : 'Share quote'}
+                    </button>
+                    <button type="button" onClick={isShared ? handleStartNewQuote : () => setStep('configure')} className={buttonClass('inverted-secondary')}>
+                      {isShared ? 'New quote' : 'Edit options'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      disabled={!canOrder}
+                      className={cn(buttonClass('inverted-secondary'), 'disabled:cursor-not-allowed disabled:opacity-50')}
+                    >
+                      <ShoppingCartSimple aria-hidden="true" className="size-4" />
+                      Add to cart ({cart.itemCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleProceedToCheckout}
+                      disabled={!canOrder}
+                      className={cn(buttonClass('inverted', 'md', true), 'disabled:cursor-not-allowed disabled:opacity-50')}
+                    >
+                      Proceed to checkout
+                      <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary text-lp-primary-fg">
+                        <ArrowRight className="size-4" weight="bold" />
+                      </span>
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </V2Shell>
   );

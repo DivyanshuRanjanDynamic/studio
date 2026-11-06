@@ -9,10 +9,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, FolderPlus } from 'lucide-react';
+import { ArrowRight, FolderPlus, X } from '@phosphor-icons/react/dist/ssr';
+import '@/components/home/landing.css';
+import { landingFontVars } from '@/components/home/fonts';
+import { buttonClass } from '@/components/home/button';
+import { fieldClass } from '@/components/auth/AuthShell';
+import { cn } from '@/utils';
 import { useToast } from '@/hooks/use-toast';
 import { trackEvent } from '@/lib/analytics';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
@@ -78,7 +80,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
       trackEvent('project_created');
 
       toast({
-        title: 'Project Created!',
+        title: 'Project created',
         description: `${projectName} has been created successfully.`,
       });
 
@@ -112,69 +114,64 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-white border-slate-200">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-              <FolderPlus className="w-5 h-5 text-[#2F5FA7]" />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold uppercase tracking-wide text-slate-900">
-                Start New Design
-              </DialogTitle>
-            </div>
-          </div>
-          <DialogDescription className="text-xs uppercase tracking-widest font-bold text-blue-200">
-            Create a new project to organize your manufacturing parts
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent hideCloseButton className={cn('lp-root lp-app gap-0 rounded-3xl border-lp-border bg-lp-bg p-0 text-lp-fg sm:max-w-[480px]', landingFontVars)}>
+        <div className="lp-blueprint lp-marks relative overflow-hidden rounded-t-3xl px-6 pb-6 pt-8 text-lp-primary-fg">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            aria-label="Close"
+            className="lp-press absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-lp-primary-fg/15 text-lp-primary-fg hover:bg-lp-primary-fg/25"
+          >
+            <X aria-hidden="true" className="size-4" weight="bold" />
+          </button>
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-lp-bg text-lp-primary">
+            <FolderPlus aria-hidden="true" className="size-6" weight="duotone" />
+          </span>
+          <DialogHeader className="mt-4 space-y-1 text-left">
+            <DialogTitle className="heading-5 text-lp-primary-fg">
+              Start a new <span className="lp-accent lp-accent-light">design</span>
+            </DialogTitle>
+            <DialogDescription className="body-6 text-lp-primary-fg/80">
+              A project keeps every part, quote and order for one build in one place.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6 p-6">
           <div className="space-y-2">
-            <Label
-              htmlFor="projectName"
-              className="text-[10px] uppercase text-[#2F5FA7] font-bold tracking-widest"
-            >
-              Project Name
-            </Label>
-            <Input
+            <label htmlFor="projectName" className="title-4 block">
+              Project name
+            </label>
+            <input
               id="projectName"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              placeholder="e.g., ROVER-T Assembly"
-              className="h-12 border-slate-200 bg-slate-50 text-sm uppercase tracking-wider font-bold text-slate-900 placeholder:font-normal placeholder:normal-case"
+              placeholder="ROVER-T assembly"
+              className={fieldClass()}
               disabled={isSubmitting}
               autoFocus
+              maxLength={80}
+              aria-describedby="projectName-hint"
             />
-            <p className="text-[10px] text-blue-100 uppercase tracking-wider font-bold">
-              Give your project a descriptive name for easy identification
+            <p id="projectName-hint" className="caption-5 text-lp-muted-fg">
+              Use something your team will recognise, like the robot, vehicle or assembly it belongs to.
             </p>
           </div>
 
-          <DialogFooter className="gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold border-slate-200 text-slate-600"
-            >
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={buttonClass('secondary')}>
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={isSubmitting || !projectName.trim()}
-              className="h-11 px-6 tracking-widest uppercase text-[10px] font-bold bg-blue-600 hover:bg-[#1E3A66] text-white shadow-lg transition-all border-none"
+              aria-busy={isSubmitting}
+              className={cn(buttonClass('primary'), 'disabled:cursor-not-allowed disabled:opacity-50')}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Project'
-              )}
-            </Button>
+              {isSubmitting ? 'Creating project' : 'Create project'}
+              {!isSubmitting && <ArrowRight aria-hidden="true" className="size-4" weight="bold" />}
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>

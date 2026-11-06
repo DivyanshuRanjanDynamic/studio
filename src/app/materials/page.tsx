@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
-import { MaterialsPageClient } from './MaterialsPageClient';
+import { V2Shell } from '@/components/V2Shell';
+import { MaterialsCatalog } from '@/components/home/MaterialsCatalog';
+import { FinalCTA } from '@/components/home/FinalCTA';
 
 export const metadata: Metadata = {
   title: 'Materials Library | Precision Manufacturing Catalog',
@@ -11,5 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default function MaterialsPage() {
-  return <MaterialsPageClient />;
+  return (
+    <V2Shell>
+      <MaterialsCatalog headingAs="h1" />
+      <FinalCTA />
+    </V2Shell>
+  );
 }

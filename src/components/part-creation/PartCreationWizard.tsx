@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/utils';
+import { buttonClass } from '@/components/home/button';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import {
@@ -604,84 +604,76 @@ export function PartCreationWizard({
 
   const content = (
     <div className={cn(
-      "flex flex-col bg-lp-card overflow-hidden font-lp-sans text-lp-muted-fg",
+      "lp-app flex flex-col bg-lp-bg overflow-hidden font-lp-sans text-lp-fg",
       standalone ? "h-screen w-full" : "h-full flex flex-col"
     )}>
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="h-20 px-8 border-b border-lp-border flex items-center justify-between shrink-0 bg-lp-card/80 backdrop-blur-md z-20">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-sm bg-lp-primary flex items-center justify-center shadow-sm">
-              <Box className="w-5 h-5 text-lp-primary-fg" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-lp-fg uppercase tracking-widest leading-none mb-1">
-                Design Configurator
+      <div className="z-20 shrink-0 border-b border-lp-border bg-lp-bg px-4 py-3 md:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lp-primary text-lp-primary-fg">
+              <Box className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="title-3 truncate">
+                New <span className="lp-accent">part</span>
               </h2>
-              <p className="lp-label-mono text-lp-primary leading-none">
-                Industrial Engineering Suite
+              <p className="lp-mono truncate text-lp-muted-fg">
+                Step {currentStepIndex + 1} of {STEPS.length} · {STEPS[currentStepIndex]?.label}
               </p>
             </div>
           </div>
 
-          <Separator orientation="vertical" className="h-8 bg-lp-border" />
+          {/* Stepper (desktop) */}
+          <ol className="hidden flex-1 items-center justify-center gap-2 lg:flex" aria-label="Part setup progress">
+            {STEPS.map((step, idx) => {
+              const done = idx < currentStepIndex;
+              const current = idx === currentStepIndex;
+              return (
+                <li key={step.id} className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
+                  <span
+                    className={cn(
+                      'lp-mono flex size-6 items-center justify-center rounded-full border transition-colors duration-500 ease-lp',
+                      current
+                        ? 'border-lp-primary bg-lp-primary text-lp-primary-fg'
+                        : done
+                          ? 'border-lp-primary bg-lp-primary/10 text-lp-primary'
+                          : 'border-lp-border text-lp-muted-fg'
+                    )}
+                  >
+                    {done ? <CheckCircle className="size-3" aria-hidden="true" /> : idx + 1}
+                  </span>
+                  <span className={cn('caption-4', current ? 'text-lp-fg' : 'text-lp-muted-fg')}>{step.label}</span>
+                  {idx < STEPS.length - 1 && <span aria-hidden="true" className={cn('h-px w-4 xl:w-8', done ? 'bg-lp-primary' : 'bg-lp-border')} />}
+                </li>
+              );
+            })}
+          </ol>
 
-          {/* Stepper HUD */}
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-4 flex-1">
-            {STEPS.map((step, idx) => (
-              <div
-                key={step.id}
-                className={cn(
-                  'flex items-center gap-2 transition-all duration-300',
-                  idx <= currentStepIndex ? 'opacity-100' : 'opacity-40'
-                )}
-              >
-                <div
-                  className={cn(
-                    'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border',
-                    idx === currentStepIndex
-                      ? 'bg-lp-card border-lp-primary text-lp-primary ring-4 ring-lp-primary/10'
-                      : idx < currentStepIndex
-                        ? 'bg-lp-primary border-lp-primary text-lp-primary-fg'
-                        : 'bg-lp-accent border-lp-border text-lp-muted-fg'
-                  )}
-                >
-                  {idx < currentStepIndex ? <CheckCircle className="w-3.5 h-3.5" /> : idx + 1}
-                </div>
-                <span
-                  className={cn(
-                    'hidden lg:block lp-label-mono transition-colors',
-                    idx === currentStepIndex ? 'text-lp-fg' : 'text-lp-muted-fg'
-                  )}
-                >
-                  {step.label}
-                </span>
-                {idx < STEPS.length - 1 && (
-                  <span className={cn(
-                    'ml-1 text-xs',
-                    idx < currentStepIndex ? 'text-lp-primary' : 'text-lp-border'
-                  )}>——</span>
-                )}
-              </div>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => handleClose()}
+            disabled={isSubmitting}
+            aria-label="Close part setup"
+            className="lp-press flex size-10 shrink-0 items-center justify-center rounded-full text-lp-muted-fg hover:bg-lp-muted hover:text-lp-fg"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleClose()}
-          disabled={isSubmitting}
-          className="ml-10 h-8 w-8 rounded-sm text-lp-muted-fg hover:bg-lp-accent transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </Button>
+        {/* Progress (below desktop) */}
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-lp-muted lg:hidden" aria-hidden="true">
+          <div
+            className="h-full origin-left rounded-full bg-lp-primary transition-transform duration-500 ease-lp"
+            style={{ transform: `scaleX(${(currentStepIndex + 1) / STEPS.length})` }}
+          />
+        </div>
       </div>
 
       {/* ── Main Work Area ──────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden force-no-horizontal-scroll">
         {/* LEFT: Persistent Viewer (If file uploaded) */}
-        <div className="flex-1 bg-lp-bg border-r border-lp-border relative overflow-hidden flex items-center justify-center">
+        <div className="relative hidden flex-1 items-center justify-center overflow-hidden border-r border-lp-border bg-lp-card md:flex">
           {/* Show FlatPatternViewer on bending step when flat pattern is available */}
           {currentStep === 'bending' && conversionResult?.flatPattern ? (
             <FlatPatternViewer
@@ -799,7 +791,7 @@ export function PartCreationWizard({
                       )}
                     </div>
                   ) : pricing?.quote ? (
-                    <div className="px-4 py-2.5 bg-lp-primary rounded-sm shadow-sm text-right" data-testid="live-price">
+                    <div className="rounded-2xl bg-lp-ink px-4 py-3 text-right text-lp-ink-fg shadow-2xl" data-testid="live-price">
                       <p className="lp-label-mono text-lp-primary-fg/70">Live price · {quantity} pcs</p>
                       <p className="text-lg font-bold text-lp-primary-fg leading-tight">{inr(pricing.quote.totalPrice)}</p>
                       <p className="text-[9px] font-bold text-lp-primary-fg/70">{inr(pricing.quote.pricePerPart)} / part</p>
@@ -819,8 +811,8 @@ export function PartCreationWizard({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4 max-w-sm text-center">
-              <div className="w-16 h-16 rounded-sm bg-lp-accent flex items-center justify-center border-2 border-dashed border-lp-border">
-                <Box className="w-6 h-6 text-lp-muted-fg" />
+              <div className="flex size-16 items-center justify-center rounded-2xl border border-dashed border-lp-primary/40 bg-lp-primary/5">
+                <Box className="size-6 text-lp-primary" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm text-lp-fg mb-1">
@@ -835,51 +827,50 @@ export function PartCreationWizard({
         </div>
 
         {/* RIGHT: Sidebar Configurator */}
-        <div className="w-full md:w-[420px] bg-lp-card flex flex-col shrink-0 border-l border-lp-border overflow-hidden">
+        <div className="flex w-full shrink-0 flex-col overflow-hidden bg-lp-bg md:w-[420px]">
           <div className="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
             {renderStepContent()}
           </div>
 
-          {/* Navigation Footer (Floating in Sidebar) */}
-          <div className="p-6 border-t border-lp-border bg-lp-accent/50 flex items-center gap-3">
+          {/* Navigation footer */}
+          <div className="flex items-center gap-2 border-t border-lp-border bg-lp-bg p-4">
             {currentStepIndex > 0 && (
-              <Button
-                variant="outline"
+              <button
+                type="button"
                 onClick={handleBack}
                 disabled={isSubmitting}
-                className="h-12 w-12 p-0 flex items-center justify-center border-lp-border text-lp-fg rounded-sm hover:bg-lp-card transition-all shadow-sm"
+                aria-label="Previous step"
+                className={cn(buttonClass('secondary'), 'size-12 shrink-0 p-0')}
               >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
+                <ChevronLeft className="size-5" aria-hidden="true" />
+              </button>
             )}
 
             {currentStepIndex < STEPS.length - 1 ? (
-              <Button
+              <button
+                type="button"
                 onClick={handleNext}
                 disabled={!canProceed() || isSubmitting}
-                className="h-12 flex-1 lp-label-mono bg-lp-primary hover:bg-lp-primary/80 text-lp-primary-fg shadow-sm transition-all border-none rounded-sm flex items-center justify-center gap-2 group"
+                className={cn(buttonClass('primary', 'md', true), 'h-12 flex-1 justify-between disabled:cursor-not-allowed disabled:opacity-50')}
               >
-                Next Step
-                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Button>
+                Next: {STEPS[currentStepIndex + 1]?.label}
+                <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                  <ChevronRight className="size-4" />
+                </span>
+              </button>
             ) : (
-              <Button
+              <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={!canProceed() || isSubmitting}
-                className="h-12 flex-1 lp-label-mono bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all border-none rounded-sm flex items-center justify-center gap-2"
+                aria-busy={isSubmitting}
+                className={cn(buttonClass('primary', 'md', true), 'h-12 flex-1 justify-between disabled:cursor-not-allowed disabled:opacity-50')}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Finalizing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Add to Project
-                  </>
-                )}
-              </Button>
+                {isSubmitting ? 'Adding to project' : 'Add part to project'}
+                <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                  <CheckCircle className="size-4" />
+                </span>
+              </button>
             )}
           </div>
         </div>
@@ -910,7 +901,7 @@ export function PartCreationWizard({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        `lp-root ${landingFontVars} w-full h-[95vh] p-0 overflow-hidden bg-lp-card border-0 shadow-sm flex flex-col rounded-sm transition-all duration-500`,
+        `lp-root lp-app ${landingFontVars} flex h-[95vh] w-full flex-col overflow-hidden rounded-3xl border border-lp-border bg-lp-bg p-0 shadow-2xl`,
         currentStep === 'secondary' && secondaryProcesses.includes('tapping')
           ? "max-w-[95vw] lg:max-w-[1600px]"
           : "max-w-[95vw] lg:max-w-[1280px]"

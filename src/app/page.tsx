@@ -1,8 +1,9 @@
 /*
  * MECHHUB HOMEPAGE — OUTSTANDING TODOs
  * ─────────────────────────────────────
- * [ ] Showreel:   S3 video URL uses a signed URL — replace with a permanent embed
- * [ ] Testimonials: Replace placeholder quotes with real customer quotes
+ * [ ] Watch demo (WatchDemo.tsx): S3 video URL uses a signed URL — replace with a permanent embed
+ * [ ] Proof: fill in real stats and customer quotes in components/home/proof.ts
+ *     (the section stays hidden until they exist)
  */
 import type { Metadata } from 'next';
 import '@/components/home/landing.css';
@@ -10,31 +11,26 @@ import { landingFontVars } from '@/components/home/fonts';
 import { cn } from '@/utils';
 
 import { HomeNav } from '@/components/home/HomeNav';
+import { IntroSplash } from '@/components/brand/IntroSplash';
 import { Hero } from '@/components/home/Hero';
-import { Showreel } from '@/components/home/Showreel';
-import { Marquee } from '@/components/home/primitives';
-import { SegmentSection } from '@/components/home/SegmentSection';
-import { ServicesSection } from '@/components/home/ServicesSection';
-import { HowItWorks } from '@/components/home/HowItWorks';
-import { MaterialsCatalog } from '@/components/home/MaterialsCatalog';
-import { PromiseSection } from '@/components/home/PromiseSection';
 import { WhyMechHub } from '@/components/home/WhyMechHub';
-import { Testimonials, WordsBanner } from '@/components/home/Testimonials';
+import { PromiseSection } from '@/components/home/PromiseSection';
+import { HowItWorks } from '@/components/home/HowItWorks';
+import { AboutIndex } from '@/components/home/AboutIndex';
+import { PartsCatalogue } from '@/components/home/PartsCatalogue';
+import { TaglineReveal } from '@/components/home/TaglineReveal';
+import { ServicesSection } from '@/components/home/ServicesSection';
+import { MaterialsCatalog } from '@/components/home/MaterialsCatalog';
+import { Testimonials } from '@/components/home/Testimonials';
 import { MechMasterSection } from '@/components/home/MechMasterSection';
+import { FAQSection } from '@/components/home/FAQSection';
 import { FinalCTA, HomeFooter } from '@/components/home/FinalCTA';
+import { FAQ } from '@/components/home/faq';
 
-const TRUST_POINTS = [
-  'Verified Vendors',
-  'Fast Turnaround',
-  'Secure Payments',
-  'Pan India Delivery',
-  'Sustainable Manufacturing',
-];
-
-// Copy mirrors claims the page itself makes (hero, trust marquee, 72hr stat).
-const HOME_TITLE = 'Custom Manufacturing, Made Fast & Affordable | MechHub';
+// Copy mirrors claims the page itself makes (hero, FAQ, 72 hour average turnaround).
+const HOME_TITLE = 'Custom CNC, laser cut and sheet metal parts in India | MechHub';
 const HOME_DESCRIPTION =
-  'Upload your design and get CNC machined, laser cut and bent parts delivered across India. Instant quotes, verified vendors, 72-hour typical turnaround.';
+  'Upload a STEP  get an instant quote, and receive vetted, NDA protected parts anywhere in India in 72 hours on average.';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
@@ -52,29 +48,42 @@ export const metadata: Metadata = {
   },
 };
 
+const FAQ_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
 export default function Home() {
   return (
     <div className={cn('lp-root min-h-screen', landingFontVars)} suppressHydrationWarning>
+      <IntroSplash />
       <HomeNav />
-      <main>
+      <main id="main">
         <Hero />
-        <Showreel />
-        <div className="mt-16">
-          <Marquee items={TRUST_POINTS} />
-        </div>
-        <SegmentSection />
-        <ServicesSection />
-        <Marquee items={TRUST_POINTS} dark />
-        <HowItWorks />
-        <MaterialsCatalog />
-        <PromiseSection />
+        <AboutIndex />
+        <PartsCatalogue />
         <WhyMechHub />
-        <WordsBanner />
+        <HowItWorks />
+        <TaglineReveal />
+        <PromiseSection />
+        <ServicesSection />
+        <MaterialsCatalog preview />
         <Testimonials />
         <MechMasterSection />
+        <FAQSection />
         <FinalCTA />
       </main>
       <HomeFooter />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }}
+      />
     </div>
   );
 }

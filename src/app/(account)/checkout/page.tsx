@@ -5,28 +5,20 @@ import { useCart } from '@/context/CartContext';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { V2Shell } from '@/components/V2Shell';
-import '@/components/home/landing.css';
-import { landingFontVars } from '@/components/home/fonts';
 import { cn } from '@/utils';
 import {
-  ShieldCheck,
-  Truck,
-  CreditCard,
-  MapPin,
-  Package,
-  ShoppingCart,
   ArrowRight,
-  ChevronLeft,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+  CaretLeft,
+  Check,
+  LockKey,
+  Receipt,
+  ShieldCheck,
+  ShoppingCartSimple,
+  Truck,
+} from '@phosphor-icons/react/dist/ssr';
 import { useToast } from '@/hooks/use-toast';
+import { Accent, Tag } from '@/components/home/primitives';
+import { buttonClass } from '@/components/home/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -38,7 +30,6 @@ import { ShippingForm } from '@/components/checkout/ShippingForm';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { OrderConfirmation } from '@/components/checkout/OrderConfirmation';
 import { ShopCart } from '@/components/checkout/ShopCart';
-import { Badge as UI_Badge } from '@/components/ui/badge';
 import { resolveUserFriendlyMessage } from '@/lib/error-mapping';
 import { AccountLoader } from '@/components/PageLoaders';
 
@@ -91,23 +82,41 @@ export default function CheckoutPage() {
 
   if (!user) return null;
 
+  const steps = [
+    { id: 'cart', label: 'Review' },
+    { id: 'shipping', label: 'Delivery' },
+    { id: 'payment', label: 'Payment' },
+  ] as const;
+  const stepIndex = steps.findIndex((s) => s.id === checkout.step);
+  const shippingPrice = checkout.selectedShippingOption.price;
+
   // Handle empty state (Both carts empty)
   if (quoteCart.isEmpty && shopCart.totalItems === 0 && checkout.step !== 'success') {
     return (
-      <div className={cn('lp-root min-h-screen bg-lp-bg flex flex-col items-center justify-center p-4', landingFontVars)}>
-        <div className="w-20 h-20 rounded-sm bg-lp-card flex items-center justify-center mb-8 border border-lp-border">
-          <ShoppingCart className="w-10 h-10 text-lp-muted-fg/40" />
-        </div>
-        <h1 className="text-2xl font-medium text-lp-fg mb-2 tracking-tight">
-          Your cart is empty
-        </h1>
-        <p className="text-lp-muted-fg mb-8">Add some quotes or products to proceed.</p>
-        <Link href="/quote/instant">
-          <button className="lp-label-mono bg-lp-primary text-lp-primary-fg py-4 px-10 rounded-sm transition-all active:scale-[0.98] hover:bg-lp-primary/90">
-            Start a New Design
-          </button>
-        </Link>
-      </div>
+      <V2Shell>
+        <section className="px-4 py-16 md:py-24">
+          <div className="lp-hero-in mx-auto max-w-[480px] text-center">
+            <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-lp-primary/10 text-lp-primary">
+              <ShoppingCartSimple aria-hidden="true" className="size-8" weight="duotone" />
+            </span>
+            <h1 className="heading-4 mt-6">
+              Your cart is <Accent>empty</Accent>
+            </h1>
+            <p className="body-6 mt-2 text-lp-muted-fg">
+              Upload a STEP file to get an instant quote, or pick a ready made part from the shop.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-2 sm:flex-row">
+              <Link href="/quote/instant" className={buttonClass('primary')}>
+                Get an instant quote
+                <ArrowRight aria-hidden="true" className="size-4" weight="bold" />
+              </Link>
+              <Link href="/shop" className={buttonClass('secondary')}>
+                Browse the shop
+              </Link>
+            </div>
+          </div>
+        </section>
+      </V2Shell>
     );
   }
 
@@ -115,7 +124,7 @@ export default function CheckoutPage() {
   if (checkout.step === 'success' && checkout.order) {
     return (
       <V2Shell>
-        <div className="pb-20 px-4">
+        <div className="px-4 pb-16 md:pb-24">
           <OrderConfirmation order={checkout.order} />
         </div>
       </V2Shell>
@@ -124,190 +133,167 @@ export default function CheckoutPage() {
 
   return (
     <V2Shell>
-      <main className="container mx-auto px-4 pb-20 max-w-7xl">
-        {/* Header / Stepper */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center gap-2 mb-4 bg-lp-accent px-4 py-2 rounded-sm">
-            <ShieldCheck className="w-4 h-4 text-lp-primary" />
-            <span className="lp-label-mono text-lp-primary">
-              Secure Checkout Profile
-            </span>
-          </div>
-          <h1 className="text-4xl font-medium text-lp-fg tracking-tight mb-4">
-            Complete Your Order
-          </h1>
+      <div className="px-4 pb-16 pt-8 md:pb-24 md:pt-16">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+            <div>
+              <Tag>Checkout</Tag>
+              <h1 className="heading-2 mt-4">
+                Complete your <Accent>order</Accent>
+              </h1>
+            </div>
 
-          {/* Visual Stepper */}
-          <div className="flex items-center justify-center gap-4 max-w-md mx-auto mt-8">
-            {[
-              { id: 'cart', label: 'Cart' },
-              { id: 'shipping', label: 'Shipping' },
-              { id: 'payment', label: 'Payment' },
-            ].map((s, i) => (
-              <React.Fragment key={s.id}>
-                <div className="flex flex-col items-center gap-2">
-                  <div
-                    className={`w-8 h-8 rounded-sm flex items-center justify-center border-2 transition-all duration-500 ${checkout.step === s.id
-                        ? 'bg-lp-primary border-lp-primary text-lp-primary-fg'
-                        : i < ['cart', 'shipping', 'payment'].indexOf(checkout.step)
-                          ? 'bg-emerald-600 border-emerald-600 text-white'
-                          : 'bg-lp-card border-lp-border text-lp-muted-fg/40'
-                      }`}
-                  >
-                    <span className="text-[10px] font-semibold">{i + 1}</span>
-                  </div>
-                  <span
-                    className={`lp-label-mono ${checkout.step === s.id ? 'text-lp-primary' : 'text-lp-muted-fg'}`}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-                {i < 2 && <div className="h-0.5 w-12 bg-lp-border mb-5" />}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Left: Step Content */}
-          <div className="flex-1 w-full space-y-8">
-            {checkout.step === 'cart' && (
-              <div className="animate-in fade-in slide-in-from-left-4 duration-500 space-y-8">
-                {!quoteCart.isEmpty && (
-                  <QuoteCart items={quoteCart.items} onRemove={quoteCart.removeFromCart} />
-                )}
-
-                {shopCart.totalItems > 0 && (
-                  <ShopCart
-                    items={shopCart.items}
-                    onRemove={shopCart.removeItem}
-                    onUpdateQuantity={shopCart.updateQuantity}
-                  />
-                )}
-              </div>
-            )}
-
-            {checkout.step === 'shipping' && (
-              <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                <button
-                  onClick={checkout.prevStep}
-                  className="flex items-center gap-2 lp-label-mono text-lp-muted-fg hover:text-lp-primary transition-colors mb-6"
-                >
-                  <ChevronLeft size={14} /> Back to Cart
-                </button>
-                <ShippingForm
-                  onSubmit={checkout.submitShipping}
-                  isLoading={checkout.isProcessing}
-                />
-              </div>
-            )}
-
-            {checkout.step === 'payment' && checkout.order && (
-              <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                <button
-                  onClick={checkout.prevStep}
-                  className="flex items-center gap-2 lp-label-mono text-lp-muted-fg hover:text-lp-primary transition-colors mb-6"
-                >
-                  <ChevronLeft size={14} /> Back to Shipping
-                </button>
-                <PaymentSection
-                  order={checkout.order}
-                  onSuccess={(data) => checkout.verifyPayment(data)}
-                  isLoading={checkout.isVerifying}
-                />
-              </div>
-            )}
-
-            {/* Fallback for payment if order not yet created but on payment step */}
-            {checkout.step === 'payment' && !checkout.order && (
-              <div className="bg-lp-card border border-lp-border rounded-sm p-12 text-center space-y-6">
-                <Loader2 className="w-10 h-10 text-lp-primary animate-spin mx-auto" />
-                <p className="text-lp-muted-fg">Finalizing order details...</p>
-                <button
-                  onClick={() => checkout.createOrder()}
-                  className="lp-label-mono bg-lp-primary text-lp-primary-fg px-8 py-4 rounded-sm"
-                >
-                  Try again
-                </button>
-              </div>
-            )}
+            <ol className="flex items-center gap-2" aria-label="Checkout progress">
+              {steps.map((s, i) => {
+                const done = i < stepIndex;
+                const current = i === stepIndex;
+                return (
+                  <li key={s.id} className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
+                    <span
+                      className={cn(
+                        'lp-mono flex size-8 items-center justify-center rounded-full border',
+                        current
+                          ? 'border-lp-primary bg-lp-primary text-lp-primary-fg'
+                          : done
+                            ? 'border-lp-primary bg-lp-primary/10 text-lp-primary'
+                            : 'border-lp-border text-lp-muted-fg'
+                      )}
+                    >
+                      {done ? <Check aria-hidden="true" className="size-4" weight="bold" /> : i + 1}
+                    </span>
+                    <span className={cn('caption-1', current ? 'text-lp-fg' : 'text-lp-muted-fg')}>{s.label}</span>
+                    {i < steps.length - 1 && <span aria-hidden="true" className="h-px w-6 bg-lp-border md:w-12" />}
+                  </li>
+                );
+              })}
+            </ol>
           </div>
 
-          {/* Right: Summary Sidebar */}
-          <div className="lg:w-[400px] w-full sticky top-32">
-            <div className="bg-lp-card border border-lp-border rounded-sm p-8 space-y-8">
-              <h3 className="lp-label-mono text-lp-primary flex items-center gap-2">
-                <Package size={14} /> Order Summary
-              </h3>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="lp-label-mono text-lp-muted-fg">
-                    Subtotal
-                  </span>
-                  <span className="text-sm font-medium text-lp-fg">
-                    ₹{combinedSubtotal.toLocaleString('en-IN')}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-emerald-600">
-                  <span className="lp-label-mono">Shipping</span>
-                  <span className="text-sm font-medium">
-                    {checkout.selectedShippingOption.price === 0
-                      ? 'FREE'
-                      : `₹${checkout.selectedShippingOption.price}`}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="lp-label-mono text-lp-muted-fg">
-                    GST (18%)
-                  </span>
-                  <span className="text-sm font-medium text-lp-fg">
-                    ₹{combinedGst.toLocaleString('en-IN')}
-                  </span>
-                </div>
-              </div>
-
-              <Separator className="bg-lp-border" />
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-end">
-                  <span className="lp-label-mono text-lp-fg">
-                    Total
-                  </span>
-                  <span className="text-3xl font-medium text-lp-primary tracking-tight">
-                    ₹
-                    {(combinedTotal + checkout.selectedShippingOption.price).toLocaleString(
-                      'en-IN'
-                    )}
-                  </span>
-                </div>
-                <p className="lp-label-mono text-lp-muted-fg/60 text-right">
-                  Gross Inc. Logistics
-                </p>
-              </div>
-
+          <div className="mt-12 grid items-start gap-8 lg:grid-cols-[1fr_400px]">
+            <div className="min-w-0 space-y-8">
               {checkout.step === 'cart' && (
-                <button
-                  onClick={checkout.nextStep}
-                  disabled={quoteCart.isEmpty && shopCart.totalItems === 0}
-                  className="w-full lp-label-mono bg-lp-primary hover:bg-lp-primary/90 disabled:opacity-40 text-lp-primary-fg py-5 rounded-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-                >
-                  Proceed to Shipping <ArrowRight size={14} />
-                </button>
+                <div className="lp-hero-in space-y-8">
+                  {!quoteCart.isEmpty && <QuoteCart items={quoteCart.items} onRemove={quoteCart.removeFromCart} />}
+                  {shopCart.totalItems > 0 && (
+                    <ShopCart items={shopCart.items} onRemove={shopCart.removeItem} onUpdateQuantity={shopCart.updateQuantity} />
+                  )}
+                </div>
               )}
 
-              {/* Trust Badge */}
-              <div className="flex items-center gap-3 pt-4 opacity-50 justify-center">
-                <ShieldCheck size={16} className="text-lp-primary" />
-                <span className="lp-label-mono text-lp-muted-fg">
-                  Industrial Encryption
-                </span>
-              </div>
+              {checkout.step === 'shipping' && (
+                <div className="lp-hero-in">
+                  <BackButton onClick={checkout.prevStep}>Back to review</BackButton>
+                  <ShippingForm onSubmit={checkout.submitShipping} isLoading={checkout.isProcessing} />
+                </div>
+              )}
+
+              {checkout.step === 'payment' && checkout.order && (
+                <div className="lp-hero-in">
+                  <BackButton onClick={checkout.prevStep}>Back to delivery</BackButton>
+                  <PaymentSection order={checkout.order} onSuccess={(data) => checkout.verifyPayment(data)} isLoading={checkout.isVerifying} />
+                </div>
+              )}
+
+              {/* Fallback for payment if order not yet created but on payment step */}
+              {checkout.step === 'payment' && !checkout.order && (
+                <div className="rounded-2xl border border-lp-border bg-lp-bg p-6 md:p-8" role="status">
+                  <div className="space-y-4" aria-hidden="true">
+                    <div className="h-4 w-32 animate-pulse rounded bg-lp-muted" />
+                    <div className="h-10 w-48 animate-pulse rounded-lg bg-lp-muted" />
+                    <div className="h-12 animate-pulse rounded-full bg-lp-primary/20" />
+                  </div>
+                  <p className="body-6 mt-6 text-lp-muted-fg">Preparing your order for payment.</p>
+                  <button type="button" onClick={() => checkout.createOrder()} className={cn(buttonClass('secondary'), 'mt-4')}>
+                    Try again
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Order summary */}
+            <aside aria-labelledby="summary-heading" className="lg:sticky lg:top-24">
+              <div className="rounded-2xl border border-lp-border bg-lp-card p-6 md:p-8">
+                <h2 id="summary-heading" className="heading-6 flex items-center gap-2">
+                  <Receipt aria-hidden="true" className="size-5 text-lp-primary" weight="duotone" />
+                  Order summary
+                </h2>
+
+                <dl className="mt-6 space-y-3">
+                  {totalQuoteSubtotal > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="body-6 text-lp-muted-fg">Custom parts</dt>
+                      <dd className="body-5 lp-num">₹{totalQuoteSubtotal.toLocaleString('en-IN')}</dd>
+                    </div>
+                  )}
+                  {totalShopSubtotal > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="body-6 text-lp-muted-fg">Shop products</dt>
+                      <dd className="body-5 lp-num">₹{totalShopSubtotal.toLocaleString('en-IN')}</dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between gap-4">
+                    <dt className="body-6 text-lp-muted-fg">Shipping</dt>
+                    <dd className={cn('body-5 lp-num', shippingPrice === 0 && 'text-lp-primary')}>
+                      {shippingPrice === 0 ? 'Free' : `₹${shippingPrice.toLocaleString('en-IN')}`}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="body-6 text-lp-muted-fg">GST (18%)</dt>
+                    <dd className="body-5 lp-num">₹{combinedGst.toLocaleString('en-IN')}</dd>
+                  </div>
+                </dl>
+
+                <div className="mt-6 flex items-end justify-between gap-4 border-t border-lp-border pt-6">
+                  <span className="title-3">Total</span>
+                  <span className="heading-4 lp-num text-lp-primary">₹{(combinedTotal + shippingPrice).toLocaleString('en-IN')}</span>
+                </div>
+                <p className="caption-5 mt-1 text-right text-lp-muted-fg">Including GST and shipping</p>
+
+                {checkout.step === 'cart' && (
+                  <button
+                    type="button"
+                    onClick={checkout.nextStep}
+                    disabled={quoteCart.isEmpty && shopCart.totalItems === 0}
+                    className={cn(buttonClass('primary', 'md', true), 'mt-6 w-full justify-between disabled:opacity-60')}
+                  >
+                    Continue to delivery
+                    <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                      <ArrowRight className="size-4" weight="bold" />
+                    </span>
+                  </button>
+                )}
+
+                <ul className="mt-6 space-y-2 border-t border-lp-border pt-6">
+                  {[
+                    { icon: LockKey, label: 'NDA on every file' },
+                    { icon: ShieldCheck, label: 'Payments by Razorpay' },
+                    { icon: Truck, label: 'Delivered across India' },
+                  ].map(({ icon: Icon, label }) => (
+                    <li key={label} className="caption-1 flex items-center gap-2 text-lp-muted-fg">
+                      <Icon aria-hidden="true" className="size-4 text-lp-primary" weight="bold" />
+                      {label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
           </div>
         </div>
-      </main>
+      </div>
     </V2Shell>
+  );
+}
+
+function BackButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="caption-1 mb-6 flex items-center gap-2 rounded-full px-2 py-1 text-lp-muted-fg transition-colors duration-300 ease-lp hover:bg-lp-muted hover:text-lp-fg"
+    >
+      <CaretLeft aria-hidden="true" className="size-4" weight="bold" />
+      {children}
+    </button>
   );
 }
 

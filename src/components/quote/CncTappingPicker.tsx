@@ -1,13 +1,14 @@
 'use client';
 
-import { Info } from 'lucide-react';
+import { Info } from '@phosphor-icons/react/dist/ssr';
 import { getTapName } from '@/config/manufacturing';
 import type { TappableHoleGroup } from '@/lib/quoting/tapping';
 import type { TapPicks } from '@/hooks/use-cnc-quote';
+import { fieldClass } from '@/components/auth/AuthShell';
+import { cn } from '@/utils';
 
 const formatInr = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-const fieldClass =
-  'bg-lp-accent border border-lp-border rounded-sm px-4 py-3 text-sm text-lp-fg font-medium focus:outline-none focus:border-lp-primary focus:ring-4 focus:ring-lp-primary/5 appearance-none custom-select transition-all';
+const selectClass = cn(fieldClass(), 'lp-select appearance-none pr-10');
 
 /** Thread picker for the CNC instant quote — one row per tappable hole group in the analysis. */
 export function CncTappingPicker({
@@ -25,42 +26,40 @@ export function CncTappingPicker({
   tappedHoles?: number;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between ml-1">
-        <label className="block text-[11px] font-bold text-lp-muted-fg uppercase tracking-widest">
-          Threads / Tapping
-        </label>
+    <fieldset aria-labelledby="threads-heading" className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span id="threads-heading" className="title-4">Threads and tapping</span>
         {(tappingCost ?? 0) > 0 && (
-          <span className="lp-label-mono text-lp-primary">
+          <span className="lp-mono rounded-full bg-lp-primary/10 px-2 py-0.5 text-lp-primary">
             +{formatInr(tappingCost ?? 0)}/part · {tappedHoles} hole{tappedHoles === 1 ? '' : 's'}
           </span>
         )}
       </div>
 
       {holes.length === 0 ? (
-        <div className="flex items-start gap-3 p-4 rounded-sm bg-lp-card border border-lp-border">
-          <Info className="w-4 h-4 text-lp-muted-fg shrink-0 mt-0.5" />
-          <p className="text-xs text-lp-muted-fg">
-            No holes on this part match a standard tap drill. Model tapped holes at the tap-drill size (for
-            example Ø5.0 mm for M6) to get threads priced instantly.
-          </p>
-        </div>
+        <p className="caption-2 flex items-start gap-3 rounded-xl border border-lp-border bg-lp-card p-4 text-lp-muted-fg">
+          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" weight="bold" />
+          No holes on this part match a standard tap drill. Model tapped holes at the tap drill size (for example Ø5.0 mm for
+          M6) to get threads priced instantly.
+        </p>
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {holes.map((hole) => {
             const pick = picks[hole.key];
             return (
-              <div
+              <li
                 key={hole.key}
-                className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-sm border transition-colors ${pick ? 'border-lp-primary/40 bg-lp-accent/40' : 'border-lp-border bg-lp-card'
-                  }`}
+                className={cn(
+                  'flex flex-col gap-3 rounded-2xl border p-4 transition-colors duration-300 ease-lp sm:flex-row sm:items-center',
+                  pick ? 'border-lp-primary/40 bg-lp-primary/5' : 'border-lp-border bg-lp-bg'
+                )}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-lp-fg">
+                <div className="min-w-0 flex-1">
+                  <p className="title-4 lp-num">
                     {hole.count} × Ø{hole.diameterMm.toFixed(1)} mm
                   </p>
-                  <p className="lp-label-mono text-lp-muted-fg mt-0.5">
-                    {hole.through ? 'Through hole' : `Blind · ${hole.depthMm.toFixed(1)} mm deep`}
+                  <p className="caption-5 mt-1 text-lp-muted-fg">
+                    {hole.through ? 'Through hole' : `Blind, ${hole.depthMm.toFixed(1)} mm deep`}
                   </p>
                 </div>
                 <select
@@ -69,7 +68,7 @@ export function CncTappingPicker({
                   onChange={(e) =>
                     onPick(hole.key, e.target.value ? { tapId: e.target.value, count: pick?.count ?? hole.count } : null)
                   }
-                  className={`${fieldClass} sm:w-44`}
+                  className={cn(selectClass, 'sm:w-44')}
                 >
                   <option value="">No thread</option>
                   {hole.tapIds.map((id) => (
@@ -83,7 +82,7 @@ export function CncTappingPicker({
                     aria-label="How many of these holes to tap"
                     value={pick.count}
                     onChange={(e) => onPick(hole.key, { tapId: pick.tapId, count: Number(e.target.value) })}
-                    className={`${fieldClass} sm:w-32`}
+                    className={cn(selectClass, 'sm:w-32')}
                   >
                     {Array.from({ length: hole.count }, (_, i) => i + 1).map((n) => (
                       <option key={n} value={n}>
@@ -92,11 +91,11 @@ export function CncTappingPicker({
                     ))}
                   </select>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
-    </div>
+    </fieldset>
   );
 }

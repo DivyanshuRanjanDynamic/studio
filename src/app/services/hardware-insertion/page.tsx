@@ -1,5 +1,3 @@
-'use client';
-
 import { ServicePageTemplate } from '@/components/services/ServicePageTemplate';
 import { HARDWARE_INSERTION } from '@/lib/services/service-pages';
 

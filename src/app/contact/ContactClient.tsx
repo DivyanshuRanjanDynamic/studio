@@ -1,33 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { Check, Loader2, Mail, Phone, MapPin, Clock, Send, ArrowRight } from 'lucide-react';
-import { V2Shell } from '@/components/V2Shell';
-import { Reveal, Tag } from '@/components/home/primitives';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowRight, CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr';
+import { buttonClass } from '@/components/home/button';
 import { trackEvent } from '@/lib/analytics';
+import { cn } from '@/utils';
 
-export default function ContactClient() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const { toast } = useToast();
+type Field = 'firstName' | 'lastName' | 'email' | 'message';
+type Errors = Partial<Record<Field, string>>;
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function validate(data: FormData): Errors {
+  const errors: Errors = {};
+  const get = (k: string) => String(data.get(k) ?? '').trim();
+  if (!get('firstName')) errors.firstName = 'Enter your first name.';
+  if (!get('lastName')) errors.lastName = 'Enter your last name.';
+  if (!get('email')) errors.email = 'Enter your email address.';
+  else if (!EMAIL_RE.test(get('email'))) errors.email = 'Enter an email address like name@company.in.';
+  if (get('message').length < 10) errors.message = 'Tell us a little more, at least 10 characters.';
+  return errors;
+}
+
+const inputCls = (invalid: boolean) =>
+  cn(
+    'body-6 w-full rounded-xl border bg-lp-bg px-3 py-2 text-lp-fg placeholder:text-lp-muted-fg/60 transition-colors duration-300 ease-lp focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lp-primary',
+    invalid ? 'border-lp-destructive' : 'border-lp-border hover:border-lp-fg/30'
+  );
+
+function FieldShell({
+  id,
+  label,
+  optional = false,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  optional?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="title-4 block">
+        {label} {optional && <span className="caption-5 text-lp-muted-fg">(optional)</span>}
+      </label>
+      {children}
+      {error && (
+        <p id={`${id}-error`} className="caption-2 flex items-center gap-2 text-lp-destructive">
+          <WarningCircle aria-hidden="true" className="size-4 shrink-0" weight="bold" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Contact form with client side validation, inline errors and a calm confirmation. */
+export default function ContactForm() {
+  const [errors, setErrors] = useState<Errors>({});
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  const [failure, setFailure] = useState('');
+  const [sentTo, setSentTo] = useState('');
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsSubmitting(true);
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const found = validate(data);
+    setErrors(found);
+    if (Object.keys(found).length) {
+      form.querySelector<HTMLElement>(`[name="${Object.keys(found)[0]}"]`)?.focus();
+      return;
+    }
 
-    const formData = new FormData(e.currentTarget);
+    setStatus('sending');
     const payload = {
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
-      phone: (formData.get('phone') as string) || '',
-      company: (formData.get('company') as string) || '',
-      message: formData.get('message') as string,
+      firstName: String(data.get('firstName')).trim(),
+      lastName: String(data.get('lastName')).trim(),
+      email: String(data.get('email')).trim(),
+      phone: String(data.get('phone') ?? '').trim(),
+      company: String(data.get('company') ?? '').trim(),
+      message: String(data.get('message')).trim(),
     };
 
     try {
@@ -37,220 +93,134 @@ export default function ContactClient() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Submission failed');
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `The server answered with status ${res.status}.`);
       }
-      setIsSubmitted(true);
       trackEvent('contact_submitted');
-      toast({ title: 'Message Sent!', description: "We'll get back to you within 24 hours." });
-    } catch (err: any) {
-      toast({ title: 'Something went wrong', description: err.message || 'Please try again later.', variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
+      setSentTo(payload.email);
+      setStatus('sent');
+    } catch (err) {
+      setFailure(err instanceof Error ? err.message : 'The message could not be sent.');
+      setStatus('failed');
     }
   }
 
-  const inputCls =
-    'h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm';
+  if (status === 'sent') {
+    return (
+      <div role="status" className="flex flex-col items-start rounded-2xl border border-lp-border bg-lp-card p-6 md:p-8">
+        <CheckCircle aria-hidden="true" className="size-8 text-lp-primary" weight="duotone" />
+        <h2 className="heading-5 mt-6">Message sent to the MechHub team</h2>
+        <p className="body-6 mt-2 max-w-[480px] text-lp-muted-fg">
+          We will reply to {sentTo} within 24 hours on working days. For an urgent order, call us on the number
+          alongside.
+        </p>
+        <Link href="/" className={cn(buttonClass('secondary'), 'mt-8')}>
+          Back to the home page
+          <ArrowRight aria-hidden="true" className="size-4" weight="bold" />
+        </Link>
+      </div>
+    );
+  }
+
+  const describedBy = (f: Field) => (errors[f] ? `${f}-error` : undefined);
 
   return (
-    <V2Shell>
-      <section className="py-20 md:py-28">
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-5">
-          <Reveal>
-            <Tag>Contact Us</Tag>
-          </Reveal>
-          <Reveal delay={80}>
-            <h1 className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
-              Get in <span className="font-lp-serif italic">Touch</span>
-            </h1>
-          </Reveal>
-          <Reveal delay={140}>
-            <p className="mt-4 max-w-xl text-sm text-lp-muted-fg">
-              Have a question about our services, need a custom quote, or want to discuss your
-              project? Fill out the form below and our team will get back to you shortly.
-            </p>
-          </Reveal>
+    <form
+      noValidate
+      onSubmit={handleSubmit}
+      aria-label="Contact MechHub"
+      className="space-y-6 rounded-2xl border border-lp-border bg-lp-card p-6 md:p-8"
+    >
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FieldShell id="firstName" label="First name" error={errors.firstName}>
+          <input
+            id="firstName"
+            name="firstName"
+            autoComplete="given-name"
+            required
+            placeholder="Aarav"
+            aria-invalid={!!errors.firstName}
+            aria-describedby={describedBy('firstName')}
+            className={inputCls(!!errors.firstName)}
+          />
+        </FieldShell>
+        <FieldShell id="lastName" label="Last name" error={errors.lastName}>
+          <input
+            id="lastName"
+            name="lastName"
+            autoComplete="family-name"
+            required
+            placeholder="Mehta"
+            aria-invalid={!!errors.lastName}
+            aria-describedby={describedBy('lastName')}
+            className={inputCls(!!errors.lastName)}
+          />
+        </FieldShell>
+      </div>
 
-          <div className="mt-14 grid gap-10 lg:grid-cols-5 lg:gap-16">
-            {/* Form */}
-            <div className="lg:col-span-3">
-              {isSubmitted ? (
-                <Reveal>
-                  <div className="flex flex-col items-center border border-lp-border bg-lp-bg py-20 text-center">
-                    <div className="flex size-20 items-center justify-center bg-emerald-50 text-emerald-500">
-                      <Check className="size-9" />
-                    </div>
-                    <p className="mt-6 text-xl font-medium">Message Received!</p>
-                    <p className="mt-2 max-w-sm text-sm text-lp-muted-fg">
-                      Thank you for reaching out. Our team will respond within 24 hours.
-                    </p>
-                    <Link
-                      href="/"
-                      className="lp-label-mono mt-8 inline-flex items-center gap-2 bg-lp-primary px-5 py-3 text-lp-primary-fg transition-transform hover:scale-105"
-                    >
-                      Back to Home <ArrowRight className="size-3" />
-                    </Link>
-                  </div>
-                </Reveal>
-              ) : (
-                <Reveal>
-                  <form
-                    onSubmit={handleSubmit}
-                    className="space-y-6 border border-lp-border bg-lp-bg p-6 sm:p-10"
-                  >
-                    <div className="grid gap-6 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <label htmlFor="firstName" className="lp-label-mono text-lp-primary">
-                          First name
-                        </label>
-                        <Input id="firstName" name="firstName" required placeholder="John" className={inputCls} />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="lastName" className="lp-label-mono text-lp-primary">
-                          Last name
-                        </label>
-                        <Input id="lastName" name="lastName" required placeholder="Doe" className={inputCls} />
-                      </div>
-                    </div>
+      <FieldShell id="email" label="Email" error={errors.email}>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="aarav@vyomrobotics.in"
+          aria-invalid={!!errors.email}
+          aria-describedby={describedBy('email')}
+          className={inputCls(!!errors.email)}
+        />
+      </FieldShell>
 
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="lp-label-mono text-lp-primary">
-                        Work Email
-                      </label>
-                      <Input id="email" name="email" type="email" required placeholder="john@company.com" className={inputCls} />
-                    </div>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FieldShell id="phone" label="Phone" optional>
+          <input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="+91 98765 43210" className={inputCls(false)} />
+        </FieldShell>
+        <FieldShell id="company" label="Team or company" optional>
+          <input id="company" name="company" autoComplete="organization" placeholder="Vyom Robotics" className={inputCls(false)} />
+        </FieldShell>
+      </div>
 
-                    <div className="grid gap-6 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <label htmlFor="phone" className="lp-label-mono text-lp-primary">
-                          Phone <span className="text-lp-muted-fg normal-case tracking-normal">(optional)</span>
-                        </label>
-                        <Input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" className={inputCls} />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="company" className="lp-label-mono text-lp-primary">
-                          Company <span className="text-lp-muted-fg normal-case tracking-normal">(optional)</span>
-                        </label>
-                        <Input id="company" name="company" placeholder="Acme Inc." className={inputCls} />
-                      </div>
-                    </div>
+      <FieldShell id="message" label="Message" error={errors.message}>
+        <textarea
+          id="message"
+          name="message"
+          required
+          minLength={10}
+          rows={5}
+          placeholder="What are you building, and which parts do you need?"
+          aria-invalid={!!errors.message}
+          aria-describedby={describedBy('message')}
+          className={cn(inputCls(!!errors.message), 'resize-none')}
+        />
+      </FieldShell>
 
-                    <div className="space-y-2">
-                      <label htmlFor="message" className="lp-label-mono text-lp-primary">
-                        Message
-                      </label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        required
-                        minLength={10}
-                        placeholder="Tell us about your project..."
-                        className="min-h-[140px] resize-none border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm"
-                      />
-                    </div>
+      {status === 'failed' && (
+        <p role="alert" className="body-6 flex items-start gap-2 rounded-xl border border-lp-destructive/40 p-3 text-lp-destructive">
+          <WarningCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" weight="bold" />
+          <span>
+            Your message was not sent. {failure} Try again, or email outreach@mechhub.in directly.
+          </span>
+        </p>
+      )}
 
-                    <p className="text-xs text-lp-muted-fg">
-                      By submitting this form, you agree to our{' '}
-                      <Link href="/privacy-policy" className="text-lp-primary underline underline-offset-2">
-                        Privacy Policy
-                      </Link>.
-                    </p>
+      <p className="caption-2 text-lp-muted-fg">
+        By sending this form you agree to our{' '}
+        <Link href="/privacy-policy" className="text-lp-primary underline underline-offset-4 hover:opacity-80">
+          privacy policy
+        </Link>
+        .
+      </p>
 
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="lp-label-mono h-14 w-full bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm text-sm transition-transform active:scale-[0.98]"
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="size-5 animate-spin" />
-                      ) : (
-                        <>
-                          Send Message <Send className="ml-2 size-4" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Reveal>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6 lg:col-span-2">
-              <Reveal>
-                <div className="border border-lp-border bg-lp-bg p-6 sm:p-8">
-                  <h2 className="text-lg font-medium tracking-tight">Direct Support</h2>
-                  <p className="mt-1 text-sm text-lp-muted-fg">
-                    Prefer to reach out directly? Use any of the channels below.
-                  </p>
-                  <div className="mt-6 space-y-5">
-                    {[
-                      { icon: Mail, label: 'Email', value: 'outreach@mechhub.in', href: 'mailto:outreach@mechhub.in' },
-                      { icon: Phone, label: 'Phone', value: '+91 9607043079', href: 'tel:+919607043079', note: 'Mon–Sun, 10AM–8PM IST' },
-                      { icon: MapPin, label: 'Office', value: 'Synchubb Innovations Pvt Ltd' },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-start gap-4">
-                        <div className="flex size-10 shrink-0 items-center justify-center bg-lp-accent text-lp-primary">
-                          <item.icon className="size-4" />
-                        </div>
-                        <div>
-                          <p className="lp-label-mono text-lp-muted-fg">{item.label}</p>
-                          {item.href ? (
-                            <a href={item.href} className="text-sm font-medium text-lp-fg hover:text-lp-primary transition-colors">
-                              {item.value}
-                            </a>
-                          ) : (
-                            <p className="text-sm font-medium">{item.value}</p>
-                          )}
-                          {item.note && <p className="lp-label-mono mt-0.5 text-lp-muted-fg">{item.note}</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Reveal>
-
-              <Reveal delay={80}>
-                <div className="lp-grid-bg bg-lp-primary p-6 text-lp-primary-fg sm:p-8">
-                  <div className="flex size-12 items-center justify-center bg-lp-primary-fg/10 border border-lp-primary-fg/10">
-                    <Clock className="size-5" />
-                  </div>
-                  <h3 className="mt-5 text-lg font-medium">Response Time</h3>
-                  <p className="mt-2 text-sm opacity-70 leading-relaxed">
-                    Our team typically responds within{' '}
-                    <span className="font-medium opacity-100">24 hours</span> on working days. For
-                    urgent manufacturing queries, call us directly.
-                  </p>
-                </div>
-              </Reveal>
-
-              <Reveal delay={120}>
-                <div className="border border-lp-border bg-lp-bg p-6 sm:p-8">
-                  <h3 className="font-medium tracking-tight">Common Questions</h3>
-                  <div className="mt-4 space-y-3">
-                    {[
-                      'What file formats do you accept?',
-                      'What are your minimum order quantities?',
-                      'How do I track my order?',
-                    ].map((q) => (
-                      <div key={q} className="flex items-center gap-3">
-                        <div className="size-1.5 shrink-0 bg-lp-primary/30" />
-                        <p className="text-sm text-lp-muted-fg">{q}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <Link
-                    href="/about"
-                    className="lp-label-mono mt-5 inline-flex items-center gap-1 text-lp-primary"
-                  >
-                    Learn More <ArrowRight className="size-3" />
-                  </Link>
-                </div>
-              </Reveal>
-            </div>
-          </div>
-        </div>
-      </section>
-    </V2Shell>
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        aria-busy={status === 'sending'}
+        className={cn(buttonClass('primary'), 'w-full disabled:cursor-wait disabled:opacity-60 sm:w-auto')}
+      >
+        {status === 'sending' ? 'Sending your message' : 'Send message'}
+        {status !== 'sending' && <ArrowRight aria-hidden="true" className="size-4" weight="bold" />}
+      </button>
+    </form>
   );
 }

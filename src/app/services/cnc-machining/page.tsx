@@ -1,5 +1,3 @@
-'use client';
-
 import { ServicePageTemplate } from '@/components/services/ServicePageTemplate';
 import { CNC_MACHINING } from '@/lib/services/service-pages';
 

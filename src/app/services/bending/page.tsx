@@ -1,5 +1,3 @@
-'use client';
-
 import { ServicePageTemplate } from '@/components/services/ServicePageTemplate';
 import { BENDING } from '@/lib/services/service-pages';
 

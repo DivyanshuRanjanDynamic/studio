@@ -1,88 +1,68 @@
-import { Asterisk, Factory, PencilRuler } from 'lucide-react';
-import { Reveal, Tag } from '@/components/home/primitives';
+import { ArrowRight, Factory, PencilRuler, Stack } from '@phosphor-icons/react/dist/ssr';
+import { Reveal, SectionHeader } from '@/components/home/primitives';
+import { cn } from '@/utils';
 
-/** Dashed link between two sides of the platform, with tokens travelling each way. */
-function Lane({ forward, back }: { forward: string; back: string }) {
-  const packet = 'about-packet lp-label-mono rounded-sm';
-  return (
-    <div className="about-lane" aria-hidden="true">
-      <div className="about-lane-rail" style={{ '--rail': '34%' } as React.CSSProperties} />
-      <div className="about-lane-rail" style={{ '--rail': '66%' } as React.CSSProperties} />
-      <span className={`${packet} bg-lp-primary text-lp-primary-fg`} style={{ '--rail': '34%' } as React.CSSProperties}>
-        {forward}
-      </span>
-      <span
-        className={`${packet} about-packet-back bg-lp-ink-fg text-lp-ink`}
-        style={{ '--rail': '66%' } as React.CSSProperties}
-      >
-        {back}
-      </span>
-    </div>
-  );
-}
+const SIDES = [
+  {
+    icon: PencilRuler,
+    who: 'You',
+    title: 'Builders',
+    body: 'Students, startups and hobbyists upload a design, approve a quote and track the order. One part or a thousand, with no minimum quantity.',
+    highlight: false,
+  },
+  {
+    icon: Stack,
+    who: 'In the middle',
+    title: 'MechHub',
+    body: 'Instant quotes, NDA protected design files, live order tracking and QC inspection, all in one managed flow.',
+    highlight: true,
+  },
+  {
+    icon: Factory,
+    who: 'The network',
+    title: 'MechMasters',
+    body: 'Vetted manufacturing partners take on the work, from sheet cutting and CNC machining to surface finishing.',
+    highlight: false,
+  },
+];
 
+/** How the managed marketplace fits together: builders, MechHub, MechMasters. */
 export function AboutPlatform() {
   return (
-    <section className="lp-grid-bg bg-lp-ink py-24 text-lp-ink-fg md:py-32">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-5">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div>
-            <Reveal>
-              <Tag>The Platform</Tag>
-            </Reveal>
-            <Reveal delay={100}>
-              <h2 className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
-                A Managed Marketplace, <span className="font-lp-serif italic opacity-70">Not a Vendor List</span>
-              </h2>
-            </Reveal>
-          </div>
-          <Reveal delay={150} className="lg:self-end">
-            <p className="max-w-md opacity-70 lg:ml-auto">
-              You deal with one platform and one price. MechHub runs the network behind it, so cutting, bending and
-              finishing never become your project to manage.
-            </p>
-          </Reveal>
-        </div>
+    <section aria-labelledby="platform-heading" className="bg-lp-ink px-4 py-16 text-lp-ink-fg md:py-24">
+      <div className="mx-auto max-w-[1200px]">
+        <SectionHeader
+          inverted
+          id="platform-heading"
+          kicker="The platform"
+          title="A managed marketplace, not a vendor list"
+          lead="You deal with one platform and one price. MechHub runs the network behind it, so cutting, bending and finishing never become your project to manage."
+        />
 
-        <div className="mt-14 grid lg:grid-cols-[1fr_minmax(5rem,0.45fr)_1.1fr_minmax(5rem,0.45fr)_1fr]">
-          <Reveal className="border border-lp-ink-fg/15 bg-lp-ink p-7">
-            <PencilRuler className="size-7 text-lp-ink-fg/70" strokeWidth={1.25} />
-            <div className="lp-label-mono mt-8 opacity-60">You</div>
-            <h3 className="mt-2 text-2xl">Builders</h3>
-            <p className="mt-3 text-sm opacity-70">
-              Startups, college clubs, industrial buyers and businesses upload a design, approve a quote and track the
-              order. One part or 1,000+, with no minimum quantity.
-            </p>
-          </Reveal>
-
-          <Lane forward="CAD" back="Parts" />
-
-          <Reveal delay={100} className="lp-grid-bg relative overflow-hidden bg-lp-primary p-7 text-lp-primary-fg">
-            <Asterisk
-              className="lp-spin-slow absolute -right-8 -top-8 size-36 opacity-20"
-              strokeWidth={1}
-              aria-hidden="true"
-            />
-            <div className="lp-label-mono mt-[3.75rem] opacity-80">In the middle</div>
-            <h3 className="mt-2 text-2xl">MechHub</h3>
-            <p className="mt-3 text-sm opacity-85">
-              Instant quotes, NDA-protected design files, real-time order tracking and QC inspection, all in one
-              managed flow.
-            </p>
-          </Reveal>
-
-          <Lane forward="Order" back="Parts" />
-
-          <Reveal delay={200} className="border border-lp-ink-fg/15 bg-lp-ink p-7">
-            <Factory className="size-7 text-lp-ink-fg/70" strokeWidth={1.25} />
-            <div className="lp-label-mono mt-8 opacity-60">The Network</div>
-            <h3 className="mt-2 text-2xl">MechMasters</h3>
-            <p className="mt-3 text-sm opacity-70">
-              Vetted manufacturing partners take on the work, from sheet cutting and CNC machining to surface
-              finishing.
-            </p>
-          </Reveal>
-        </div>
+        <ol className="mt-12 grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          {SIDES.map(({ icon: Icon, who, title, body, highlight }, i) => (
+            <li key={title} className="contents">
+              {i > 0 && (
+                <span aria-hidden="true" className="hidden items-center justify-center text-lp-ink-fg/40 lg:flex">
+                  <ArrowRight className="size-5" weight="bold" />
+                </span>
+              )}
+              <Reveal
+                as="article"
+                delay={i * 80}
+                className={cn(
+                  'rounded-2xl p-6',
+                  highlight ? 'bg-lp-primary text-lp-primary-fg' : 'border border-lp-ink-fg/15'
+                )}
+              >
+                <Icon aria-hidden="true" className="size-6" weight="duotone" />
+                <p className={cn('caption-4 mt-6', highlight ? 'text-lp-primary-fg/80' : 'text-lp-ink-fg/60')}>{who}</p>
+                <h3 className="heading-6 mt-1">{title}</h3>
+                <p className={cn('body-6 mt-2', highlight ? 'text-lp-primary-fg/80' : 'text-lp-ink-fg/70')}>{body}</p>
+              </Reveal>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

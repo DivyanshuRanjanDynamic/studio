@@ -1,7 +1,11 @@
 /*
- * Home page (landing) design system.
+ * Marketing site design system (home, services, materials, about, contact).
  * Everything is scoped to .lp-root or prefixed `lp-` so it cannot leak into
  * other pages once this stylesheet has been loaded by client-side navigation.
+ *
+ * Text styles (heading-1 … caption-5), spacing, radius and motion follow the
+ * landing page design SKILL: one typeface (Geist), Tailwind type scale only,
+ * no italics, flat backgrounds, one easing curve.
  */
 
 .lp-root {
@@ -17,11 +21,15 @@
   --lp-ink: 12% 0.005 265;
   --lp-ink-foreground: 96% 0 0;
   --lp-destructive: 57.7% 0.245 27.325;
-  /* Near-square corners: rounded-sm => 0, rounded-md => 2px, rounded-lg => 4px */
+  /* Near-square corners for the app screens: rounded-sm => 0, rounded-md => 2px, rounded-lg => 4px.
+     Marketing pages use rounded, rounded-xl, rounded-2xl and rounded-full instead. */
   --radius: 0.25rem;
 
-  --lp-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
-  --lp-ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* The one easing curve (SKILL B7). */
+  --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Legacy names kept for app screens that still reference them. */
+  --lp-ease-out: var(--lp-ease);
+  --lp-ease-spring: var(--lp-ease);
 
   background-color: oklch(var(--lp-background));
   color: oklch(var(--lp-foreground));
@@ -37,7 +45,321 @@
   border-color: oklch(var(--lp-border));
 }
 
-/* ── Type helpers ─────────────────────────────────────────────────────────── */
+/* ── Text styles (SKILL B1) ───────────────────────────────────────────────── */
+/* Headings step down one scale level below 768px so 390px screens never overflow. */
+
+/* Premium look (reference: precision CNC storefronts): large, medium weight, tight tracking. */
+.lp-root :is(.heading-display, .heading-1, .heading-2, .heading-3, .heading-4, .heading-5, .heading-6) {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+/* Hero only: text-4xl → text-5xl → text-7xl. */
+.lp-root .heading-display { font-size: 2.25rem; line-height: 2.5rem; }
+@media (min-width: 640px) {
+  .lp-root .heading-display { font-size: 3rem; line-height: 1; }
+}
+@media (min-width: 1024px) {
+  .lp-root .heading-display { font-size: 4.5rem; line-height: 1; }
+}
+
+.lp-root .heading-1 { font-size: 2.25rem; line-height: 2.5rem; }
+.lp-root .heading-2 { font-size: 1.875rem; line-height: 2.25rem; }
+.lp-root .heading-3 { font-size: 1.875rem; line-height: 2.25rem; }
+.lp-root .heading-4 { font-size: 1.5rem; line-height: 2rem; }
+.lp-root .heading-5 { font-size: 1.5rem; line-height: 2rem; }
+.lp-root .heading-6 { font-size: 1.25rem; line-height: 1.75rem; letter-spacing: -0.01em; }
+
+@media (min-width: 768px) {
+  .lp-root .heading-1 { font-size: 3.75rem; line-height: 1; }
+  .lp-root .heading-2 { font-size: 3rem; line-height: 1; }
+  .lp-root .heading-3 { font-size: 2.25rem; line-height: 2.5rem; }
+  .lp-root .heading-4 { font-size: 1.875rem; line-height: 2.25rem; }
+}
+
+.lp-root :is(.title-1, .title-2, .title-3, .title-4, .title-5) { font-weight: 500; text-wrap: balance; }
+.lp-root .title-1 { font-size: 1.25rem; line-height: 1.75rem; }
+.lp-root .title-2 { font-size: 1.125rem; line-height: 1.75rem; }
+.lp-root .title-3 { font-size: 1rem; line-height: 1.5rem; }
+.lp-root .title-4 { font-size: 0.875rem; line-height: 1.25rem; }
+.lp-root .title-5 { font-size: 0.75rem; line-height: 1rem; }
+
+.lp-root :is(.body-1, .body-2, .body-3, .body-4, .body-5, .body-6) { text-wrap: pretty; }
+.lp-root :is(.body-1, .body-2, .body-3) { font-size: 1rem; line-height: 1.5rem; }
+.lp-root :is(.body-4, .body-5, .body-6) { font-size: 0.875rem; line-height: 1.25rem; }
+.lp-root :is(.body-1, .body-4) { font-weight: 600; }
+.lp-root :is(.body-2, .body-5) { font-weight: 500; }
+.lp-root :is(.body-3, .body-6) { font-weight: 400; }
+
+.lp-root :is(.button-lg, .button-md, .button-sm, .button-xsm) { font-weight: 600; }
+.lp-root .button-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.lp-root .button-md { font-size: 1rem; line-height: 1.5rem; }
+.lp-root .button-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.lp-root .button-xsm { font-size: 0.75rem; line-height: 1rem; }
+
+.lp-root :is(.caption-1, .caption-2) { font-size: 0.875rem; line-height: 1.25rem; }
+.lp-root :is(.caption-3, .caption-4, .caption-5) { font-size: 0.75rem; line-height: 1rem; }
+.lp-root .caption-1 { font-weight: 500; }
+.lp-root .caption-2 { font-weight: 400; }
+.lp-root .caption-3 { font-weight: 600; }
+.lp-root .caption-4 { font-weight: 500; }
+.lp-root .caption-5 { font-weight: 400; }
+
+/* Hero heading: the one place a gradient is allowed, on text only (SKILL B5). */
+.lp-hero-heading {
+  background-image: linear-gradient(90deg, #000000, #666666);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Accent word: the one serif italic moment per heading (Instrument Serif, self hosted). */
+.lp-root .lp-accent {
+  font-family: var(--lp-font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  padding-right: 0.06em;
+  background-image: linear-gradient(90deg, oklch(var(--lp-primary)), oklch(62% 0.08 262));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lp-root .lp-accent-light {
+  background-image: linear-gradient(90deg, oklch(var(--lp-primary-foreground)), oklch(82% 0.06 262));
+}
+
+/* Technical labels: spec sheets, captions, kickers. */
+.lp-root .lp-mono {
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Blue panels: drafting grid drawn with an SVG tile (no gradient fill). */
+.lp-blueprint {
+  background-color: oklch(var(--lp-primary));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M48 0H0V48' fill='none' stroke='white' stroke-opacity='.12'/%3E%3C/svg%3E");
+}
+
+/* Corner registration marks on framed panels. */
+.lp-marks {
+  position: relative;
+}
+.lp-marks::before,
+.lp-marks::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border-color: currentColor;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.lp-marks::before {
+  top: 8px;
+  left: 8px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.lp-marks::after {
+  right: 8px;
+  bottom: 8px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+
+/* Blue duotone photography. */
+.lp-duotone {
+  background-color: oklch(var(--lp-primary));
+  isolation: isolate;
+}
+.lp-duotone img {
+  filter: grayscale(1) contrast(1.15) brightness(1.1);
+  mix-blend-mode: multiply;
+}
+
+/* Floating parts: slow tumble on the shared curve, alternate so it never snaps. */
+.lp-tumble {
+  animation: lp-tumble var(--dur, 7s) cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0s) infinite alternate;
+}
+@keyframes lp-tumble {
+  from {
+    transform: translateY(0) rotate(var(--r0, -6deg));
+  }
+  to {
+    transform: translateY(-16px) rotate(var(--r1, 6deg));
+  }
+}
+
+/* Numeric UI where a monospace is functionally needed (prices, counts). */
+.lp-root .lp-num {
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Interaction ─────────────────────────────────────────────────────────── */
+
+/* Full state set for buttons and links (SKILL B9). */
+.lp-press {
+  transition-property: transform, background-color, color, border-color, opacity;
+  transition-duration: 300ms;
+  transition-timing-function: var(--lp-ease);
+}
+.lp-press:active {
+  transform: scale(0.98);
+}
+.lp-root :is(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid oklch(var(--lp-primary));
+  outline-offset: 2px;
+}
+
+.lp-skip {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 100;
+  transform: translateY(-200%);
+  transition: transform 300ms var(--lp-ease);
+}
+.lp-skip:focus {
+  transform: none;
+}
+
+/* ── Scroll reveal (SKILL B7) ─────────────────────────────────────────────── */
+/* Uses the independent `translate` property so Tailwind transform utilities
+   (hover:-translate-y-1, active scale, …) keep working on the same node. */
+
+.lp-reveal {
+  opacity: 0;
+  translate: 0 32px;
+  transition:
+    opacity 700ms var(--lp-ease),
+    translate 700ms var(--lp-ease),
+    transform 500ms var(--lp-ease),
+    background-color 300ms var(--lp-ease),
+    color 300ms var(--lp-ease),
+    border-color 300ms var(--lp-ease);
+}
+
+.lp-reveal.lp-in {
+  opacity: 1;
+  translate: none;
+}
+
+/* Hero entrance: rises once on load. */
+.lp-hero-in {
+  opacity: 0;
+  animation: lp-rise 800ms var(--lp-ease) forwards;
+}
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Tagline reveal (SKILL B11) ───────────────────────────────────────────── */
+
+.lp-tagline-word {
+  color: oklch(var(--lp-foreground) / 0.3);
+  transition: color 500ms var(--lp-ease);
+}
+.lp-tagline-word.lp-on {
+  color: oklch(var(--lp-foreground));
+}
+
+/* ── Demo video dialog ────────────────────────────────────────────────────── */
+
+.lp-demo[open] {
+  animation: lp-demo-in 500ms var(--lp-ease);
+}
+.lp-demo[open]::backdrop {
+  animation: lp-fade 300ms var(--lp-ease);
+}
+@keyframes lp-demo-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── FAQ ──────────────────────────────────────────────────────────────────── */
+
+.lp-faq summary {
+  list-style: none;
+}
+.lp-faq summary::-webkit-details-marker {
+  display: none;
+}
+.lp-faq .lp-faq-icon {
+  transition: transform 500ms var(--lp-ease);
+}
+.lp-faq[open] .lp-faq-icon {
+  transform: rotate(45deg);
+}
+.lp-faq[open] .lp-faq-body {
+  animation: lp-faq-open 500ms var(--lp-ease);
+}
+@keyframes lp-faq-open {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Navigation (SKILL B7 › Navigation) ───────────────────────────────────── */
+
+.lp-menu-line {
+  transition: transform 500ms var(--lp-ease), opacity 300ms var(--lp-ease);
+  transform-origin: center;
+}
+.lp-menu-open .lp-menu-line:nth-child(1) {
+  transform: translateY(3px) rotate(45deg);
+}
+.lp-menu-open .lp-menu-line:nth-child(2) {
+  transform: translateY(-3px) rotate(-45deg);
+}
+
+.lp-menu-panel {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 500ms var(--lp-ease), visibility 0s linear 500ms;
+}
+.lp-menu-panel.lp-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 500ms var(--lp-ease), visibility 0s;
+}
+.lp-menu-item {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 500ms var(--lp-ease), transform 500ms var(--lp-ease);
+}
+.lp-open .lp-menu-item {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Legacy helpers (app screens inside V2Shell still use these) ──────────── */
 
 .lp-label-mono {
   font-family: var(--lp-font-mono), ui-monospace, monospace;
@@ -47,263 +369,403 @@
 }
 
 .lp-accent-serif {
-  font-family: var(--lp-font-serif), Georgia, serif;
-  font-style: italic;
-  font-weight: 400;
-  color: color-mix(in oklab, oklch(var(--lp-primary)) 55%, oklch(var(--lp-muted-foreground)));
+  color: oklch(var(--lp-primary));
 }
 
 .lp-tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: 2px;
-  background: oklch(var(--lp-primary));
-  color: oklch(var(--lp-primary-foreground));
-  font-family: var(--lp-font-mono), ui-monospace, monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  background: oklch(var(--lp-primary) / 0.1);
+  color: oklch(var(--lp-primary));
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
 }
 
-/* ── Backgrounds ──────────────────────────────────────────────────────────── */
-
-.lp-grid-bg {
-  background-image:
-    linear-gradient(color-mix(in oklab, oklch(var(--lp-primary-foreground)) 10%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, oklch(var(--lp-primary-foreground)) 10%, transparent) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
+/* Flat backgrounds only (SKILL B4). */
+.lp-grid-bg,
 .lp-hero-dots {
-  background-image: radial-gradient(color-mix(in oklab, oklch(var(--lp-foreground)) 14%, transparent) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-
-/* ── Scroll reveal ────────────────────────────────────────────────────────── */
-/* Uses the independent `translate` property so Tailwind transform utilities
-   (hover:translate-x-2, hover:-translate-y-2, …) keep working on the same node. */
-
-.lp-reveal {
-  opacity: 0;
-  filter: blur(6px);
-  translate: 0 40px;
-  transition:
-    opacity 0.9s var(--lp-ease-out),
-    translate 0.9s var(--lp-ease-out),
-    filter 0.9s,
-    transform 0.5s,
-    background-color 0.5s,
-    color 0.5s,
-    border-color 0.5s,
-    box-shadow 0.15s;
-}
-
-.lp-reveal.lp-in {
-  opacity: 1;
-  filter: none;
-  translate: none;
-}
-
-/* ── Hero intro ───────────────────────────────────────────────────────────── */
-
-.lp-hero-word {
-  display: inline-block;
-  opacity: 0;
-  animation: lp-word-up 0.9s var(--lp-ease-spring) forwards;
-}
-
-.lp-hero-part {
-  opacity: 0;
-  animation: lp-part-in 1.3s var(--lp-ease-spring) forwards;
-}
-
-.lp-hero-fade {
-  opacity: 0;
-  animation: lp-fade-up 0.9s forwards;
-}
-
-/* ── Looping motion ───────────────────────────────────────────────────────── */
-
-.lp-marquee {
-  animation: lp-marquee 40s linear infinite;
-}
-
-.lp-floaty {
-  animation: lp-floaty 5s ease-in-out infinite;
-}
-
-.lp-spin-slow {
-  animation: lp-spin-slow 18s linear infinite;
-}
-
-.lp-bar-grow {
-  transform-origin: bottom;
-  animation: lp-grow 1.4s var(--lp-ease-spring) both;
-}
-
-/* ── Material swatches ────────────────────────────────────────────────────── */
-
-.lp-sw-aluminium {
-  background:
-    repeating-linear-gradient(90deg, oklch(86% 0.005 250) 0 2px, oklch(80% 0.006 250) 2px 3px),
-    linear-gradient(135deg, oklch(92% 0.004 250), oklch(72% 0.01 250));
-  background-blend-mode: multiply;
-}
-
-.lp-sw-steel {
-  background:
-    repeating-linear-gradient(0deg, oklch(55% 0.01 250) 0 1px, oklch(50% 0.01 250) 1px 3px),
-    linear-gradient(135deg, oklch(62% 0.01 250), oklch(38% 0.01 250));
-  background-blend-mode: multiply;
-}
-
-.lp-sw-stainless {
-  background: conic-gradient(
-    oklch(90% 0.005 250),
-    oklch(65% 0.01 250),
-    oklch(95% 0.003 250),
-    oklch(70% 0.01 250),
-    oklch(90% 0.005 250)
-  );
-}
-
-.lp-sw-carbon {
-  background:
-    repeating-linear-gradient(45deg, oklch(20% 0 0) 0 6px, oklch(28% 0 0) 6px 12px),
-    repeating-linear-gradient(-45deg, oklch(20% 0 0) 0 6px, oklch(30% 0 0) 6px 12px);
-  background-blend-mode: lighten;
-}
-
-.lp-sw-acrylic {
-  background:
-    linear-gradient(135deg, oklch(85% 0.08 230 / 0.9), oklch(60% 0.15 250 / 0.7)),
-    radial-gradient(circle at 30% 30%, oklch(100% 0 0 / 0.6), transparent 50%);
-}
-
-.lp-sw-wood {
-  background: repeating-radial-gradient(
-    at 20% 120%,
-    oklch(72% 0.08 70) 0 6px,
-    oklch(64% 0.09 60) 6px 9px,
-    oklch(78% 0.07 75) 9px 14px
-  );
-}
-
-.lp-sw-print {
-  background: repeating-linear-gradient(
-    0deg,
-    oklch(var(--lp-primary)) 0 3px,
-    color-mix(in oklab, oklch(var(--lp-primary)) 70%, black) 3px 4px
-  );
-}
-
-.lp-sw-sheen {
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), oklch(100% 0 0 / 0.45), transparent 45%);
-}
-
-/* Custom cursor only for precise hovering pointers */
-@media (hover: hover) and (pointer: fine) {
-  .lp-cursor-none,
-  .lp-cursor-none * {
-    cursor: none;
-  }
-}
-
-/* ── Keyframes ────────────────────────────────────────────────────────────── */
-
-@keyframes lp-marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes lp-floaty {
-  50% {
-    transform: translateY(-14px) rotate(4deg);
-  }
-}
-
-@keyframes lp-spin-slow {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes lp-word-up {
-  from {
-    opacity: 0;
-    filter: blur(10px);
-    transform: translateY(60%);
-  }
-  to {
-    opacity: 1;
-    filter: none;
-    transform: none;
-  }
-}
-
-@keyframes lp-part-in {
-  from {
-    opacity: 0;
-    filter: blur(14px);
-    transform: translateY(120%) rotate(-25deg) scale(0.7);
-  }
-  to {
-    opacity: 1;
-    filter: none;
-    transform: none;
-  }
-}
-
-@keyframes lp-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes lp-grow {
-  from {
-    transform: scaleY(0);
-  }
-  to {
-    transform: scaleY(1);
-  }
+  background-image: none;
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────────── */
+/* Movement becomes a plain opacity change. */
 
 @media (prefers-reduced-motion: reduce) {
-  .lp-root *,
-  .lp-root *::before,
-  .lp-root *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
-  }
-
   .lp-root .lp-reveal {
+    translate: none;
+    transition: opacity 500ms var(--lp-ease);
+  }
+  .lp-root .lp-hero-in {
+    animation-name: lp-fade;
+  }
+  .lp-root .lp-menu-item,
+  .lp-root .lp-faq[open] .lp-faq-body {
+    transform: none;
+    animation-name: lp-fade;
+  }
+  .lp-root .lp-press:active {
+    transform: none;
+  }
+  .lp-root .lp-tagline-word {
+    color: oklch(var(--lp-foreground));
+    transition: none;
+  }
+  .lp-root .lp-tumble {
+    animation: none;
+  }
+  .lp-demo[open] {
+    animation-name: lp-fade;
+  }
+  .lp-root [data-parallax] {
+    transform: none !important;
+  }
+}
+
+@keyframes lp-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Legal pages ──────────────────────────────────────────────────────────── */
+
+/* Class specificity on purpose: Tailwind's reset sets p and h3 margins to 0. */
+.lp-legal > * + * {
+  margin-top: 16px;
+}
+:where(.lp-legal) p,
+:where(.lp-legal) li {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: oklch(var(--lp-muted-foreground));
+  text-wrap: pretty;
+}
+:where(.lp-legal) ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 24px;
+  list-style: disc;
+}
+:where(.lp-legal) li::marker {
+  color: oklch(var(--lp-primary));
+}
+:where(.lp-legal) strong {
+  font-weight: 500;
+  color: oklch(var(--lp-foreground));
+}
+.lp-legal h3 {
+  margin-top: 24px;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  color: oklch(var(--lp-foreground));
+}
+:where(.lp-legal) a {
+  color: oklch(var(--lp-primary));
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ── Form controls ────────────────────────────────────────────────────────── */
+
+/* Native select with a drawn caret (keeps the OS picker, which is best on phones). */
+.lp-root .lp-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 20px 20px;
+}
+
+/* Indeterminate progress for analysis in flight (transform only). */
+.lp-progress {
+  animation: lp-progress 1.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes lp-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-progress {
+    animation: none;
+    transform: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+}
+
+/* ── Signed-in app screens (dashboard, project, part wizard) ─────────────────
+   A theme layer for the long app screens: it lifts the legacy micro labels to a
+   readable size and maps off-palette utility colours (slate, emerald, amber,
+   ad hoc blues) onto the lp tokens, so every screen inside matches the site.
+   Scoped to .lp-app so marketing pages are untouched. */
+
+.lp-app .lp-label-mono {
+  font-size: 0.75rem !important;
+  line-height: 1rem;
+  letter-spacing: 0.04em;
+}
+.lp-app :is(.text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.lp-app .rounded-sm {
+  border-radius: 0.75rem;
+}
+
+/* Text */
+.lp-app :is(.text-slate-900, .text-slate-800, .text-slate-700, .text-gray-900, .text-gray-800) {
+  color: oklch(var(--lp-foreground));
+}
+.lp-app :is(.text-slate-600, .text-slate-500, .text-slate-400, .text-slate-300, .text-gray-500, .text-gray-400, .text-blue-100, .text-blue-200, .text-blue-300) {
+  color: oklch(var(--lp-muted-foreground));
+}
+.lp-app :is(.text-blue-500, .text-blue-600, .text-blue-700, .text-\[\#2F5FA7\], .text-emerald-500, .text-emerald-600, .text-emerald-700, .text-green-500, .text-green-600) {
+  color: oklch(var(--lp-primary));
+}
+.lp-app :is(.text-amber-500, .text-amber-600, .text-amber-700, .text-amber-800) {
+  color: oklch(var(--lp-foreground));
+}
+.lp-app :is(.text-red-500, .text-red-600, .text-red-700) {
+  color: oklch(var(--lp-destructive));
+}
+
+/* Surfaces */
+.lp-app :is(.bg-white) {
+  background-color: oklch(var(--lp-background));
+}
+.lp-app :is(.bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-amber-50, .bg-amber-100) {
+  background-color: oklch(var(--lp-muted));
+}
+.lp-app :is(.bg-blue-50, .bg-emerald-50, .bg-green-50) {
+  background-color: oklch(var(--lp-primary) / 0.08);
+}
+.lp-app :is(.bg-blue-600, .bg-emerald-500, .bg-emerald-600, .bg-\[\#2F5FA7\]) {
+  background-color: oklch(var(--lp-primary));
+}
+.lp-app :is(.bg-red-50) {
+  background-color: oklch(var(--lp-destructive) / 0.06);
+}
+.lp-app :is(.bg-amber-500) {
+  background-color: oklch(var(--lp-foreground));
+}
+
+/* Borders */
+.lp-app :is(.border-slate-100, .border-slate-200, .border-gray-200, .border-amber-100, .border-amber-200) {
+  border-color: oklch(var(--lp-border));
+}
+.lp-app :is(.border-blue-100, .border-blue-200, .border-emerald-100, .border-emerald-200) {
+  border-color: oklch(var(--lp-primary) / 0.2);
+}
+.lp-app :is(.border-red-100, .border-red-200) {
+  border-color: oklch(var(--lp-destructive) / 0.35);
+}
+
+/* Cards breathe a little more than the old square boxes. */
+.lp-app :is(.bg-lp-card, .bg-lp-bg).border {
+  border-radius: 1rem;
+}
+
+.lp-app :is(.text-indigo-600, .text-indigo-700) {
+  color: oklch(var(--lp-primary));
+}
+.lp-app :is(.bg-indigo-50) {
+  background-color: oklch(var(--lp-primary) / 0.08);
+}
+.lp-app :is(.border-indigo-100, .border-indigo-200) {
+  border-color: oklch(var(--lp-primary) / 0.2);
+}
+
+/* Old uppercase, wide tracked micro labels become the system's mono label. */
+.lp-app :is(.tracking-widest, .tracking-wider, .tracking-\[0\.2em\], .tracking-\[0\.15em\], .tracking-\[0\.3em\]).uppercase {
+  font-family: var(--lp-font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+/* Old all caps headings read as sentence weight headings. */
+/* Doubled class: must outrank the mono label rule above for headings that used it. */
+.lp-app.lp-app :is(h1, h2, h3, h4).uppercase {
+  font-family: var(--lp-font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+
+/* ── Animated logo ────────────────────────────────────────────────────────────
+   Timeline (2.6s): the tile spins in from a blur and grows to centre stage, the M
+   halves slide together, the gear turns into place, then the mark shrinks and the
+   row slides left while "MechHub" types in letter by letter. */
+
+.lp-logo-anim {
+  --shift: 2.3em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: oklch(var(--lp-foreground));
+  animation: lp-logo-row 2.6s var(--lp-ease) both;
+}
+.lp-logo-mark {
+  display: block;
+  width: 1.4em;
+  height: 1.4em;
+  flex-shrink: 0;
+  perspective: 600px;
+}
+.lp-logo-tile {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: lp-logo-tile 2.6s var(--lp-ease) both;
+}
+.lp-logo-m,
+.lp-logo-gear {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.lp-logo-m {
+  animation: lp-logo-m 2.6s var(--lp-ease) both;
+}
+.lp-logo-gear {
+  animation: lp-logo-gear 2.6s var(--lp-ease) both;
+}
+.lp-logo-word {
+  display: inline-flex;
+}
+.lp-logo-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: lp-logo-letter 600ms var(--lp-ease) forwards;
+}
+
+@keyframes lp-logo-row {
+  0%,
+  52% {
+    transform: translateX(var(--shift));
+  }
+  82%,
+  100% {
+    transform: none;
+  }
+}
+@keyframes lp-logo-tile {
+  0% {
+    opacity: 0;
+    filter: blur(12px);
+    transform: scale(0.25) rotateY(160deg) rotateZ(-70deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  36% {
+    filter: blur(0);
+    transform: scale(1.35) rotateY(0deg) rotateZ(0deg);
+  }
+  52% {
+    transform: scale(1.35);
+  }
+  82%,
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+@keyframes lp-logo-m {
+  0%,
+  22% {
+    opacity: 0;
+    transform: translateX(-46px);
+  }
+  44%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-logo-gear {
+  0%,
+  30% {
+    opacity: 0;
+    transform: rotate(-180deg) scale(0.2);
+  }
+  52%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-logo-letter {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateX(0.3em);
+  }
+  to {
     opacity: 1;
     filter: none;
-    translate: none;
+    transform: none;
   }
+}
 
-  .lp-root .lp-hero-word,
-  .lp-root .lp-hero-part,
-  .lp-root .lp-hero-fade {
+/* First visit intro: a full screen cover that plays the logo, then lifts away.
+   Runs on CSS alone, so it can never get stuck if JavaScript fails. */
+.lp-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: oklch(var(--lp-background));
+  font-size: 2.5rem;
+  animation: lp-intro-out 800ms var(--lp-ease) 2.75s forwards;
+  cursor: pointer;
+}
+@media (min-width: 768px) {
+  .lp-intro {
+    font-size: 4.5rem;
+  }
+}
+.lp-intro[data-seen],
+html[data-intro-seen] .lp-intro {
+  display: none;
+}
+.lp-intro[data-skip] {
+  animation: lp-intro-out 500ms var(--lp-ease) forwards;
+}
+@keyframes lp-intro-out {
+  to {
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-intro {
+    display: none;
+  }
+  .lp-logo-anim,
+  .lp-logo-tile,
+  .lp-logo-m,
+  .lp-logo-gear,
+  .lp-logo-letter {
+    animation: none;
     opacity: 1;
-    animation: none !important;
-  }
-
-  .lp-root .lp-marquee {
-    animation: none !important;
+    filter: none;
+    transform: none;
   }
 }

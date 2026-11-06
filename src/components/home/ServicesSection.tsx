@@ -1,164 +1,144 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { Reveal, Tag } from './primitives';
+import { ArrowRight } from '@phosphor-icons/react/dist/ssr';
+import { Accent, Reveal, SectionHeader } from './primitives';
+import { buttonClass } from './button';
 
 export const SERVICES = [
   {
-    name: 'Precision Sheet Cutting',
-    category: 'Sheet Metal',
+    name: 'Precision sheet cutting',
+    category: 'Sheet metal',
     image: '/home/svc-1.jpg',
-    description: 'Laser & waterjet cutting with 2D designs from flat sheet stock with minimal accuracy.',
-    tags: ['High Precision', 'Smooth Edges', 'Custom Shapes'],
+    description: 'Laser and waterjet cutting of 2D profiles from flat sheet stock, with clean edges and tight tolerances.',
+    tags: ['High precision', 'Smooth edges', 'Custom shapes'],
     href: '/services/precision-sheet-cutting',
   },
   {
-    name: 'CNC Milling / Turning',
-    category: 'CNC Machining',
+    name: 'CNC milling and turning',
+    category: 'CNC machining',
     image: '/home/svc-2.jpg',
-    description: 'Remove material from a solid block to create complex 3D geometry with high tolerances.',
-    tags: ['Tight Tolerances', 'Complex Geometries', 'High Finish'],
+    description: 'Complex 3D geometry machined from a solid block, held to tight tolerances.',
+    tags: ['Tight tolerances', 'Complex geometry', 'Fine finish'],
     href: '/services/cnc-machining',
   },
   {
-    name: 'Bending & Folding',
-    category: 'Bending & Folding',
+    name: 'Bending and folding',
+    category: 'Sheet metal',
     image: '/home/svc-3.jpg',
-    description: 'Precisely fold sheet metal along defined lines to produce structural angles & enclosures.',
-    tags: ['Accurate Angles', 'Multiple Thicknesses', 'Large Panels'],
+    description: 'Sheet metal folded along defined lines into brackets, angles and enclosures.',
+    tags: ['Accurate angles', 'Many thicknesses', 'Large panels'],
     href: '/services/bending',
   },
   {
     name: 'Countersinking',
-    category: 'Reduced Tolerance',
+    category: 'Hole features',
     image: '/home/svc-4.jpg',
-    description: 'Create tapered holes to sit flush with fasteners for a clean and professional finish.',
-    tags: ['Flush Fit', 'Better Aesthetics', 'Secure Assembly'],
+    description: 'Tapered holes so screw heads sit flush for a clean, professional finish.',
+    tags: ['Flush fit', 'Clean look', 'Secure assembly'],
     href: '/services/countersinking',
   },
   {
-    name: 'Dimple Forming',
-    category: 'Custom Fabrication',
+    name: 'Dimple forming',
+    category: 'Forming',
     image: '/home/svc-5.jpg',
-    description: 'Form reinforced dimples to increase strength and reduce vibration in sheet metal parts.',
-    tags: ['Stronger Parts', 'Vibration Resistant', 'Lightweight'],
+    description: 'Formed dimples that stiffen sheet metal parts and cut vibration without adding weight.',
+    tags: ['Stronger parts', 'Less vibration', 'Lightweight'],
     href: '/services/dimple-forming',
   },
   {
-    name: 'Hardware Insertion',
+    name: 'Hardware insertion',
     category: 'Hardware',
     image: '/home/svc-6.jpg',
-    description: 'Press-fit threaded inserts, standoffs, and PEM fasteners for durable and reliable assemblies.',
-    tags: ['Strong Hold', 'Repeatable Process', 'Wide Range'],
+    description: 'Threaded inserts, standoffs and PEM fasteners pressed in for durable assemblies.',
+    tags: ['Strong hold', 'Repeatable', 'Wide range'],
     href: '/services/hardware-insertion',
   },
   {
-    name: 'Precision Tapping',
+    name: 'Precision tapping',
     category: 'Threading',
     image: '/home/svc-7.jpg',
-    description: 'Create internal threads with high accuracy for secure, long-lasting connections.',
-    tags: ['Metric / Imperial', 'High Accuracy', 'Clean Finish'],
+    description: 'Accurate internal threads for secure connections that last.',
+    tags: ['Metric and imperial', 'High accuracy', 'Clean finish'],
     href: '/services/tapping',
   },
   {
     name: 'Anodizing',
-    category: 'Surface Finishing',
+    category: 'Surface finishing',
     image: '/home/svc-8.jpg',
-    description: 'Enhance corrosion resistance and aesthetics with durable, high-quality anodized coatings.',
-    tags: ['Corrosion Resistant', 'Multiple Colors', 'Long Life'],
+    description: 'A hard anodized layer that resists corrosion and comes in several colours.',
+    tags: ['Corrosion resistant', 'Several colours', 'Long life'],
     href: '/services/anodizing',
   },
   {
-    name: 'Powder Coating',
-    category: 'Finishing',
+    name: 'Powder coating',
+    category: 'Surface finishing',
     image: '/home/svc-9.jpg',
-    description: 'Electrostatic coating for a durable, impact-resistant, and visually appealing finish.',
-    tags: ['Durable Finish', 'Scratch Resistant', 'Multiple Colors'],
+    description: 'An electrostatic coating that stands up to knocks and scratches and looks good doing it.',
+    tags: ['Durable finish', 'Scratch resistant', 'Several colours'],
     href: '/services/powder-coating',
   },
 ];
 
-export function ServicesSection({ headingAs: Heading = 'h2' }: { headingAs?: 'h1' | 'h2' }) {
+export function ServicesSection({ headingAs = 'h2' }: { headingAs?: 'h1' | 'h2' }) {
+  const isPage = headingAs === 'h1';
   return (
-    <section id="services" className="scroll-mt-16 bg-lp-muted/60 py-28">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-5">
-        <div className="text-center">
-          <Reveal>
-            <Tag>Our Capabilities</Tag>
-          </Reveal>
-          <Reveal delay={100}>
-            <Heading className="mt-5 text-[3rem] leading-[0.95] tracking-tight md:text-[4.5rem]">
-              Everything You <span className="lp-accent-serif">Need</span> to Build
-            </Heading>
-          </Reveal>
-          <Reveal delay={150}>
-            <p className="mx-auto mt-5 max-w-lg text-lp-muted-fg">
-              Nine precision manufacturing capabilities. One automated platform. Delivered straight to your
-              production line.
-            </p>
-          </Reveal>
-        </div>
+    <section
+      id="services"
+      aria-labelledby="services-heading"
+      className={`scroll-mt-24 px-4 ${isPage ? 'pb-16 pt-8 md:pb-24 md:pt-16' : 'py-16 md:py-24'}`}
+    >
+      <div className="mx-auto max-w-[1200px]">
+        <SectionHeader
+          as={headingAs}
+          id="services-heading"
+          kicker="Capabilities"
+          title={<>Nine processes, <Accent>one order</Accent></>}
+          lead="Cut, machine, form, thread and finish your parts through one platform. Pick a process to see materials, tolerances and design tips."
+        />
 
-        <div className="mt-14 grid gap-px bg-lp-border md:grid-cols-3">
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map((service, i) => (
-            <Reveal
-              key={service.name}
-              delay={(i % 3) * 90}
-              className="group relative bg-lp-card p-6 hover:bg-lp-primary hover:text-lp-primary-fg"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{service.name}</span>
-                <ArrowRight className="size-4 transition-transform group-hover:-rotate-45" />
-              </div>
-              <dl className="mt-3 grid grid-cols-[90px_1fr] gap-y-1 text-xs">
-                <dt className="opacity-60">Category:</dt>
-                <dd>{service.category}</dd>
-                <dt className="opacity-60">Index:</dt>
-                <dd>0{i + 1}</dd>
-              </dl>
-              <div className="relative my-6 h-52 overflow-hidden rounded-sm">
-                <Image
-                  src={service.image}
-                  alt={service.name}
-                  fill
-                  sizes="(min-width: 768px) 33vw, 100vw"
-                  className="object-cover transition-transform duration-[1.2s] group-hover:scale-110"
-                />
-                <span className="lp-tag absolute bottom-2 left-2 translate-y-2 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-                  0{i + 1} / 09
-                </span>
-              </div>
-              <p className="text-sm opacity-75">{service.description}</p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {service.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="lp-label-mono border border-[color-mix(in_oklab,currentColor_30%,transparent)] px-2 py-0.5 opacity-80"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+            <Reveal as="li" key={service.name} delay={(i % 3) * 80}>
               <Link
                 href={service.href}
-                className="lp-label-mono mt-5 inline-block underline-offset-4 hover:underline"
+                className="lp-press group flex h-full flex-col rounded-2xl border border-lp-border bg-lp-card p-1 hover:border-lp-primary/40 hover:bg-lp-bg"
               >
-                Learn more →
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                  <Image
+                    src={service.image}
+                    alt={`${service.name} at MechHub`}
+                    fill
+                    sizes="(min-width: 1200px) 392px, (min-width: 1024px) 32vw, (min-width: 640px) 48vw, 100vw"
+                    className="object-cover transition-transform duration-500 ease-lp group-hover:scale-105"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <span className="caption-4 text-lp-muted-fg">{service.category}</span>
+                  <h3 className="title-2 mt-1 flex items-center justify-between gap-2">
+                    {service.name}
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-lp-primary transition-transform duration-300 ease-lp group-hover:translate-x-1"
+                      weight="bold"
+                    />
+                  </h3>
+                  <p className="body-6 mt-2 text-lp-muted-fg">{service.description}</p>
+                </div>
               </Link>
             </Reveal>
           ))}
-        </div>
+        </ul>
 
-        <Reveal className="lp-grid-bg relative mt-10 overflow-hidden rounded-sm bg-lp-primary p-10 text-center text-lp-primary-fg">
-          <h4 className="text-3xl md:text-4xl">Don&apos;t see what you need?</h4>
-          <p className="mx-auto mt-3 max-w-md text-sm opacity-85">
-            Our engineering team can spec, quote, and manufacture custom parts across 50+ alloys &amp; polymers.
-          </p>
-          <Link
-            href="/contact"
-            className="lp-label-mono mt-6 inline-flex items-center gap-2 rounded-sm bg-lp-bg px-5 py-3 text-lp-fg transition-transform hover:scale-105"
-          >
-            → Book Free Engineering Consultation
+        <Reveal className="mt-8 flex flex-col items-start justify-between gap-6 rounded-2xl bg-lp-ink p-6 text-lp-ink-fg md:flex-row md:items-center md:p-8">
+          <div>
+            <h3 className="heading-5">Need a process that is not listed?</h3>
+            <p className="body-6 mt-2 max-w-[560px] text-lp-ink-fg/70">
+              Our engineers can spec, quote and source custom work across the full materials catalogue.
+            </p>
+          </div>
+          <Link href="/contact" className={buttonClass('inverted')}>
+            Talk to an engineer
+            <ArrowRight aria-hidden="true" className="size-4" weight="bold" />
           </Link>
         </Reveal>
       </div>

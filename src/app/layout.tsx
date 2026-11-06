@@ -43,6 +43,11 @@ export default function RootLayout({
     <html lang="en" className={`scroll-smooth ${siteFontVars}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+        {/* Home page logo intro: marks a repeat visit before the first paint so the cover
+            never flashes (see components/brand/IntroSplash.tsx). Reads only, tiny. */}
+        <Script id="mh-intro-check" strategy="beforeInteractive">
+          {`try{if(sessionStorage.getItem('mh-intro'))document.documentElement.setAttribute('data-intro-seen','')}catch(e){}`}
+        </Script>
       </head>
       <body
         className="font-body antialiased bg-background text-foreground"

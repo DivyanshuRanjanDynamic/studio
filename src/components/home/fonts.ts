@@ -14,6 +14,7 @@ export const geistMono = localFont({
   weight: '400 500',
   variable: '--lp-font-mono',
   display: 'swap',
+  // Spec sheets and hero captions use it above the fold, so it is preloaded.
 });
 
 export const instrumentSerif = localFont({
@@ -23,6 +24,7 @@ export const instrumentSerif = localFont({
   ],
   variable: '--lp-font-serif',
   display: 'swap',
+  // The italic is the accent word in every hero heading, so it is preloaded.
 });
 
 export const landingFontVars = `${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`;

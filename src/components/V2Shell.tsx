@@ -18,7 +18,10 @@ export function V2Shell({
   return (
     <div className={cn('lp-root min-h-screen', landingFontVars)} suppressHydrationWarning>
       <HomeNav />
-      <main className={cn('pt-20', className)}>{children}</main>
+      {/* pt-24 clears the floating nav (16px offset + 56px bar + gap). */}
+      <main id="main" className={cn('pt-24', className)}>
+        {children}
+      </main>
       {!noFooter && <HomeFooter />}
     </div>
   );

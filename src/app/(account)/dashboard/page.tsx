@@ -99,6 +99,8 @@ import { getIdTokenResult, signOut } from 'firebase/auth';
 import { CreateProjectModal } from '@/components/CreateProjectModal';
 import { calculateProjectFinances } from '@/utils/finance';
 import { AccountLoader } from '@/components/PageLoaders';
+import { Tag } from '@/components/home/primitives';
+import { buttonClass } from '@/components/home/button';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   // Legacy / Basic mappings
@@ -212,6 +214,45 @@ function getStatusBadgeTone(rfq: ProjectRFQ | undefined) {
     return 'border-indigo-100 bg-indigo-50 text-indigo-700';
   }
   return 'border-slate-200 bg-slate-50 text-slate-600';
+}
+
+function ListSkeleton() {
+  return (
+    <div role="status" aria-label="Loading" className="space-y-2">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex items-center gap-4 rounded-2xl border border-lp-border p-4">
+          <div className="size-10 animate-pulse rounded-xl bg-lp-muted" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-1/2 animate-pulse rounded bg-lp-muted" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-lp-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  body,
+  action,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center rounded-3xl border border-dashed border-lp-border px-6 py-16 text-center">
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-lp-primary/10 text-lp-primary">
+        <Icon className="size-6" />
+      </span>
+      <h3 className="heading-6 mt-4">{title}</h3>
+      <p className="body-6 mt-1 max-w-[360px] text-lp-muted-fg">{body}</p>
+      {action && <div className="mt-6">{action}</div>}
+    </div>
+  );
 }
 
 function UserDashboardContent() {
@@ -796,7 +837,7 @@ function UserDashboardContent() {
 
   if (!isProfileLoading && profile?.role === 'vendor_pending') {
     return (
-      <V2Shell noFooter>
+      <V2Shell noFooter className="lp-app">
         <div className="container mx-auto px-4 flex items-center justify-center min-h-[70vh]">
           <div className="max-w-md text-center p-8 bg-lp-card border border-lp-border rounded-sm animate-in zoom-in-95 duration-500">
             <Clock className="w-16 h-16 text-lp-primary mx-auto mb-6" />
@@ -817,163 +858,131 @@ function UserDashboardContent() {
   }
 
   return (
-    <V2Shell noFooter>
-      <div className="container mx-auto px-4 sm:px-6 pb-16">
+    <V2Shell noFooter className="lp-app">
+      <div className="px-4 pb-16 pt-8 md:pt-12">
+      <div className="mx-auto max-w-[1200px]">
         {/* Admin banner */}
         {isAdminConfirmed && (
-          <div className="mb-6 p-4 bg-lp-accent border border-lp-border rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="mb-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-lp-primary/20 bg-lp-primary/5 p-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
-              <ShieldAlert className="w-5 h-5 text-lp-primary shrink-0" />
+              <ShieldAlert className="size-5 shrink-0 text-lp-primary" aria-hidden="true" />
               <div>
-                <p className="lp-label-mono text-lp-fg">Admin access detected</p>
-                <p className="lp-label-mono text-lp-muted-fg mt-0.5" style={{ fontSize: '9px' }}>
-                  You are currently in the customer view.
-                </p>
+                <p className="title-4">Admin access detected</p>
+                <p className="caption-2 text-lp-muted-fg">You are viewing the customer dashboard.</p>
               </div>
             </div>
-            <button
-              onClick={() => router.push('/admin')}
-              className="w-full sm:w-auto h-9 px-5 rounded-sm bg-lp-primary text-lp-primary-fg lp-label-mono hover:bg-lp-primary/90 transition-colors"
-            >
-              Go to Admin Panel
+            <button type="button" onClick={() => router.push('/admin')} className={buttonClass('primary', 'sm')}>
+              Go to admin panel
             </button>
           </div>
         )}
 
         {/* Hero */}
-        <div className="pt-4 pb-8 md:pb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-lp-primary text-lp-primary-fg mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-lp-primary-fg animate-pulse" />
-            <span className="lp-label-mono" style={{ fontSize: '10px' }}>Dashboard · Welcome back</span>
+        <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+          <div>
+            <Tag>Dashboard</Tag>
+            <h1 className="heading-2 mt-4">
+              Welcome back{user.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
+            </h1>
+            <p className="body-3 mt-2 max-w-[520px] text-lp-muted-fg">
+              Every project, part and order, from CAD file to parts at your door.
+            </p>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight text-lp-fg leading-[1.05]">
-                Project<br />
-                <span className="font-lp-serif italic text-lp-primary">Hub</span>
-              </h1>
-              <p className="text-sm sm:text-base text-lp-muted-fg mt-4 max-w-md leading-relaxed">
-                Manage your manufacturing pipeline from CAD file to parts at your door.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <button
-                onClick={() => router.push('/consultation')}
-                className="h-11 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors flex items-center justify-center gap-2"
-              >
-                <PhoneCall className="w-3.5 h-3.5" /> Book consultation
-              </button>
-              <button
-                onClick={() => router.push('/quote/instant')}
-                className="h-11 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors flex items-center justify-center gap-2"
-              >
-                <Zap className="w-3.5 h-3.5" /> Instant quote
-              </button>
-              <button
-                onClick={() => setIsCreateProjectOpen(true)}
-                className="h-11 px-6 rounded-sm bg-lp-primary text-lp-primary-fg lp-label-mono hover:bg-lp-primary/90 transition-colors flex items-center justify-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5" /> Start new design
-              </button>
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <button type="button" onClick={() => router.push('/consultation')} className={buttonClass('secondary')}>
+              <PhoneCall className="size-4" aria-hidden="true" /> Book a consultation
+            </button>
+            <button type="button" onClick={() => router.push('/quote/instant')} className={buttonClass('secondary')}>
+              <Zap className="size-4" aria-hidden="true" /> Instant quote
+            </button>
+            <button type="button" onClick={() => setIsCreateProjectOpen(true)} className={buttonClass('primary', 'md', true)}>
+              Start a new design
+              <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-lp-primary-fg/15">
+                <Plus className="size-4" />
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-b border-lp-border py-6 mb-8 gap-y-4">
-          <div className="text-center sm:border-r border-lp-border">
-            <p className="lp-label-mono text-lp-muted-fg mb-1">Active projects</p>
-            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{sortedRfqs?.length || 0}</p>
-          </div>
-          <div className="text-center sm:border-r border-lp-border">
-            <p className="lp-label-mono text-lp-muted-fg mb-1">Parts uploaded</p>
-            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{allParts?.length || 0}</p>
-          </div>
-          <div className="text-center sm:border-r border-lp-border">
-            <p className="lp-label-mono text-lp-muted-fg mb-1">Pipeline value</p>
-            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">₹{pipelineValue.toLocaleString()}</p>
-          </div>
-          <div className="text-center">
-            <p className="lp-label-mono text-lp-muted-fg mb-1">Avg. lead time</p>
-            <p className="text-2xl sm:text-3xl font-medium text-lp-fg tracking-tight">{avgLeadTime} days</p>
-          </div>
-        </div>
+        {/* Stats */}
+        <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-lp-border bg-lp-border md:grid-cols-4">
+          {[
+            { label: 'Active projects', value: String(sortedRfqs?.length || 0), icon: Layers },
+            { label: 'Parts uploaded', value: String(allParts?.length || 0), icon: Box },
+            { label: 'Pipeline value', value: `₹${pipelineValue.toLocaleString('en-IN')}`, icon: TrendingUp },
+            { label: 'Average lead time', value: `${avgLeadTime} days`, icon: Clock },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} className="bg-lp-bg p-4 md:p-6">
+              <dt className="lp-mono flex items-center gap-2 text-lp-muted-fg">
+                <Icon className="size-4 text-lp-primary" aria-hidden="true" />
+                {label}
+              </dt>
+              <dd className="heading-4 lp-num mt-2 truncate">{value}</dd>
+            </div>
+          ))}
+        </dl>
 
         {/* Main content: list + detail panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Left: Tabs & list */}
           <div className="lg:col-span-7">
-            <Tabs
-              value={activeTab}
-              onValueChange={handleDashboardTabChange}
-              className="space-y-6"
-            >
-              <TabsList className="bg-transparent border-b border-lp-border p-0 rounded-none h-auto w-full flex justify-start gap-0">
-                <TabsTrigger
-                  value="projects"
-                  className="px-4 py-3 rounded-none border-b-2 border-transparent text-sm font-medium text-lp-muted-fg hover:text-lp-fg data-[state=active]:border-lp-fg data-[state=active]:text-lp-fg data-[state=active]:bg-transparent transition-colors"
-                >
-                  Project RFQs
-                </TabsTrigger>
-                <TabsTrigger
-                  value="designs"
-                  className="px-4 py-3 rounded-none border-b-2 border-transparent text-sm font-medium text-lp-muted-fg hover:text-lp-fg data-[state=active]:border-lp-fg data-[state=active]:text-lp-fg data-[state=active]:bg-transparent transition-colors"
-                >
-                  Designs
-                </TabsTrigger>
-                <TabsTrigger
-                  value="shop_orders"
-                  className="px-4 py-3 rounded-none border-b-2 border-transparent text-sm font-medium text-lp-muted-fg hover:text-lp-fg data-[state=active]:border-lp-fg data-[state=active]:text-lp-fg data-[state=active]:bg-transparent transition-colors"
-                >
-                  Shop Orders
-                </TabsTrigger>
+            <Tabs value={activeTab} onValueChange={handleDashboardTabChange} className="space-y-6">
+              <TabsList className="flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-lp-border bg-transparent p-0 no-scrollbar">
+                {[
+                  { value: 'projects', label: 'Projects', count: sortedRfqs?.length || 0 },
+                  { value: 'designs', label: 'Designs', count: allParts?.length || 0 },
+                  { value: 'shop_orders', label: 'Shop orders', count: completedShopOrders?.length || 0 },
+                ].map((t) => (
+                  <TabsTrigger
+                    key={t.value}
+                    value={t.value}
+                    className="button-sm -mb-px flex shrink-0 items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-lp-muted-fg shadow-none transition-colors duration-300 ease-lp hover:text-lp-fg data-[state=active]:border-lp-primary data-[state=active]:bg-transparent data-[state=active]:text-lp-fg data-[state=active]:shadow-none"
+                  >
+                    {t.label}
+                    <span className="lp-mono rounded-full bg-lp-muted px-2 py-0.5 text-lp-muted-fg">{t.count}</span>
+                  </TabsTrigger>
+                ))}
               </TabsList>
 
-              <TabsContent value="projects" className="space-y-0">
-                {isRfqsLoading && (!sortedRfqs || sortedRfqs.length === 0) && (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2 className="w-6 h-6 animate-spin text-lp-primary" />
-                  </div>
-                )}
+              <TabsContent value="projects" className="space-y-2">
+                {isRfqsLoading && (!sortedRfqs || sortedRfqs.length === 0) && <ListSkeleton />}
 
                 {!isRfqsLoading && (!sortedRfqs || sortedRfqs.length === 0) && (
-                  <div className="text-center py-20 border border-dashed border-lp-border rounded-sm space-y-4">
-                    <History className="w-10 h-10 mx-auto text-lp-muted-fg/30" />
-                    <p className="lp-label-mono text-lp-muted-fg">
-                      You haven&apos;t started any projects yet.
-                    </p>
-                    <button
-                      onClick={() => setIsCreateProjectOpen(true)}
-                      className="h-9 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors"
-                    >
-                      Start your first design
-                    </button>
-                  </div>
+                  <EmptyState
+                    icon={History}
+                    title="No projects yet"
+                    body="A project holds every part, quote and order for one build. Start one and upload your first STEP file."
+                    action={
+                      <button type="button" onClick={() => setIsCreateProjectOpen(true)} className={buttonClass('primary')}>
+                        <Plus className="size-4" aria-hidden="true" /> Start your first design
+                      </button>
+                    }
+                  />
                 )}
 
                 {!isRfqsLoading &&
                   sortedRfqs &&
                   sortedRfqs.length > 0 &&
-                  sortedRfqs.map((order, idx) => {
+                  sortedRfqs.map((order) => {
                     const projectParts = allParts?.filter((p) => p.projectId === order.id) || [];
-                    const mainMaterial =
-                      projectParts.length > 0 ? projectParts[0].material.name : 'No Parts';
+                    const mainMaterial = projectParts.length > 0 ? projectParts[0].material.name : 'No parts yet';
                     const totalQty = projectParts.reduce((sum, p) => sum + (p.quantity || 0), 0);
 
                     const canonicalStatus = normalizeWorkflowStatus(order.workflowStatus, order.status);
-                    const statusInfo = (canonicalStatus && STATUS_MAP[canonicalStatus]) ||
-                      STATUS_MAP[order.status] ||
-                      STATUS_MAP.draft;
+                    const statusInfo = (canonicalStatus && STATUS_MAP[canonicalStatus]) || STATUS_MAP[order.status] || STATUS_MAP.draft;
                     const StatusIcon = statusInfo.icon;
                     const isSelected = selectedOrderId === order.id;
 
                     return (
                       <div
                         key={order.id}
+                        role="button"
                         tabIndex={0}
-                        className={`flex items-center gap-4 px-4 py-5 border-b border-lp-border cursor-pointer transition-all duration-200 group ${isSelected ? 'bg-lp-accent' : 'hover:bg-lp-accent/50'}`}
+                        aria-pressed={isSelected}
+                        className={`group flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition-colors duration-300 ease-lp ${
+                          isSelected ? 'border-lp-primary bg-lp-primary/5' : 'border-lp-border bg-lp-bg hover:border-lp-primary/30'
+                        }`}
                         onClick={() => setSelectedOrderId(order.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
@@ -982,209 +991,161 @@ function UserDashboardContent() {
                           }
                         }}
                       >
-                        {/* Number */}
-                        <span className="text-sm font-lp-mono text-lp-muted-fg/50 w-7 shrink-0">
-                          {String(idx + 1).padStart(2, '0')}.
+                        <span
+                          className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
+                            isSelected ? 'bg-lp-primary text-lp-primary-fg' : 'bg-lp-muted text-lp-muted-fg group-hover:text-lp-primary'
+                          }`}
+                        >
+                          <StatusIcon className="size-4" aria-hidden="true" />
                         </span>
 
-                        {/* Icon */}
-                        <div className={`w-10 h-10 rounded-sm flex items-center justify-center shrink-0 border ${isSelected ? 'bg-lp-primary/10 border-lp-primary/30' : 'bg-lp-accent border-lp-border'}`}>
-                          <StatusIcon className={`w-4 h-4 ${isSelected ? 'text-lp-primary' : 'text-lp-muted-fg'}`} />
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-medium text-sm tracking-tight truncate transition-colors ${isSelected ? 'text-lp-primary' : 'text-lp-fg group-hover:text-lp-primary'}`}>
-                            {order.projectName || 'Untitled Design'}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="lp-label-mono text-lp-muted-fg" style={{ fontSize: '9px' }}>
+                        <div className="min-w-0 flex-1">
+                          <p className="title-3 truncate">{order.projectName || 'Untitled design'}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className={`lp-mono rounded-full border px-2 py-0.5 ${getStatusBadgeTone(order)}`}>{statusInfo.label}</span>
+                            <span className="caption-5 text-lp-muted-fg">
                               {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
-                            <span className={`lp-label-mono px-2 py-0.5 rounded-sm ${getStatusBadgeTone(order)}`} style={{ fontSize: '9px' }}>
-                              {statusInfo.label}
-                            </span>
-                            <span className="lp-label-mono text-lp-muted-fg hidden sm:inline" style={{ fontSize: '9px' }}>
+                            <span className="caption-5 hidden text-lp-muted-fg sm:inline">
                               {mainMaterial} · {totalQty} pcs
                             </span>
                           </div>
                         </div>
 
-                        {/* Open link */}
                         <button
-                          className="lp-label-mono text-lp-muted-fg hover:text-lp-primary transition-colors flex items-center gap-1 shrink-0"
+                          type="button"
+                          className={buttonClass('secondary', 'sm')}
                           onClick={(e) => {
                             e.stopPropagation();
                             router.push(`/projects/${order.id}`);
                           }}
                         >
-                          Open <ChevronRight className="w-3.5 h-3.5" />
+                          Open <ChevronRight className="size-4" aria-hidden="true" />
                         </button>
                       </div>
                     );
                   })}
               </TabsContent>
 
-              <TabsContent value="designs" className="space-y-0">
-                {isPartsLoading && (!allParts || allParts.length === 0) && (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2 className="w-6 h-6 animate-spin text-lp-primary" />
-                  </div>
-                )}
+              <TabsContent value="designs">
+                {isPartsLoading && (!allParts || allParts.length === 0) && <ListSkeleton />}
 
                 {!isPartsLoading && (!allParts || allParts.length === 0) && (
-                  <div className="text-center py-20 border border-dashed border-lp-border rounded-sm space-y-4">
-                    <Layers className="w-10 h-10 mx-auto text-lp-muted-fg/30" />
-                    <p className="lp-label-mono text-lp-muted-fg">
-                      No design files added to any projects.
-                    </p>
-                    <button
-                      onClick={() => setIsCreateProjectOpen(true)}
-                      className="h-9 px-5 rounded-sm border border-lp-border bg-lp-bg text-lp-fg lp-label-mono hover:bg-lp-accent transition-colors"
-                    >
-                      Upload your first STEP file
-                    </button>
-                  </div>
+                  <EmptyState
+                    icon={Layers}
+                    title="No designs yet"
+                    body="Parts you add to a project show up here, ready to preview in 3D."
+                    action={
+                      <button type="button" onClick={() => setIsCreateProjectOpen(true)} className={buttonClass('primary')}>
+                        Upload your first STEP file
+                      </button>
+                    }
+                  />
                 )}
 
                 {allParts && allParts.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     {allParts.map((part: MechanicalPart) => {
                       const Icon = SERVICE_ICONS[part.service] || Package;
                       return (
-                        <div
-                          key={part.id}
-                          className="p-4 border border-lp-border rounded-sm bg-lp-bg hover:bg-lp-accent hover:border-lp-primary/30 transition-all cursor-pointer group"
-                        >
+                        <article key={part.id} className="group rounded-2xl border border-lp-border bg-lp-bg p-4 transition-colors duration-300 ease-lp hover:border-lp-primary/30">
                           <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border group-hover:border-lp-primary/30 transition-colors shrink-0">
-                              <Icon className="w-4 h-4 text-lp-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="font-medium text-sm text-lp-fg truncate group-hover:text-lp-primary transition-colors">
-                                  {part.partName || 'Untitled Part'}
-                                </p>
-                                <button
-                                  className="lp-label-mono text-lp-primary hover:underline shrink-0"
-                                  style={{ fontSize: '9px' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePreviewDesign(part);
-                                  }}
-                                >
-                                  Preview 3D
-                                </button>
-                              </div>
-                              <p className="lp-label-mono text-lp-primary mt-0.5" style={{ fontSize: '9px' }}>
-                                {SERVICE_DISPLAY_NAMES[part.service] || part.service}
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lp-primary/10 text-lp-primary">
+                              <Icon className="size-4" aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="title-4 truncate">{part.partName || 'Untitled part'}</h3>
+                              <p className="lp-mono mt-1 text-lp-primary">{SERVICE_DISPLAY_NAMES[part.service] || part.service}</p>
+                              <p className="caption-5 mt-2 text-lp-muted-fg">
+                                {part.material.name}
+                                {part.material.grade && ` (${part.material.grade})`} · {part.quantity} pcs
                               </p>
-                              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                <span className="lp-label-mono text-lp-muted-fg flex items-center gap-1" style={{ fontSize: '9px' }}>
-                                  <Layers className="w-3 h-3" />
-                                  {part.material.name}
-                                  {part.material.grade && ` (${part.material.grade})`}
-                                </span>
-                                <span className="lp-label-mono text-lp-muted-fg flex items-center gap-1" style={{ fontSize: '9px' }}>
-                                  <Hash className="w-3 h-3" />
-                                  {part.quantity} pcs
-                                </span>
-                              </div>
                               {part.secondaryProcesses && part.secondaryProcesses.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                <ul className="mt-2 flex flex-wrap gap-1">
                                   {part.secondaryProcesses.map((proc) => (
-                                    <span
-                                      key={proc}
-                                      className="lp-label-mono px-1.5 py-0.5 rounded-sm bg-lp-accent border border-lp-border text-lp-muted-fg"
-                                      style={{ fontSize: '8px' }}
-                                    >
+                                    <li key={proc} className="caption-5 rounded-full bg-lp-muted px-2 py-0.5 capitalize text-lp-muted-fg">
                                       {proc.replace(/_/g, ' ')}
-                                    </span>
+                                    </li>
                                   ))}
-                                </div>
+                                </ul>
                               )}
                             </div>
                           </div>
-                        </div>
+                          <button
+                            type="button"
+                            className={`${buttonClass('secondary', 'sm')} mt-4 w-full`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePreviewDesign(part);
+                            }}
+                          >
+                            <Eye className="size-4" aria-hidden="true" /> Preview in 3D
+                          </button>
+                        </article>
                       );
                     })}
                   </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="shop_orders" className="space-y-0">
-                {isShopOrdersLoading &&
-                  (!completedShopOrders || completedShopOrders.length === 0) && (
-                    <div className="flex items-center justify-center py-16">
-                      <Loader2 className="w-6 h-6 animate-spin text-lp-primary" />
-                    </div>
-                  )}
+              <TabsContent value="shop_orders" className="space-y-2">
+                {isShopOrdersLoading && (!completedShopOrders || completedShopOrders.length === 0) && <ListSkeleton />}
 
-                {!isShopOrdersLoading &&
-                  (!completedShopOrders || completedShopOrders.length === 0) && (
-                    <div className="text-center py-20 border border-dashed border-lp-border rounded-sm space-y-3">
-                      <History className="w-10 h-10 mx-auto text-lp-muted-fg/30" />
-                      <p className="lp-label-mono text-lp-muted-fg">
-                        No completed orders yet.
-                      </p>
-                      <p className="text-xs text-lp-muted-fg/60 max-w-[260px] mx-auto leading-relaxed">
-                        Only orders that have been successfully delivered are shown in this history.
-                      </p>
-                    </div>
-                  )}
+                {!isShopOrdersLoading && (!completedShopOrders || completedShopOrders.length === 0) && (
+                  <EmptyState
+                    icon={Package}
+                    title="No delivered orders yet"
+                    body="Shop orders appear here once they are delivered."
+                    action={
+                      <Link href="/shop" className={buttonClass('secondary')}>
+                        Browse the shop
+                      </Link>
+                    }
+                  />
+                )}
 
                 {completedShopOrders &&
                   completedShopOrders.length > 0 &&
-                  (completedShopOrders as any[]).map((order: any, idx: number) => (
-                    <div
-                      key={order.id}
-                      tabIndex={0}
-                      className="flex items-center gap-4 px-4 py-5 border-b border-lp-border cursor-pointer hover:bg-lp-accent/50 transition-all group"
-                      onClick={() => router.push(`/orders/${order.id}`)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          router.push(`/orders/${order.id}`);
-                        }
-                      }}
-                    >
-                      <span className="text-sm font-lp-mono text-lp-muted-fg/50 w-7 shrink-0">
-                        {String(idx + 1).padStart(2, '0')}.
-                      </span>
-                      <div className="w-10 h-10 rounded-sm bg-lp-accent flex items-center justify-center border border-lp-border shrink-0">
-                        <Package className="w-4 h-4 text-lp-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-lp-fg truncate group-hover:text-lp-primary transition-colors">
-                          {(order.items?.length || 0) + (order.shopItems?.length || 0)}{' '}
-                          {(order.items?.length || 0) + (order.shopItems?.length || 0) === 1
-                            ? 'Component'
-                            : 'Components'}{' '}
-                          Procured
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          <span className="lp-label-mono text-lp-muted-fg" style={{ fontSize: '9px' }}>
-                            {order.createdAt
-                              ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                              : 'Unknown date'}
-                          </span>
-                          <span className={`lp-label-mono px-2 py-0.5 rounded-sm ${order.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`} style={{ fontSize: '9px' }}>
-                            {order.status === 'paid' ? 'TXN SECURED' : order.status?.toUpperCase() || 'UNKNOWN'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right flex items-center gap-4">
-                        <div className="hidden sm:block">
-                          <p className="text-sm font-medium text-lp-fg font-lp-mono">
-                            ₹{(order.pricing?.total || 0).toLocaleString()}
+                  (completedShopOrders as any[]).map((order: any) => {
+                    const count = (order.items?.length || 0) + (order.shopItems?.length || 0);
+                    return (
+                      <div
+                        key={order.id}
+                        role="link"
+                        tabIndex={0}
+                        className="group flex cursor-pointer items-center gap-4 rounded-2xl border border-lp-border bg-lp-bg p-4 transition-colors duration-300 ease-lp hover:border-lp-primary/30"
+                        onClick={() => router.push(`/orders/${order.id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            router.push(`/orders/${order.id}`);
+                          }
+                        }}
+                      >
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lp-primary/10 text-lp-primary">
+                          <Package className="size-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="title-3 truncate">
+                            {count} {count === 1 ? 'item' : 'items'} ordered
                           </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className={`lp-mono rounded-full border px-2 py-0.5 ${order.status === 'paid' ? 'border-lp-primary/20 bg-lp-primary/10 text-lp-primary' : 'border-lp-border bg-lp-muted text-lp-fg'}`}>
+                              {order.status === 'paid' ? 'Paid' : order.status || 'Unknown'}
+                            </span>
+                            <span className="caption-5 text-lp-muted-fg">
+                              {order.createdAt
+                                ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'Unknown date'}
+                            </span>
+                          </div>
                         </div>
-                        <ChevronRight className="w-3.5 h-3.5 text-lp-muted-fg group-hover:text-lp-primary transition-colors" />
+                        <span className="title-4 lp-num hidden sm:block">₹{(order.pricing?.total || 0).toLocaleString('en-IN')}</span>
+                        <ChevronRight className="size-4 text-lp-muted-fg transition-transform duration-300 ease-lp group-hover:translate-x-1 group-hover:text-lp-primary" aria-hidden="true" />
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
               </TabsContent>
-
             </Tabs>
           </div>
 
@@ -1278,10 +1239,12 @@ function UserDashboardContent() {
                                           <p className="font-medium text-lp-fg text-sm">
                                             {quote.vendorName || 'MechMaster'}
                                           </p>
-                                          <div className="flex items-center gap-1 lp-label-mono text-lp-muted-fg mt-1">
-                                            <TrendingUp className="w-3 h-3 text-lp-primary" />
-                                            {quote.vendorRating || '4.5'} Rating
-                                          </div>
+                                          {quote.vendorRating ? (
+                                            <div className="flex items-center gap-1 lp-label-mono text-lp-muted-fg mt-1">
+                                              <TrendingUp className="w-3 h-3 text-lp-primary" />
+                                              {quote.vendorRating} rating
+                                            </div>
+                                          ) : null}
                                         </div>
                                         <div className="text-right">
                                           <p className="text-xl font-medium text-lp-primary font-lp-mono">
@@ -1689,7 +1652,7 @@ function UserDashboardContent() {
         }}
       >
         <DialogContent
-          className={`lp-root ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm sm:max-w-[450px] overflow-hidden p-0`}
+          className={`lp-root lp-app ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm sm:max-w-[450px] overflow-hidden p-0`}
           onPointerDownOutside={(e) => {
             if (!profile?.onboarded) e.preventDefault();
           }}
@@ -1807,7 +1770,7 @@ function UserDashboardContent() {
       </Dialog>
 
       <Dialog open={isNegotiating} onOpenChange={setIsNegotiating}>
-        <DialogContent className={`lp-root ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm sm:max-w-[500px]`}>
+        <DialogContent className={`lp-root lp-app ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm sm:max-w-[500px]`}>
           <DialogHeader>
             <DialogTitle className="text-xl font-medium text-lp-fg">Negotiate Terms</DialogTitle>
             <DialogDescription className="text-lp-muted-fg text-xs pt-1">
@@ -1897,7 +1860,7 @@ function UserDashboardContent() {
           if (!open) setPendingDeleteProject(null);
         }}
       >
-        <AlertDialogContent className={`lp-root ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm`}>
+        <AlertDialogContent className={`lp-root lp-app ${landingFontVars} bg-lp-bg text-lp-fg border-lp-border rounded-sm`}>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lp-fg font-medium">Delete Project?</AlertDialogTitle>
             <AlertDialogDescription className="text-lp-muted-fg">
@@ -1946,6 +1909,7 @@ function UserDashboardContent() {
         fileName={previewPartName}
         isConverting={isConverterLoading}
       />
+      </div>
     </V2Shell>
   );
 }

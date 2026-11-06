@@ -4,23 +4,12 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/firebase';
 import { verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Loader2, KeyRound } from 'lucide-react';
+import { Key, WarningCircle } from '@phosphor-icons/react/dist/ssr';
 import { useToast } from '@/hooks/use-toast';
-import { V2Shell } from '@/components/V2Shell';
-
-const inputCls =
-  'h-12 border-lp-border bg-lp-card text-lp-fg placeholder:text-lp-muted-fg/40 focus:border-lp-primary focus:ring-lp-primary/10 rounded-sm text-sm';
+import { AuthShell, AuthSkeleton, fieldClass } from '@/components/auth/AuthShell';
+import { Accent } from '@/components/home/primitives';
+import { buttonClass } from '@/components/home/button';
+import { cn } from '@/utils';
 
 function ResetPasswordForm() {
   const auth = useAuth();
@@ -104,98 +93,64 @@ function ResetPasswordForm() {
   };
 
   if (verifying) {
-    return (
-      <div className="w-full max-w-md border border-lp-border bg-lp-bg p-8 text-center mx-auto">
-        <Loader2 className="size-8 animate-spin mx-auto text-lp-primary mb-4" />
-        <p className="text-sm text-lp-muted-fg">Verifying your secure link...</p>
-      </div>
-    );
+    return <AuthSkeleton />;
   }
 
   return (
-    <Card className="w-full max-w-md border-lp-border bg-lp-bg shadow-none relative overflow-hidden mx-auto rounded-sm">
-      <div className="absolute top-0 left-0 w-full h-0.5 bg-lp-primary" />
-      <CardHeader className="space-y-1 pb-4">
-        <div className="flex justify-center mb-2">
-          <div className="flex size-12 items-center justify-center bg-lp-accent text-lp-primary">
-            <KeyRound className="size-6" />
-          </div>
-        </div>
-        <CardTitle className="text-2xl text-center font-medium tracking-tight">Reset Password</CardTitle>
-        <CardDescription className="text-center text-lp-muted-fg">
-          {error ? 'There was a problem with your request.' : `Create a new password for ${email}`}
-        </CardDescription>
-      </CardHeader>
+    <div>
+      <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-lp-primary/10 text-lp-primary">
+        <Key aria-hidden="true" className="size-8" weight="duotone" />
+      </span>
+      <h1 className="heading-4 mt-6 text-center">
+        Set a new <Accent>password</Accent>
+      </h1>
+      <p className="body-6 mt-2 text-center text-lp-muted-fg">
+        {error ? 'This reset link cannot be used.' : (
+          <>
+            For <span className="body-4 text-lp-fg">{email}</span>
+          </>
+        )}
+      </p>
 
       {!error ? (
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password" className="lp-label-mono text-lp-primary">New Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                className={inputCls}
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="lp-label-mono text-lp-primary">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                required
-                className={inputCls}
-                disabled={loading}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button
-              className="lp-label-mono w-full h-12 bg-lp-primary text-lp-primary-fg hover:bg-lp-primary/90 rounded-sm transition-all active:scale-[0.98]"
-              type="submit"
-              disabled={loading}
-            >
-              {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-              {loading ? 'Updating...' : 'Reset Password'}
-            </Button>
-          </CardFooter>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="password" className="title-4">
+              New password
+            </label>
+            <input id="password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" required disabled={loading} className={fieldClass()} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="title-4">
+              Confirm password
+            </label>
+            <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" placeholder="••••••••" required disabled={loading} className={fieldClass()} />
+          </div>
+          <button type="submit" disabled={loading} aria-busy={loading} className={cn(buttonClass('primary'), 'w-full py-3 disabled:opacity-60')}>
+            {loading ? 'Updating password' : 'Update password'}
+          </button>
         </form>
       ) : (
-        <CardContent className="flex flex-col gap-4 items-center pb-8 p-6">
-          <p className="text-sm text-lp-destructive font-medium text-center">{error}</p>
-          <Button
-            variant="outline"
-            className="mt-4 border-lp-border w-full rounded-sm hover:bg-lp-accent"
-            onClick={() => router.push('/login')}
-          >
-            Return to Login
-          </Button>
-        </CardContent>
+        <div className="mt-8 space-y-4">
+          <p role="alert" className="body-6 flex items-start gap-2 rounded-xl border border-lp-destructive/40 p-3 text-lp-destructive">
+            <WarningCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" weight="bold" />
+            {error}
+          </p>
+          <button type="button" onClick={() => router.push('/login?tab=login')} className={cn(buttonClass('secondary'), 'w-full')}>
+            Back to sign in
+          </button>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <V2Shell>
-      <div className="flex-1 flex justify-center items-center px-4 py-20">
-        <Suspense
-          fallback={
-            <div className="w-full max-w-md border border-lp-border bg-lp-bg p-8 text-center mx-auto">
-              <Loader2 className="size-8 animate-spin mx-auto text-lp-primary" />
-            </div>
-          }
-        >
-          <ResetPasswordForm />
-        </Suspense>
-      </div>
-    </V2Shell>
+    <AuthShell>
+      <Suspense fallback={<AuthSkeleton />}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthShell>
   );
 }
