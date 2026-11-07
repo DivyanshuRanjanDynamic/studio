@@ -334,7 +334,7 @@ export default function VendorOnboardingPage() {
   };
 
   return (
-    <div className={cn('lp-root min-h-screen', landingFontVars)} suppressHydrationWarning>
+    <div className={cn('lp-root lp-glow min-h-screen', landingFontVars)} suppressHydrationWarning>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-lp-bg focus:px-4 focus:py-2">
         Skip to the form
       </a>

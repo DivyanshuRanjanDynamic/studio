@@ -15,7 +15,7 @@ import { CustomerGuide, HelpLine, VendorGuide } from './AuthPanel';
  */
 export function AuthShell({ children, role = 'customer' }: { children: ReactNode; role?: 'customer' | 'vendor' }) {
   return (
-    <div className={cn('lp-root min-h-screen', landingFontVars)}>
+    <div className={cn('lp-root lp-glow min-h-screen', landingFontVars)}>
       <div className="mx-auto grid min-h-screen max-w-[1440px] lg:grid-cols-[1fr_1.05fr]">
         <div className="flex flex-col px-4 py-6 md:px-12">
           <header className="flex items-center justify-between gap-4">
@@ -51,7 +51,7 @@ export function AuthShell({ children, role = 'customer' }: { children: ReactNode
         </div>
 
         <aside aria-label={role === 'vendor' ? 'About the MechMaster network' : 'How MechHub works'} className="hidden p-4 lg:block">
-          <div className="sticky top-4 flex h-[calc(100vh-32px)] flex-col gap-6 overflow-y-auto rounded-3xl bg-[#0f1219] p-8 xl:p-10 [&>*]:shrink-0">
+          <div className="sticky top-4 flex h-[calc(100vh-32px)] flex-col gap-6 overflow-y-auto rounded-3xl bg-[#0f1219] lp-glow-dark p-8 xl:p-10 [&>*]:shrink-0">
             {role === 'vendor' ? <VendorGuide /> : <CustomerGuide />}
             <HelpLine className="mt-auto" title={role === 'vendor' ? 'Questions about joining?' : 'Need a hand?'} />
           </div>

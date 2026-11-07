@@ -60,7 +60,7 @@ const FAQ_SCHEMA = {
 
 export default function Home() {
   return (
-    <div className={cn('lp-root min-h-screen', landingFontVars)} suppressHydrationWarning>
+    <div className={cn('lp-root lp-glow min-h-screen', landingFontVars)} suppressHydrationWarning>
       <IntroSplash />
       <HomeNav />
       <main id="main">

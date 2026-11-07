@@ -16,7 +16,7 @@ export function V2Shell({
   noFooter?: boolean;
 }) {
   return (
-    <div className={cn('lp-root min-h-screen', landingFontVars)} suppressHydrationWarning>
+    <div className={cn('lp-root lp-glow min-h-screen', landingFontVars)} suppressHydrationWarning>
       <HomeNav />
       {/* pt-24 clears the floating nav (16px offset + 56px bar + gap). */}
       <main id="main" className={cn('pt-24', className)}>
