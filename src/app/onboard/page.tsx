@@ -540,7 +540,7 @@ export default function VendorOnboardingPage() {
                                 </span>
                                 <span className="min-w-0 pr-6">
                                   <span className="title-4 block">{capability}</span>
-                                  <span className="caption-5 text-lp-muted-fg">{info?.body}</span>
+                                  <span className="caption-5 mt-0.5 block text-lp-muted-fg">{info?.body}</span>
                                 </span>
                                 <span
                                   aria-hidden="true"
@@ -708,7 +708,7 @@ export default function VendorOnboardingPage() {
             </div>
           )}
 
-          <HelpLine title="Questions about joining?" className="mt-6" />
+          <HelpLine tone="light" title="Questions about joining?" className="mt-6" />
         </main>
       </div>
     </div>
@@ -848,7 +848,7 @@ function SubmittedCard({ email }: { email: string }) {
       </div>
       <div className="p-8 md:p-10">
         <p className="lp-mono text-lp-muted-fg">What happens next</p>
-        <StepList className="mt-4" steps={JOIN_STEPS.slice(1)} />
+        <StepList tone="light" className="mt-4" steps={JOIN_STEPS.slice(1)} />
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link href="/login?tab=login" className={buttonClass('primary')}>
             Go to sign in

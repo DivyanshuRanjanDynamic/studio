@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import {
   EnvelopeSimple,
   Phone,
@@ -6,7 +5,8 @@ import {
   ShieldCheck,
 } from '@phosphor-icons/react/dist/ssr';
 import { cn } from '@/utils';
-import { SUPPORT } from './auth-facts';
+import { EXAMPLE_QUOTE, PROCESSES, SUPPORT } from './auth-facts';
+import { VENDOR_CAPABILITIES } from '@/lib/vendor-onboarding';
 
 /* ── Right-hand side panel of sign-in / register screens ──────────────────────
    Clean, visual card: a bold headline, one-liner and a hero parts showcase.
@@ -26,19 +26,28 @@ export const KEEP_READY = [
   'The processes your shop runs',
 ];
 
+/** dark: on the sign in panel. light: on ordinary page backgrounds (the MechMaster application). */
+type Tone = 'dark' | 'light';
+
 /** Numbered steps joined by a rule, used on the application flow. */
-export function StepList({ steps, className }: { steps: { title: string; body: string }[]; className?: string }) {
+export function StepList({ steps, className, tone = 'dark' }: { steps: { title: string; body: string }[]; className?: string; tone?: Tone }) {
+  const light = tone === 'light';
   return (
     <ol className={cn('relative space-y-6', className)}>
-      <span aria-hidden="true" className="absolute bottom-3 left-[15px] top-3 w-px bg-white/20" />
+      <span aria-hidden="true" className={cn('absolute bottom-3 left-[15px] top-3 w-px', light ? 'bg-lp-border' : 'bg-white/20')} />
       {steps.map((s, i) => (
         <li key={s.title} className="relative flex gap-4">
-          <span className="lp-mono relative flex size-8 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white">
+          <span
+            className={cn(
+              'lp-mono relative flex size-8 shrink-0 items-center justify-center rounded-full border',
+              light ? 'border-lp-border bg-lp-bg text-lp-primary' : 'border-white/20 bg-white/10 text-white'
+            )}
+          >
             {String(i + 1).padStart(2, '0')}
           </span>
           <span className="pt-1">
-            <span className="title-4 block text-white">{s.title}</span>
-            <span className="caption-2 mt-1 block text-white/60">{s.body}</span>
+            <span className={cn('title-4 block', light ? 'text-lp-fg' : 'text-white')}>{s.title}</span>
+            <span className={cn('caption-2 mt-1 block', light ? 'text-lp-muted-fg' : 'text-white/60')}>{s.body}</span>
           </span>
         </li>
       ))}
@@ -47,25 +56,32 @@ export function StepList({ steps, className }: { steps: { title: string; body: s
 }
 
 /** Phone and email so nobody is stuck at a sign-in screen. */
-export function HelpLine({ title = 'Need a hand?', className }: { title?: string; className?: string }) {
+export function HelpLine({ title = 'Need a hand?', className, tone = 'dark' }: { title?: string; className?: string; tone?: Tone }) {
+  const light = tone === 'light';
+  const link = cn(
+    'caption-1 inline-flex items-center gap-2 rounded-full border px-3 py-2 transition-colors duration-300',
+    light ? 'border-lp-border text-lp-fg hover:border-lp-primary hover:text-lp-primary' : 'border-white/15 text-white/70 hover:border-white/40 hover:text-white'
+  );
   return (
-    <div className={cn('flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4', className)}>
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4',
+        light ? 'border-lp-border bg-lp-bg' : 'border-white/10 bg-white/5',
+        className
+      )}
+    >
       <div>
-        <p className="title-4 text-white">{title}</p>
-        <p className="caption-5 mt-1 text-white/50">{SUPPORT.office}</p>
+        <p className={cn('title-4', light ? 'text-lp-fg' : 'text-white')}>{title}</p>
+        <p className={cn('caption-5 mt-1', light ? 'text-lp-muted-fg' : 'text-white/50')}>
+          {light ? `Talk to the MechHub team, ${SUPPORT.office}.` : SUPPORT.office}
+        </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <a
-          href={SUPPORT.phoneHref}
-          className="caption-1 inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-white/70 transition-colors duration-300 hover:border-white/40 hover:text-white"
-        >
+        <a href={SUPPORT.phoneHref} className={link}>
           <Phone aria-hidden="true" className="size-4" weight="bold" />
           {SUPPORT.phone}
         </a>
-        <a
-          href={`mailto:${SUPPORT.email}`}
-          className="caption-1 inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-white/70 transition-colors duration-300 hover:border-white/40 hover:text-white"
-        >
+        <a href={`mailto:${SUPPORT.email}`} className={link}>
           <EnvelopeSimple aria-hidden="true" className="size-4" weight="bold" />
           {SUPPORT.email}
         </a>
@@ -81,12 +97,15 @@ function HeroCard({
   headline,
   subhead,
   stats,
+  note,
 }: {
   badge: string;
   badgeIcon: typeof ShieldCheck;
   headline: string;
   subhead: string;
   stats: { value: string; label: string }[];
+  /** Where the numbers come from, shown under the stats row. */
+  note?: string;
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -111,22 +130,30 @@ function HeroCard({
           </div>
         ))}
       </div>
+      {note && <p className="caption-5 mt-6 max-w-[360px] text-white/40">{note}</p>}
     </div>
   );
 }
+
+/* Every stat below is something the site already states or the pricing engine produces:
+   72 h is the average turnaround the home page and FAQ promise, the counts come from the
+   service pages and the application form, and ₹77 is EXAMPLE_QUOTE (pinned by a test). */
+const PER_PART_AT_100 = EXAMPLE_QUOTE.prices.find((p) => p.quantity === 100)!;
+const VENDOR_PROCESSES = VENDOR_CAPABILITIES.filter((c) => c !== 'Other').length;
 
 export function CustomerGuide() {
   return (
     <HeroCard
       badge="NDA on every file"
       badgeIcon={ShieldCheck}
-      headline="Custom CNC parts, priced instantly"
+      headline="Custom metal parts, priced instantly"
       subhead="Upload a STEP file. Get a price. Made by a vetted shop, delivered anywhere in India."
       stats={[
         { value: '72h', label: 'Avg turnaround' },
-        { value: '9+', label: 'Processes' },
-        { value: '₹0', label: 'Quoting fee' },
+        { value: String(PROCESSES.length), label: 'Processes' },
+        { value: PER_PART_AT_100.label, label: `Per part at ${PER_PART_AT_100.quantity} pcs` },
       ]}
+      note={`Example quote: ${EXAMPLE_QUOTE.part}, ${EXAMPLE_QUOTE.material}, ${EXAMPLE_QUOTE.process.toLowerCase()}. Excluding GST.`}
     />
   );
 }
@@ -139,10 +166,11 @@ export function VendorGuide() {
       headline="Orders for your shop, zero sales calls"
       subhead="Drawings and specs sorted. Clear payouts on every delivery."
       stats={[
-        { value: '0%', label: 'Commission' },
-        { value: '100%', label: 'Specs sorted' },
-        { value: 'Fast', label: 'Payouts' },
+        { value: '4', label: 'Steps to apply' },
+        { value: String(VENDOR_PROCESSES), label: 'Processes we route' },
+        { value: '0', label: 'Sales calls' },
       ]}
+      note="Every partner passes our technical and delivery checks before the first order."
     />
   );
 }
